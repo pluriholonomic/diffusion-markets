@@ -1,0 +1,151 @@
+--- /mnt/data/main_revised6.tex	2025-12-23 08:28:55.288461629 +0000
++++ /mnt/data/main_revised7.tex	2025-12-23 08:29:03.629322634 +0000
+@@ -621,13 +621,61 @@
+ \begin{assumption}[Learned diffusion approximates the noise operator]\label{ass:learned-diff}
+ For each compute budget $T$, the implemented diffusion forecaster outputs a function $\widetilde q_T$ such that
+ \[
+-\norm{\widetilde q_T - T_{\rho(T)} f}_{L^2} \le \epsilon_{\mathrm{learn}}(T)
++\norm{\widetilde q_T - T_{\rho(T)} f}_{L^2} \le \epsilon_{\mathrm{learn}}(T),
+ \]
+ for some effective correlation level $\rho(T)\uparrow 1$ as $T\to\infty$ and some approximation error $\epsilon_{\mathrm{learn}}(T)\downarrow 0$.
+ This assumption abstracts the phenomenon that denoising/score models implement a reverse-time smoothing-to-sharpening map \cite{ho2020ddpm,song2020sde}, and it is the point at which learning quality enters our theory.
+ \end{assumption}
+ 
+ 
++\subsubsection{Justifying the noise-operator abstraction}\label{sec:justify-noise-operator}
++
++Assumption~\ref{ass:learned-diff} is the strongest modeling idealization in our theory: it posits that (at a given compute budget) the diffusion forecaster behaves like a \emph{Markov smoothing operator} applied to the Truth function.
++This is a natural abstraction for two reasons.
++
++\paragraph{(i) Population optimality of denoising objectives.}
++Fix a noising kernel $K_\rho(\cdot\mid z)$ on $\{-1,1\}^d$ and a target label $Y\in[0,1]$ with regression function $f(z)=\E[Y\mid Z=z]$.
++Consider the supervised denoising objective at noise level $\rho$,
++\[
++\min_{g:\{-1,1\}^d\to\R}\ \E\bigl[(g(\widetilde Z)-Y)^2\bigr],\qquad \widetilde Z\sim K_\rho(\cdot\mid Z).
++\]
++The unique minimizer is the conditional expectation $g^\star(\tilde z)=\E[Y\mid \widetilde Z=\tilde z]$.
++For the standard $\rho$--bit-flip kernel, this conditional expectation is exactly the Boolean noise operator applied to $f$.
++
++\begin{proposition}[Denoising regression learns the Boolean noise operator]\label{prop:denoise-noise-operator}
++Let $Z\sim\mathrm{Unif}(\{-1,1\}^d)$ and let $Y\in[0,1]$ satisfy $\E[Y\mid Z=z]=f(z)$.
++Let $\widetilde Z$ be obtained from $Z$ by independent $\rho$--correlated bit flips.
++Then the unique minimizer of $\E[(g(\widetilde Z)-Y)^2]$ over measurable $g$ is
++\[
++g^\star\ =\ T_\rho f.
++\]
++Equivalently, if $f(z)=\sum_{S\subseteq[d]}\widehat f(S)\chi_S(z)$, then $g^\star(z)=\sum_S \rho^{|S|}\widehat f(S)\chi_S(z)$.
++\end{proposition}
++
++\paragraph{(ii) Diffusion score models estimate conditional-expectation semigroups.}
++In continuous diffusion models, the forward noising process induces a Markov semigroup $(P_t)_{t\ge 0}$ acting on test functions by
++$P_t h(x)=\E[h(X_t)\mid X_0=x]$.
++Denoising score matching (DSM) and its variants are designed so that, in the population limit, the learned network recovers the \emph{score} of the noise-perturbed marginals $\nabla_x\log p_t(x)$ \cite{hyvarinen2005scorematching,vincent2011smdae,song2019score}.
++With exact scores, reverse-time sampling depends only on these marginal scores \cite{song2020sde,ho2020ddpm}.
++Moreover, for Gaussian perturbations the Bayes-optimal denoiser (posterior mean) is an explicit functional of the score (a form of Tweedie's formula), so ``learning the score'' is equivalent to ``learning the denoising operator'' at each noise level.
++
++\paragraph{Operator-theoretic/harmonic-analysis perspective.}
++For Markov forward processes, $(P_t)$ is literally a family of conditional-expectation operators with a generator $L$ and a spectral decomposition $P_t=e^{tL}$.
++Recent work develops \emph{operator-informed score matching} by exploiting the eigenfunctions/eigenvalues of $L$ to approximate scores and conditional expectations across all noise levels \cite{shen2025oism}.
++This viewpoint is exactly the analytic analogue of the hypercube identity $\widehat{(T_\rho f)}(S)=\rho^{|S|}\widehat f(S)$: in the Gaussian/OU case the eigenfunctions are Hermite polynomials and high-frequency components decay exponentially in time.
++
++\paragraph{Evidence from kernel limits and learning theory.}
++While there is (to our knowledge) no complete ``kernel limit'' theory specific to \emph{diffusion LLMs}, there are increasingly sharp analyses of \emph{score estimation} in kernel and random-feature regimes.
++For example, Han et al.\ show that (with appropriate parameterizations) gradient descent training for score estimation can be modeled by a sequence of kernel regression problems, yielding sample-complexity/generalization bounds for score learning \cite{han2024scoreNTK}.
++Complementary results provide finite-sample generalization bounds for DSM under relaxed geometric assumptions \cite{yakovlev2025dsmgen}, and asymptotically precise learning curves for DSM with random features \cite{george2025dsmRF}.
++Related work explicitly interprets empirical score estimators as noisy operators and studies bias--variance tradeoffs via kernel smoothing \cite{gabriel2025kernelsmoothedscores}.
++Collectively, these results support interpreting trained diffusion/score models as approximating a smoothing operator, with an error term that decreases with more data, width, and compute.
++
++\paragraph{Empirical caveat.}
++Empirically, trained denoisers need not equal the Bayes-optimal posterior mean at every noise level.
++Mechanistic studies of image diffusion find systematic deviations from the optimal denoiser (especially at intermediate noise), consistent with architectural inductive biases \cite{niedoba2024mechanistic}.
++Our theory explicitly tracks such gaps via $\epsilon_{\mathrm{learn}}(T)$ in Assumption~\ref{ass:learned-diff}; all diffusion guarantees degrade gracefully as $\epsilon_{\mathrm{learn}}(T)$ increases.
++
+ \section{Main Results: Calibration, Compute, and Complexity}
+ 
+ \subsection{AR+CoT: a complexity cliff}
+@@ -1042,6 +1090,31 @@
+ For log loss, $\phi(p)= -p\log p-(1-p)\log(1-p)$ and $D_\phi(p,q)=\KL(\mathrm{Bern}(p)\|\mathrm{Bern}(q))$.
+ \end{proof}
+ 
++\subsection{Proof of \cref{prop:denoise-noise-operator}}
++\begin{proof}
++Let $\mathcal{G}$ be the Hilbert space $L^2(\{-1,1\}^d)$ under the marginal law of $\widetilde Z$ (which is uniform when $Z$ is uniform and the bit-flip kernel is used).
++The square-loss risk can be decomposed by the standard $L^2$ projection identity:
++for any measurable $g$,
++\[
++\E\bigl[(g(\widetilde Z)-Y)^2\bigr]
++=\E\bigl[(g(\widetilde Z)-\E[Y\mid \widetilde Z])^2\bigr]+\E\bigl[(\E[Y\mid \widetilde Z]-Y)^2\bigr].
++\]
++The second term does not depend on $g$, and the first term is minimized uniquely (in $\mathcal{G}$) when $g(\widetilde Z)=\E[Y\mid \widetilde Z]$ a.s.
++Thus the unique minimizer is $g^\star(\tilde z)=\E[Y\mid \widetilde Z=\tilde z]$.
++
++By the tower property,
++\[
++g^\star(\tilde z)=\E\bigl[\E[Y\mid Z]\mid \widetilde Z=\tilde z\bigr]=\E[f(Z)\mid \widetilde Z=\tilde z].
++\]
++For the $\rho$--bit-flip kernel with $Z\sim\mathrm{Unif}(\{-1,1\}^d)$, the joint law of $(Z,\widetilde Z)$ is exchangeable (the kernel is symmetric and preserves the uniform measure), so
++\[
++\E[f(Z)\mid \widetilde Z=\tilde z]=\E[f(\widetilde Z)\mid Z=\tilde z] = (T_\rho f)(\tilde z),
++\]
++where $T_\rho$ is the Boolean noise operator as defined in the main text.
++The Fourier coefficient identity $\widehat{(T_\rho f)}(S)=\rho^{|S|}\widehat f(S)$ is standard \cite{odonnell2014analysis}.
++\end{proof}
++
++
+ \subsection{Proof of \cref{thm:cal-noarb}}
+ \begin{proof}
+ For any $b(x,q)=B h(x,q)$ with $h\in\cH$,
+@@ -1634,6 +1707,53 @@
+ \newblock Fees \& operating hours (trading fee schedule).
+ \newblock \url{https://www.polymarketexchange.com/fees-hours.html}. Accessed: 2025-12-23.
+ 
++
++
++\bibitem{hyvarinen2005scorematching}
++Aapo Hyv{\"a}rinen.
++\newblock Estimation of non-normalized statistical models by score matching.
++\newblock \emph{Journal of Machine Learning Research}, 6:695--709, 2005.
++
++\bibitem{vincent2011smdae}
++Pascal Vincent.
++\newblock A connection between score matching and denoising autoencoders.
++\newblock \emph{Neural Computation}, 23(7):1661--1674, 2011.
++
++\bibitem{song2019score}
++Yang Song and Stefano Ermon.
++\newblock Generative modeling by estimating gradients of the data distribution.
++\newblock \emph{NeurIPS}, 2019. \emph{arXiv preprint arXiv:1907.05600}.
++
++\bibitem{shen2025oism}
++Zheyang Shen, Huihui Wang, Marina Riabiz, and Chris~J. Oates.
++\newblock Operator-informed score matching for Markov diffusion models.
++\newblock \emph{arXiv preprint arXiv:2406.09084}, 2025.
++
++\bibitem{han2024scoreNTK}
++Yinbin Han, Meisam Razaviyayn, and Renyuan Xu.
++\newblock Neural network-based score estimation in diffusion models: Optimization and generalization.
++\newblock \emph{arXiv preprint arXiv:2401.15604}, 2024.
++
++\bibitem{yakovlev2025dsmgen}
++Konstantin Yakovlev and Nikita Puchkin.
++\newblock Generalization error bound for denoising score matching under relaxed manifold assumption.
++\newblock \emph{arXiv preprint arXiv:2502.13662}, 2025.
++
++\bibitem{george2025dsmRF}
++Anand Jerry George, Rodrigo Veiga, and Nicolas Macris.
++\newblock Denoising score matching with random features: Insights on diffusion models from precise learning curves.
++\newblock \emph{arXiv preprint arXiv:2502.00336}, 2025.
++
++\bibitem{gabriel2025kernelsmoothedscores}
++Franck Gabriel, Fran{\c c}ois Ged, Maria Han Veiga, and Emmanuel Schertzer.
++\newblock Kernel-smoothed scores for denoising diffusion: A bias-variance study.
++\newblock \emph{arXiv preprint arXiv:2505.22841}, 2025.
++
++\bibitem{niedoba2024mechanistic}
++Matthew Niedoba, Berend Zwartsenberg, Kevin Murphy, Frank Wood.
++\newblock Towards a mechanistic explanation of diffusion model generalization.
++\newblock \emph{arXiv preprint arXiv:2411.19339}, 2024.
++
+ \end{thebibliography}
+ 
+ \end{document}

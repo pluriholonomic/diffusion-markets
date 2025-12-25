@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+
+runs/
+data/
+remote_runs/
+remote_logs/
+*.log
+polymarket_backups/
+
+

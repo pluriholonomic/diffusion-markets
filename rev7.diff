@@ -1,0 +1,179 @@
+--- main_revised8.tex
++++ main_revised11.tex
+@@ -478,7 +478,140 @@
+ Conversely, any positive long-run profit for such traders implies nontrivial $\cH$-calibration error.
+ Proof is in Appendix~\ref{app:proofs}.
+ 
++\subsection{Approachability view: the no-arbitrage set and why swap regret matters}\label{sec:approachability}
++
++The equivalence in \cref{thm:cal-noarb} admits a concrete geometric interpretation using \emph{Blackwell approachability} \cite{blackwell1956approachability,foster1999blackwell,perchet2013approachability}.
++This perspective provides a simple reason why \emph{swap/internal} regret---rather than external regret---is the economically relevant efficiency notion: statistical arbitrage corresponds to violations of \emph{many} conditional correlation constraints, i.e.\ a high-dimensional no-arbitrage set.
++
++\paragraph{Finite test families and vector payoffs.}
++Fix a finite subfamily $\cH_M=\{h^1,\dots,h^M\}\subseteq \cH$ and consider the per-round \emph{vector payoff}
++\begin{equation}\label{eq:blackwell-gt}
++g_t \in \R^M,\qquad g_t(i)\ :=\ (Y_t-q_t)\,h^i(X_t,q_t),\quad i\in[M].
++\end{equation}
++The empirical average $\bar g_T:=\frac{1}{T}\sum_{t=1}^T g_t$ satisfies $\E[\bar g_T(i)]\approx \E[(Y-q(X))h^i(X,q(X))]$ under stationarity.
++
++\paragraph{The no-arbitrage target set.}
++In the two-sided setting of this paper (traders may take either sign, corresponding to $h$ and $-h$), ``no statistical arbitrage up to margin $\varepsilon$'' for the family $\cH_M$ is exactly the hypercube
++\begin{equation}\label{eq:blackwell-Ceps}
++C_\varepsilon\ :=\ \{v\in\R^M:\ |v_i|\le \varepsilon\ \ \forall i\in[M]\}.
++\end{equation}
++Indeed, if $\bar g_T(i)$ is positive then the trader that activates on $h^i$ has positive average profit, and if it is negative then the opposite-sign trader profits.
++With proportional per-round costs of the form $c|b_t|$ for $|b_t|\le B$, the non-exploitable region expands to $|v_i|\le c/B$ (cf.\ \cref{thm:cal-noarb} and \cref{sec:fees}).
++
++Approachability asks whether the forecaster can choose prices $q_t$ so that $\bar g_T$ converges (in distance) to $C_\varepsilon$ against an adversarial environment.
++Classical results show that (randomized) calibration can be proved as an instance of Blackwell approachability \cite{foster1999blackwell,fostervohra1998asymptotic}; \cref{thm:cal-noarb} can be read as a specialized economic corollary.
++
++\subsubsection{Example: group--bin arbitrage as a four-dimensional box}
++
++Let there be two groups $\cG=\{G_0,G_1\}$ and two probability bins $\mathcal{I}=\{[0,1/2),[1/2,1]\}$.
++Define the indicator tests
++\[
++h_{G,I}(x,q)\ :=\ \1\{x\in G\}\,\1\{q\in I\},\qquad (G,I)\in\cG\times\mathcal{I},
++\]
++so $M=4$.
++Then $g_t(G,I)=(Y_t-q_t)\1\{X_t\in G\}\1\{q_t\in I\}$ measures the residual on rounds where the forecaster placed $X_t$ in subgroup $G$ and posted a price in bin $I$.
++If $\bar g_T(G,I)=+0.03$, the trader ``buy $B$ shares whenever $(X\in G,\,q\in I)$'' achieves average profit $0.03B$ per round (conditional profit is larger on activated rounds); if $\bar g_T(G,I)=-0.03$, the shorting trader profits.
++Thus the natural no-arbitrage set is the box \eqref{eq:blackwell-Ceps}.
++
++This example also clarifies why \emph{external} regret is insufficient: external regret controls performance against \emph{unconditional} comparators (e.g.\ the best constant forecast), but does not force each coordinate of $\bar g_T$ to be small.
++Swap regret (or the equivalent internal-regret formulations) is precisely the guarantee that controls such forecast-conditional deviations; see \cref{sec:regrets} for formal statements and decompositions.
++
++\subsubsection{Example: multi-market static arbitrage and how structure shrinks $C$}
++
++Consider two underlying binary events $A,B\in\{0,1\}$ and three related markets:
++an Arrow security on $A$, one on $B$, and one on the conjunction $(A\wedge B)$.
++Let posted prices be $p=(p_A,p_B,p_{AB})\in[0,1]^3$.
++
++\paragraph{Unknown correlation structure.}
++If no additional structure is assumed about the joint law of $(A,B)$, then arbitrage-free prices satisfy the Fr\'echet bounds
++\[
++\max\{0,p_A+p_B-1\}\ \le\ p_{AB}\ \le\ \min\{p_A,p_B\}.
++\]
++Equivalently, defining the \emph{violation vector}
++\begin{equation}\label{eq:frechet-viol}
++g_{\mathrm{unk}}(p)\ :=\
++\begin{pmatrix}
++p_{AB}-p_A\\[2pt]
++p_{AB}-p_B\\[2pt]
++(p_A+p_B-1)-p_{AB}
++\end{pmatrix},
++\end{equation}
++the no-static-arbitrage region is $g_{\mathrm{unk}}(p)\in\R^3_{\le 0}$ (a polytope in price space).
++For example $p=(0.60,0.30,0.25)$ satisfies the bounds and yields $g_{\mathrm{unk}}(p)=(-0.35,-0.05,-0.35)$, so no purely logical static-arbitrage portfolio exists.
++
++\paragraph{Known correlation structure shrinks the target.}
++Now suppose a structural fact is known, e.g.\ $A=B$ almost surely (perfect correlation).
++Then the payoffs coincide ($A=B=AB$), so no-arbitrage requires the equalities
++\[
++p_A=p_B=p_{AB},
++\]
++i.e.\ a one-dimensional diagonal line segment in $[0,1]^3$.
++One can express this again as an orthant constraint by including both directions:
++\[
++g_{\mathrm{known}}(p)=
++\begin{pmatrix}
++p_A-p_B\\
++p_B-p_A\\
++p_A-p_{AB}\\
++p_{AB}-p_A\\
++p_B-p_{AB}\\
++p_{AB}-p_B
++\end{pmatrix}\in \R^6_{\le 0}.
++\]
++The same price vector $p=(0.60,0.30,0.25)$ becomes \emph{highly arbitrageable} because $A$ and $B$ are identical payoffs but differently priced: selling $A$ and buying $B$ yields immediate profit $0.30$ with zero future payoff in all feasible states.
++
++\paragraph{Why this matters for learning and regret.}
++The above illustrates that the ``no-arbitrage set'' $C$ depends on which constraints/traders are admissible.
++With \emph{unknown} correlation structure, the natural trader/test class is typically large (many conditional correlations must be controlled), while additional structural knowledge can either (i) reduce the admissible trader class or (ii) compress the relevant constraints into a smaller representation.
++In Blackwell-style procedures, each constraint corresponds to a coordinate of the vector payoff \eqref{eq:blackwell-gt}, so the ``size'' of $\cH_M$ directly controls the dimension of the approachability problem.
++
++To make this concrete, suppose $|g_t(i)|\le B$ and one seeks $\ell_\infty$-approachability of $C_0$ (i.e.\ all coordinates of $\bar g_T$ are small).
++Standard reductions from $\ell_\infty$-approachability to online learning yield rates scaling like\footnote{The precise constants and norm choices depend on the reduction; our goal here is to highlight the dependence on the number of constraints.}
++\begin{equation}\label{eq:linfty-approach-rate}
++\E\big[d_\infty(\bar g_T, C_0)\big]\ \lesssim\ B\sqrt{\frac{\log M}{T}},
++\end{equation}
++where $d_\infty(v,C)=\inf_{u\in C}\norm{v-u}_\infty$ \cite{perchet2013approachability,dann2023pseudonorm}.
++Thus, when correlations are \emph{unknown} and one must guard against a large family of conditional bets (large $M$), certifying ``no arbitrage'' in all directions becomes statistically and computationally harder.
++Conversely, if structural knowledge yields a smaller effective constraint family (or a lower-dimensional representation of distance to $C$), approach can be faster, sometimes even achieving $1/T$ rates in special geometric settings \cite{perchet2013fastslow}.
++
++
++\subsubsection{Can diffusion vs.\ AR be viewed as ``learning $C$''?}
++
++In our reduction, $C$ is not an arbitrary convex set: it is the set of correlation vectors for which every trader in the chosen class has non-positive attainable profit (up to margins/fees).
++For a large test family $\cH$ (e.g.\ all intersections of groups and forecast bins, or all bounded parity-like tests in a Boolean surrogate), the corresponding $C$ is an intersection of many slabs,
++\[
++C_\varepsilon \;=\; \bigcap_{h\in\cH}\{\mu:\ |\mu(h)|\le \varepsilon\},
++\qquad
++\mu_q(h):=\E[(Y-q(X))h(X,q(X))].
++\]
++
++\paragraph{A multiscale ``constraint ladder''.}
++In the Boolean surrogate of \cref{sec:boolean}, Fourier degree induces a natural filtration of test classes.
++Let $\cH_{\le k}$ denote tests that can be expressed using only degree-$\le k$ Fourier features, and let $C_{\le k,\varepsilon}$ be the corresponding no-arbitrage set.
++Then $C_{\le 0,\varepsilon}\supseteq C_{\le 1,\varepsilon}\supseteq\cdots$ and approaching $C_{\le k,\varepsilon}$ enforces progressively more refined conditional constraints.
++The ideal noise operator $T_\rho$ attenuates degree-$s$ components by $\rho^s$, so high-noise views effectively ``see'' only low-degree constraints.
++This suggests an interpretation of diffusion-style inference as a coarse-to-fine approachability procedure: early denoising steps enforce low-degree coherence constraints, and later steps (lower noise) reveal and correct higher-degree constraint violations.
++
++We emphasize that this is a \emph{modeling hypothesis}: it requires that the learned diffusion score/denoiser is accurate enough at each noise level (captured by $\epsilon_{\mathrm{learn}}(T)$ in \cref{ass:learned-diff}) and that the market-relevant constraints are indeed organized by a spectral notion (Fourier degree or an analogous harmonic basis).
++
++A forecaster must therefore (i) \emph{identify} which constraints are violated (which tests have large $\mu_q(h)$) and (ii) \emph{update} its predictions so as to drive those violations toward zero.
++
++Our spectral separations can be interpreted as \emph{representational barriers} to learning and enforcing these constraints.
++For instance, in the parity market of \cref{thm:parity-sep}, $C_0$ contains the single constraint $\mu(\chi_S)=0$.
++Any forecaster family whose effective hypothesis class has negligible correlation with $\chi_S$ (e.g.\ bounded-degree Fourier mass or bounded parity correlation envelope) cannot reliably detect or correct this violation, so the corresponding statistical arbitrage persists.
++By contrast, the diffusion/noise-operator abstraction implies that high-degree constraints are not \emph{invisible} but rather \emph{attenuated} and can be recovered by increasing compute (lowering noise), which yields a continuous route toward $C_\varepsilon$.
++
++\begin{remark}[Critical caveat]
++This ``learning $C$'' interpretation is a unifying \emph{lens}, not a proved equivalence.
++Our theorems establish that (i) certain AR abstractions enforce hard spectral cutoffs (making some constraints permanently unreachable), and (ii) ideal diffusion induces a semigroup attenuation that can approximate any $L^2$ Truth function with enough compute.
++Turning this into a fully general statement about the \emph{rate} at which a trained model can learn the relevant constraint set (especially when $\cH$ is infinite and correlations are estimated from finite data) would require additional complexity assumptions on $\cH$, on the environment, and on the model's training dynamics.
++We therefore treat ``diffusion learns $C$ more effectively'' as a hypothesis suggested by the multiscale operator structure, and we rely on the explicit parity/group counterexamples as formal separations.
++\end{remark}
++
++
++
+ \section{Spectral Complexity and a Boolean Surrogate}
++\label{sec:boolean}
+ 
+ We now specialize to a Boolean surrogate where spectral complexity is explicit and the AR-vs-diffusion separation can be proved end-to-end.
+ 
+@@ -1703,6 +1836,35 @@
+ \newblock Approachability, regret and calibration: implications and equivalences.
+ \newblock \emph{arXiv preprint arXiv:1301.2663}, 2013.
+ 
++
++
++\bibitem{blackwell1956approachability}
++David Blackwell.
++\newblock An analog of the minimax theorem for vector payoffs.
++\newblock \emph{Pacific Journal of Mathematics}, 6(1):1--8, 1956.
++
++\bibitem{fostervohra1998asymptotic}
++Dean~P. Foster and Rakesh~V. Vohra.
++\newblock Asymptotic calibration.
++\newblock \emph{Biometrika}, 85(2):379--390, 1998.
++
++\bibitem{foster1999blackwell}
++Dean~P. Foster.
++\newblock A proof of calibration via Blackwell's approachability theorem.
++\newblock \emph{Games and Economic Behavior}, 29(1--2):73--78, 1999.
++
++\bibitem{perchet2013fastslow}
++Vianney Perchet and Shie Mannor.
++\newblock Approachability, fast and slow.
++\newblock In \emph{Proceedings of the 26th Annual Conference on Learning Theory (COLT)}, 
++  Proceedings of Machine Learning Research 30:474--488, 2013.
++
++\bibitem{dann2023pseudonorm}
++Christoph Dann, Yishay Mansour, Mehryar Mohri, Jeff Schneider, and Balubramanian Sivan.
++\newblock Pseudonorm approachability and applications to regret minimization.
++\newblock In \emph{Proceedings of the 34th International Conference on Algorithmic Learning Theory (ALT)}, 
++  Proceedings of Machine Learning Research 201:1--39, 2023.
++
+ \bibitem{kiyani2025decisiontheory}
+ Shayan Kiyani, George Pappas, Aaron Roth, and Hamed Hassani.
+ \newblock Decision theoretic foundations for conformal prediction: Optimal uncertainty quantification for risk-averse agents.

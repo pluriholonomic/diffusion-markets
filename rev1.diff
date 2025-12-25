@@ -1,0 +1,192 @@
+--- /mnt/data/main.tex	2025-12-23 05:34:23.231841948 +0000
++++ /mnt/data/main_revised2.tex	2025-12-23 05:35:41.810201054 +0000
+@@ -108,6 +108,36 @@
+   \item A concrete experimental protocol (synthetic + real) that leverages the theory, including subgroup stress tests and compute scaling curves.
+ \end{enumerate}
+ 
++\section{Related Work}
++
++\paragraph{Multicalibration, multivalidity, and group robustness.}
++Multicalibration strengthens classical calibration by requiring approximate unbiasedness conditional on membership in each group from a large (potentially intersecting) family, and has become a standard tool for ensuring robust behavior on subpopulations \cite{hebertjohnson2018multicalibration}.
++A rich line of follow-up work studies multicalibration and its extensions in batch and online/adversarial settings, including \emph{multivalid} prediction of means, moments, and prediction intervals \cite{gupta2022onlineMultivalid}, as well as \emph{multivalid conformal prediction} guarantees in the batch setting \cite{jung2022batchMultivalid}.
++Recent work further tightens the connection between no-regret learning and multivalid guarantees in online conformal prediction, highlighting the centrality of swap regret for group-conditional coverage \cite{ramalingam2025conformal}.
++
++\paragraph{Multi-group calibeating.}
++Calibeating \cite{fosterhart2022calibeating} produces forecasts that are calibrated while improving Brier loss relative to a baseline forecaster.
++A recent NeurIPS paper by Lee, Noarov, Pai, and Roth develops an online minimax multiobjective framework that yields \emph{multi-calibeating}: simultaneously calibeating a collection of forecasters on each group from a protected family, with rates that depend logarithmically on the number of groups and models and explicitly on group frequency \cite{lee2022multicalibeating}.
++These results can be viewed as a general-purpose post-processing layer in an online adversarial model.
++Our results are complementary: we study \emph{intrinsic} limitations and advantages of compute-limited forecasting architectures (AR+CoT vs.\ diffusion) in a realizable stochastic model, and we give population-level separations for worst-group calibration on exponentially small groups under explicit computation models.
++
++\paragraph{Scope and computational aspects of multicalibration.}
++Noarov and Roth characterize which statistical properties admit multicalibration via property elicitation, clarifying which targets can be meaningfully calibrated beyond means \cite{noarov2023scope}.
++Globus-Harris et al.\ connect multicalibration to boosting for regression \cite{globusharris2023boosting}.
++On the online side, improved and oracle-efficient rates for $\ell_1$-multicalibration have recently been obtained \cite{ghuge2025l1multicalibration}.
++Finally, high-dimensional (vector-valued) online prediction under rich conditioning events has been studied in the context of sequential decision making \cite{noarov2025hdp}; this perspective is closely aligned with our market interpretation, where the forecaster's output is a vector of prices whose downstream use induces rich decision rules.
++
++\paragraph{Decision making under partial calibration.}
++A complementary decision-theoretic line of work studies how downstream agents should act when forecasts are only partially calibrated or miscalibrated, including minimax-optimal robust decision rules \cite{kiyani2025robustdecision} and robust thresholding under miscalibration \cite{rothblumyona2022miscalibration}.
++Our paper connects these ideas to prediction markets by interpreting profitable trading strategies as witnesses of calibration failures.
++
++\paragraph{Diffusion models and non-autoregressive generation.}
++Diffusion and score-based generative models parameterize a reverse-time denoising dynamics that transforms noise into data \cite{ho2020ddpm,song2020sde}.
++While diffusion is most developed in continuous domains, both continuous and discrete diffusion have been explored for text generation \cite{li2022diffusionlm,nie2025llada}.
++In our setting, diffusion is used as an \emph{inference-time computation primitive} for producing calibrated probability vectors, and we analyze an idealized ``noise-operator'' abstraction that makes the spectral attenuation mechanism explicit.
++
++
++
+ \section{Forecasting Setup and the Truth Operator}
+ 
+ \subsection{Information strings, markets, and outcomes}
+@@ -193,6 +223,12 @@
+ \end{equation}
+ This formulation subsumes group-conditional calibration (take $h(x,q)=\1\{x\in G\}$), binning-based calibration (take $h$ as threshold indicators in $q$), and multivalid variants that allow intersections.
+ 
++\begin{remark}[Swap regret and robust calibration]
++In adversarial online prediction, several works show that controlling internal/swap regret is essentially equivalent to guaranteeing suitable notions of (threshold) calibration, and that these equivalences extend to group-conditional (multivalid) guarantees; see, e.g., \cite{ramalingam2025conformal,lee2022multicalibeating}.
++We use robust calibration as the analytic bridge from prediction error to economic exploitability (statistical arbitrage), via \cref{thm:cal-noarb}.
++\end{remark}
++
++
+ \subsection{Group calibration and multivalidity}
+ 
+ Let $\cG$ be a class of measurable subgroups $G\subseteq\cX$.
+@@ -202,6 +238,27 @@
+ \end{equation}
+ If $\cG$ is large (e.g.\ exponentially many overlapping groups), this corresponds to multivalid/multicalibration-style robustness \cite{hebertjohnson2018multicalibration}.
+ 
++\paragraph{Finite-sample limits on small-group evaluation.}
++Our group-robustness theorems in later sections are stated at the population level.
++In finite samples, estimating group calibration on rare groups requires correspondingly many labeled examples from those groups.
++The following standard bound clarifies the dependence on the group mass $\Prob(X\in G)$ and matches the appearance of group-frequency terms in online multicalibration and multicalibeating bounds \cite{lee2022multicalibeating,ghuge2025l1multicalibration}.
++
++\begin{proposition}[Sample complexity for estimating group calibration]\label{prop:group-sample}
++Fix a forecaster $q:\cX\to[0,1]$ and a group $G\subseteq\cX$ with $p_G:=\Prob(X\in G)>0$.
++Suppose $(X_i,Y_i)_{i=1}^m$ are i.i.d.\ with $Y_i\mid X_i\sim\mathrm{Bern}(f(X_i))$ and define the empirical group calibration estimate
++\[
++\widehat\mu_G \ :=\ \frac{1}{N_G}\sum_{i=1}^m \1\{X_i\in G\}\,(Y_i-q(X_i)),\qquad N_G:=\sum_{i=1}^m \1\{X_i\in G\}.
++\]
++Then for any $\delta\in(0,1)$, with probability at least $1-\delta$,
++\[
++\left|\widehat\mu_G - \E[Y-q(X)\mid X\in G]\right|
++\ \le\
++\sqrt{\frac{2\ln(2/\delta)}{N_G}}
++\quad\text{whenever } N_G\ge 1.
++\]
++In particular, if $m \ge \frac{4}{p_G\varepsilon^2}\ln\frac{2}{\delta}$ then $\left|\widehat\mu_G - \E[Y-q(X)\mid X\in G]\right|\le \varepsilon$ with probability at least $1-\delta$.
++\end{proposition}
++
+ \subsection{Calibeating}
+ 
+ Calibeating is the task of transforming a forecaster into one that is calibrated while \emph{improving} its Brier score.
+@@ -340,6 +397,16 @@
+ In Appendix~\ref{app:diffusion-discretization} we state an explicit per-step approximation model and propagate it to an end-to-end error bound.
+ \end{remark}
+ 
++\begin{assumption}[Learned diffusion approximates the noise operator]\label{ass:learned-diff}
++For each compute budget $T$, the implemented diffusion forecaster outputs a function $\widetilde q_T$ such that
++\[
++\norm{\widetilde q_T - T_{\rho(T)} f}_{L^2} \le \epsilon_{\mathrm{learn}}(T)
++\]
++for some effective correlation level $\rho(T)\uparrow 1$ as $T\to\infty$ and some approximation error $\epsilon_{\mathrm{learn}}(T)\downarrow 0$.
++This assumption abstracts the phenomenon that denoising/score models implement a reverse-time smoothing-to-sharpening map \cite{ho2020ddpm,song2020sde}, and it is the point at which learning quality enters our theory.
++\end{assumption}
++
++
+ \section{Main Results: Calibration, Compute, and Complexity}
+ 
+ \subsection{AR+CoT: a complexity cliff}
+@@ -762,6 +829,22 @@
+ Thus $\mathrm{GCal}_{\cG_{L+1}}(q) \ge \sup_a |\mu(a)| \ge \alpha/2$.
+ \end{proof}
+ 
++
++
++\subsection{Proof of \cref{prop:group-sample}}
++\begin{proof}
++Condition on the event $N_G\ge 1$.
++Given the indices $i$ with $X_i\in G$, the random variables $(Y_i-q(X_i))$ lie in $[-1,1]$ and have conditional mean $\E[Y-q(X)\mid X\in G]$.
++By Hoeffding's inequality applied to the average of $N_G$ bounded variables,
++\[
++\Prob\!\left(\left|\widehat\mu_G-\E[Y-q(X)\mid X\in G]\right|>\varepsilon\ \middle|\ N_G\right)
++\le 2\exp(-2N_G\varepsilon^2).
++\]
++Setting the right-hand side to $\delta$ and solving yields the displayed bound.
++For the final statement, note that $\E[N_G]=mp_G$, and a standard Chernoff bound implies $N_G\ge \tfrac{1}{2}mp_G$ with probability at least $1-\delta/2$ when $m\gtrsim \frac{1}{p_G}\ln(1/\delta)$; combining with the first inequality and a union bound yields the stated scaling.
++\end{proof}
++
++
+ \section{Fourier and Noise-Operator Preliminaries}\label{app:fourier}
+ 
+ We use standard facts about Fourier analysis on the Boolean cube and the noise operator.
+@@ -879,6 +962,71 @@
+ \newblock Strictly proper scoring rules, prediction, and estimation.
+ \newblock \emph{Journal of the American Statistical Association}, 102(477):359--378, 2007.
+ 
++
++
++\bibitem{lee2022multicalibeating}
++Daniel Lee, Georgy Noarov, Mallesh~M. Pai, and Aaron Roth.
++\newblock Online minimax multiobjective optimization: multicalibeating and other applications.
++\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2022.
++
++\bibitem{gupta2022onlineMultivalid}
++Varun Gupta, Christopher Jung, Georgy Noarov, Mallesh~M. Pai, and Aaron Roth.
++\newblock Online multivalid learning: means, moments, and prediction intervals.
++\newblock In \emph{Innovations in Theoretical Computer Science (ITCS)}, 2022.
++\newblock arXiv:2101.01739.
++
++\bibitem{jung2022batchMultivalid}
++Christopher Jung, Georgy Noarov, Ramya Ramalingam, and Aaron Roth.
++\newblock Batch multivalid conformal prediction.
++\newblock \emph{arXiv preprint arXiv:2209.15145}, 2022.
++
++\bibitem{noarov2023scope}
++Georgy Noarov and Aaron Roth.
++\newblock The statistical scope of multicalibration.
++\newblock In \emph{Proceedings of the 40th International Conference on Machine Learning (ICML)}, PMLR 202, 2023.
++
++\bibitem{globusharris2023boosting}
++Ira Globus-Harris, Declan Harrison, Michael Kearns, Aaron Roth, and Jessica Sorrell.
++\newblock Multicalibration as boosting for regression.
++\newblock \emph{arXiv preprint arXiv:2301.13767}, 2023.
++
++\bibitem{ghuge2025l1multicalibration}
++Rohan Ghuge, Vidya Muthukumar, and Sahil Singla.
++\newblock Improved and oracle-efficient online $\ell_1$-multicalibration.
++\newblock \emph{arXiv preprint arXiv:2505.17365}, 2025.
++
++\bibitem{noarov2025hdp}
++Georgy Noarov, Ramya Ramalingam, Aaron Roth, and Stephan Xie.
++\newblock High-dimensional prediction for sequential decision making.
++\newblock In \emph{Proceedings of the 42nd International Conference on Machine Learning (ICML)}, 2025.
++
++\bibitem{rothblumyona2022miscalibration}
++Guy~N. Rothblum and Gal Yona.
++\newblock Decision-making under miscalibration.
++\newblock \emph{arXiv preprint arXiv:2203.09852}, 2022.
++
++
++\bibitem{ho2020ddpm}
++Jonathan Ho, Ajay Jain, and Pieter Abbeel.
++\newblock Denoising diffusion probabilistic models.
++\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2020.
++\newblock arXiv:2006.11239.
++
++\bibitem{song2020sde}
++Yang Song, Jascha Sohl-Dickstein, Diederik~P. Kingma, Abhishek Kumar, Stefano Ermon, and Ben Poole.
++\newblock Score-based generative modeling through stochastic differential equations.
++\newblock In \emph{International Conference on Learning Representations (ICLR)}, 2021.
++\newblock arXiv:2011.13456.
++
++\bibitem{li2022diffusionlm}
++Xiang Lisa Li, John Thickstun, Ishaan Gulrajani, Percy Liang, and Tatsunori Hashimoto.
++\newblock Diffusion-{LM} improves controllable text generation.
++\newblock \emph{arXiv preprint arXiv:2205.14217}, 2022.
++
++\bibitem{nie2025llada}
++Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li.
++\newblock Large language diffusion models.
++\newblock \emph{arXiv preprint arXiv:2502.09992}, 2025.
+ \end{thebibliography}
+ 
+ \end{document}

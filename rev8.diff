@@ -1,0 +1,270 @@
+--- main_revised11.tex
++++ main_revised12.tex
+@@ -308,7 +308,7 @@
+ Lemma~\ref{lem:bregman-profit} makes the calibration/arbitrage ``dictionary'' operational in concrete mechanisms:
+ whenever a forecaster's posted prices are miscalibrated relative to $\mathrm{Truth}$, there exists (in principle) a trade or remapping that achieves positive expected profit.
+ Conversely, bounds on robust calibration (or swap regret) can be interpreted as bounds on the best expected profit attainable by classes of traders interacting with such convex mechanisms, even when the mechanism is implemented as a CFMM or as a replicating market maker.
+-Explicit transaction fees can be modeled by adding a (possibly price-dependent) surcharge to the trade cost; Section~\ref{sec:fees} develops a prior-independent no-arbitrage bound under such fees.
++Explicit transaction fees can be modeled by adding a (possibly price-dependent) surcharge to the trade cost; Section~\ref{sec:txfees} develops a prior-independent no-arbitrage bound under such fees.
+ \end{remark}
+ 
+ 
+@@ -496,7 +496,7 @@
+ C_\varepsilon\ :=\ \{v\in\R^M:\ |v_i|\le \varepsilon\ \ \forall i\in[M]\}.
+ \end{equation}
+ Indeed, if $\bar g_T(i)$ is positive then the trader that activates on $h^i$ has positive average profit, and if it is negative then the opposite-sign trader profits.
+-With proportional per-round costs of the form $c|b_t|$ for $|b_t|\le B$, the non-exploitable region expands to $|v_i|\le c/B$ (cf.\ \cref{thm:cal-noarb} and \cref{sec:fees}).
++With proportional per-round costs of the form $c|b_t|$ for $|b_t|\le B$, the non-exploitable region expands to $|v_i|\le c/B$ (cf.\ \cref{thm:cal-noarb} and \cref{sec:txfees}).
+ 
+ Approachability asks whether the forecaster can choose prices $q_t$ so that $\bar g_T$ converges (in distance) to $C_\varepsilon$ against an adversarial environment.
+ Classical results show that (randomized) calibration can be proved as an instance of Blackwell approachability \cite{foster1999blackwell,fostervohra1998asymptotic}; \cref{thm:cal-noarb} can be read as a specialized economic corollary.
+@@ -1122,7 +1122,7 @@
+ Proposition~\ref{prop:swap-ext-decomp} shows that the swap--external gap decomposes into a \emph{heterogeneity term} (variation of conditional means across bins) plus discretization.
+ This heterogeneity is \emph{not} itself an inefficiency: it can be large even when the forecaster is informative and calibrated.
+ The \emph{exploitability} comes from the within-bin miscalibration term $\sum_a N_a(a-\overline{Y}_a)^2$, which is exactly the continuous-comparator swap regret.
+-Thus, to reduce ``maximal forecast-conditional arbitrage'' one must directly control swap/internal regret (e.g.\ via repair-map dynamics or calibeating), or introduce frictions such as transaction fees and tick size (Sections~\ref{sec:fees} and~\ref{sec:intrinsic-vs-post}).
++Thus, to reduce ``maximal forecast-conditional arbitrage'' one must directly control swap/internal regret (e.g.\ via repair-map dynamics or calibeating), or introduce frictions such as transaction fees and tick size (Sections~\ref{sec:txfees} and~\ref{sec:intrinsic-vs-post}).
+ \end{remark}
+ 
+ 
+@@ -1188,32 +1188,85 @@
+ In our market interpretation, such conditional deviations correspond to profitable statistical arbitrage strategies (\cref{thm:cal-noarb}), so ``arbitrage = hysteresis'' can be read as: \emph{persistent arbitrage profit witnesses the presence of beneficial repair maps (swap regret), and eliminating it requires a backward correction mechanism that drives swap regret to zero.}
+ 
+ 
+-\section{Experimental Protocol: Stress Tests for Complexity and Group Robustness}
+-
+-We propose experiments designed to leverage (i) the spectral lower bounds and (ii) the small-group robustness separation.
+-
+-\subsection{Models}
++\section{Experimental Protocol: Stress Tests for Complexity, Group Robustness, and Blackwell Approachability}\label{sec:experiments}
++
++This section describes experimental methodologies designed to (i) test the compute--complexity scaling predictions of Sections~\ref{sec:boolean}--\ref{sec:regrets}, (ii) quantify \emph{group robustness} (worst-group calibration and calibeating gaps), and (iii) directly measure the \emph{Blackwell approachability dynamics} of the no-arbitrage set induced by a constraint family (Section~\ref{sec:approachability}).
++We emphasize two complementary axes:
++\begin{enumerate}[leftmargin=*]
++\item \textbf{Constraint complexity:} settings with a small, known constraint family versus settings where the relevant constraints are unknown and must be learned/covered by a large test family.
++\item \textbf{Repair/backward updates:} forward-only forecasting versus explicitly allowing \emph{backward fixing} (online repair) using realized outcomes at resolution times.
++\end{enumerate}
++All experiments can be run in both a \emph{fee-free} and a \emph{fee-aware} regime using the transaction-cost margin model of Section~\ref{sec:txfees}.
++
++\subsection{Models and compute knobs}
+ 
+ \paragraph{AR baselines.}
+-Train an autoregressive transformer forecaster that outputs probabilities, with:
++Fine-tune an autoregressive transformer forecaster that outputs probabilities (or logits) for a fixed set of markets.
++We vary two inference-time compute knobs:
+ \begin{enumerate}[leftmargin=*]
+-\item CoT depth $L$ controlled by limiting rationale length;
+-\item self-consistency width $K$ controlled by sampling $K$ rationales and aggregating by mean/median.
++\item \textbf{Depth:} chain-of-thought length $L$ (controlled by limiting rationale length / maximum generated tokens).
++\item \textbf{Width:} self-consistency samples $K$ (sample $K$ independent rationales and aggregate predictions by mean/median).
+ \end{enumerate}
+-Include a calibration head and optionally outcome-based RLVR training following \cite{turtel2025outcomeRL}.
++We recommend including (i) a strong instruction-tuned base model (e.g.\ Qwen3) and (ii) an RLVR-style outcome-only training variant following \cite{turtel2025outcomeRL}.
+ 
+ \paragraph{Diffusion forecaster.}
+-Train a diffusion model to generate a probability (or logit) via denoising. Concretely:
++Fine-tune a diffusion/denoising model to generate a probability (or logit) via iterative refinement.
++Concretely:
+ \begin{enumerate}[leftmargin=*]
+-\item Represent the target as logit $u=\log(p/(1-p))$ (or $n$-vector of logits).
+-\item Define a forward noising process $u_t = u + \sigma_t \xi$ with $\xi\sim\mathcal{N}(0,I)$, and train a score/denoiser to estimate $\E[u\mid u_t,x]$ (or the score $\nabla\log p(u_t\mid x)$).
+-\item At test time, run $T$ denoising steps ending at noise level $\sigma_T$ (analog of $\rho$).
++\item Represent the target as logit $u=\log(p/(1-p))$ (or an $n$-vector of logits).
++\item Define a forward noising process $u_t = u + \sigma_t \xi$ with $\xi\sim\mathcal N(0,I)$ and train a denoiser to estimate $\E[u\mid u_t,x]$ (or the score $\nabla\log p(u_t\mid x)$), conditioned on the same string $x$ as the AR model.
++\item At test time, run $T$ denoising steps (or an SDE/ODE solver) ending at a small noise level $\sigma_T$ (the analogue of $\rho\uparrow 1$ in the Boolean abstraction).
+ \end{enumerate}
+-
++We vary compute by changing $T$ (step budget) and the terminal noise level.
++
++\subsection{Blackwell approachability diagnostics and evaluation protocol}\label{sec:exp-approachability}
++
++We evaluate models not only by proper-scoring regret and calibration, but also by \emph{how quickly} their induced payoff vectors approach a no-arbitrage set.
++
++\paragraph{Finite constraint families and payoff vectors.}
++Fix a finite constraint family $\cH_M=\{h^1,\dots,h^M\}$ as in Section~\ref{sec:approachability}, and define the vector payoff
++\[
++g_t(i)\ :=\ (Y_t-q_t)\,h^i(X_t,q_t),\qquad i\in[M],
++\]
++for calibration/arbitrage traders.
++The corresponding ``two-sided no-arbitrage'' target is the box
++\[
++C_\varepsilon \ :=\ [-\varepsilon,\varepsilon]^M,
++\]
++where $\varepsilon$ is set either to $0$ (fee-free) or to the fee margin implied by Section~\ref{sec:txfees} (fee-aware).
++We report the approachability error
++\[
++\mathrm{AppErr}_T\ :=\ d_\infty(\bar g_T,C_\varepsilon),\qquad \bar g_T := \frac{1}{T}\sum_{t=1}^T g_t,
++\]
++and plot $\mathrm{AppErr}_T$ as a function of $T$ and inference compute.
++
++\paragraph{Static no-arbitrage constraints across markets.}
++For synthetic and real settings with multiple related markets, we also evaluate approachability to a \emph{static-arbitrage} no-arbitrage set.
++Let $p_t\in[0,1]^m$ denote the vector of posted prices for a bundle of related contracts at time $t$ (e.g.\ $(p_A,p_B,p_{AB})$).
++Define a violation map $v:\,[0,1]^m\to \R^M$ such that $v(p)\le 0$ encodes no-arbitrage (e.g.\ Fr\'echet inequalities, implication chains, mutual-exclusion simplices).
++Then we set $g_t := v(p_t)$ and target $C:=\R^M_{\le 0}$ (or a buffered orthant under fees), and report
++\[
++\mathrm{AppErr}^{\mathrm{stat}}_T\ :=\ d\!\left(\bar v_T,\;C\right),\qquad \bar v_T := \frac{1}{T}\sum_{t=1}^T v(p_t),
++\]
++where $d$ is the distance to the orthant (e.g.\ $\norm{(\bar v_T)_+}_\infty$).
++
++\paragraph{Time-varying constraints and market resolution.}
++To make ``market resolution $\Rightarrow$ fewer constraints'' explicit, we define a time-varying active constraint family $\cH_{M(t)}$ (or violation map $v_t$) that includes only markets that are \emph{open} at time $t$ and only relations among open markets.
++When a market resolves, we remove the corresponding coordinates and any constraints that involve that market.
++We then report a \emph{piecewise} approachability curve for the active system:
++\[
++\mathrm{AppErr}^{\mathrm{active}}_t \ :=\ d\!\left(\frac{1}{t}\sum_{s=1}^t g_s^{\mathrm{active}},\;C_t\right),
++\]
++and we visualize changes in slope around resolution times.
++
++\paragraph{Backward fixing as online repair.}
++To isolate the role of ``backward/fixing,'' we compare (i) \textbf{forward-only} predictors that output $q_t$ and never revise, versus (ii) \textbf{repair} procedures that maintain a time-varying remapping $\sigma_t$ (a swap map / calibration layer) and output $\tilde q_t=\sigma_t(q_t,X_t)$.
++We update $\sigma_t$ only when outcomes for a batch of markets become known (resolution events), which mirrors the real market setting where feedback arrives at resolution.
++The repair update is implemented by standard swap-regret / approachability algorithms (Section~\ref{sec:regrets}), and its effect is measured by comparing $\mathrm{AppErr}_T$ and downstream trading profit with and without repair.
+ 
+ \subsection{Intrinsic robustness vs.\ post-processing}\label{sec:intrinsic-vs-post}
+ 
+-A recurring concern in the calibration literature is that \emph{any} forecaster can be wrapped by a sufficiently powerful online post-processor (multicalibration/multivalidity, multi-calibeating) to obtain strong subgroup guarantees, at the cost of additional samples and computation \cite{hebertjohnson2018multicalibration,lee2022multicalibeating,ramalingam2025conformal}.
++A recurring concern in the calibration literature is that sufficiently powerful post-processing can ``fix'' many predictors, potentially obscuring differences between base model families \cite{hebertjohnson2018multicalibration,lee2022multicalibeating,ramalingam2025conformal}.
+ To isolate the contribution of the \emph{base} model family (AR+CoT vs.\ diffusion) from generic post-processing, we propose a controlled experiment with four variants:
+ \begin{enumerate}[leftmargin=*]
+ \item \textbf{AR-intrinsic:} raw AR+CoT(+self-consistency) forecasts.
+@@ -1224,15 +1277,63 @@
+ 
+ \paragraph{Post-processing choices.}
+ Two natural options are:
+-(i) an online multi-calibeating wrapper in the style of \cite{lee2022multicalibeating}, treating each group/scoring objective as a coordinate in a vector-valued game; and
+-(ii) an online multivalid calibration wrapper following the swap-regret-based reductions of \cite{ramalingam2025conformal}.
+-In either case, post-processing should be fed the same stream of $(x_t,q_t,y_t)$ triples and should be evaluated on held-out data to avoid overfitting the group family.
+-
+-\paragraph{Hypothesis.}
+-If diffusion's advantage is primarily \emph{intrinsic} (e.g.\ better rare-group robustness at fixed compute), then Diffusion-intrinsic should already dominate AR-intrinsic on worst-group metrics, and the gap should persist (perhaps shrink) even after post-processing.
+-If instead AR's deficiencies are largely ``wrapper-fixable,'' then AR+post should close the gap with Diffusion-intrinsic, but one should observe a \emph{sampling/group-frequency tax} (larger data and compute requirements) for AR on rare groups, consistent with Proposition~\ref{prop:group-sample} and \cite{lee2022multicalibeating}.
+-
+-\subsection{Synthetic benchmarks aligned with theory}
++(i) an online multi-calibeating wrapper in the style of \cite{lee2022multicalibeating}, which treats each group/scoring objective as a coordinate in a vector-valued game; and
++(ii) an online multivalid calibration wrapper following swap-regret-based reductions such as \cite{ramalingam2025conformal}.
++In either case, post-processing must be evaluated on held-out data and must be restricted to the same group family to avoid overfitting.
++
++\subsection{Synthetic data: sampled price trajectories with known vs.\ unknown correlation structure}\label{sec:exp-synth}
++
++We propose two synthetic families that generate \emph{sampled price trajectories} and ground-truth outcomes, enabling controlled approachability experiments.
++
++\paragraph{Family S1: three-market Fr\'echet system with optional structure.}
++Consider two latent binary events $(A,B)\in\{0,1\}^2$ and three contracts $(S_A,S_B,S_{AB})$ paying $A$, $B$, and $A\wedge B$.
++We generate a time series of ``true'' marginal probabilities $(p_{A,t},p_{B,t},p_{AB,t})$ by:
++\begin{enumerate}[leftmargin=*]
++\item Sampling latent logits $(u_t,v_t)$ from a correlated Gaussian AR(1) process (or OU process), and setting $p_{A,t}=\sigma(u_t)$, $p_{B,t}=\sigma(v_t)$.
++\item Sampling $p_{AB,t}$ either (i) from the Fr\'echet interval $[\max(0,p_{A,t}+p_{B,t}-1),\min(p_{A,t},p_{B,t})]$ using a parametric family that controls dependence, or (ii) from a \emph{structured} regime such as $A=B$ (perfect correlation) or conditional independence $p_{AB,t}=p_{A,t}p_{B,t}$.
++\item Producing a synthetic ``market price path'' by adding microstructure noise and mean reversion:
++$p^{\mathrm{mkt}}_{t}= \mathrm{clip}(p_t+\eta_t)$ with $\eta_t$ temporally correlated.
++\end{enumerate}
++The input string $x_t$ provides a noisy summary of $(u_t,v_t)$ and metadata (time-to-resolution, volatility regime, and optional ``known structure'' tags).
++At a fixed resolution time $t^\star$, we sample $(A,B)$ from a joint distribution consistent with $(p_{A,t^\star},p_{B,t^\star},p_{AB,t^\star})$ and reveal outcomes.
++
++\paragraph{Known vs.\ unknown constraints (few vs.\ many).}
++We vary constraint complexity in two ways:
++\begin{enumerate}[leftmargin=*]
++\item \textbf{Few constraints (structure known):} provide a small constraint family (e.g.\ implication/equality constraints implied by $A=B$, or a sparse dependence graph).
++\item \textbf{Many constraints (structure unknown):} evaluate the same trajectories against a large, generic constraint family, e.g.\ all Fr\'echet constraints for all pairs in a larger bundle of markets, plus group--bin calibration traders over contextual groups.
++\end{enumerate}
++We then measure how $\mathrm{AppErr}_T$ scales with compute for AR and diffusion, and how quickly repair reduces $\mathrm{AppErr}_T$ after resolution feedback.
++
++\paragraph{Family S2: scalable bundles with sparse logical graphs.}
++To obtain a knob that increases constraint complexity, generate $m$ events $(E_1,\dots,E_m)$ with a sparse implication graph (e.g.\ a chain $E_1\Rightarrow E_2\Rightarrow\cdots\Rightarrow E_m$ or a tree).
++Provide markets for each $E_i$ and (optionally) for selected conjunctions.
++\begin{enumerate}[leftmargin=*]
++\item In the \emph{known-graph} setting, the no-arbitrage constraint family contains only the $O(m)$ edge constraints $p_i\le p_j$ for each implication edge.
++\item In the \emph{unknown-graph} setting, the constraint family contains a much larger dictionary (e.g.\ all pairwise dominance constraints and conjunction Fr\'echet constraints), mimicking a setting where correlations are unknown and the approachability procedure must cover many potential arbitrage directions.
++\end{enumerate}
++
++\paragraph{Compute-matched fine-tuning and approachability curves.}
++For each synthetic family, fine-tune AR+CoT and diffusion predictors to output the full price vector given $x_t$.
++Train with proper scoring (Brier and log/Kelly) against the realized outcomes, optionally augmented with a penalty on constraint violations.
++Evaluation reports:
++\begin{enumerate}[leftmargin=*]
++\item Proper scoring: Brier regret (SCE) and log/Kelly regret.
++\item Calibration: ECE, SCE, and worst-group calibration for rare groups.
++\item \textbf{Approachability:} $\mathrm{AppErr}_T$ and $\mathrm{AppErr}^{\mathrm{stat}}_T$ as a function of compute (varying $(L,K)$ or $T$) and as a function of time $T$.
++\end{enumerate}
++To highlight ``market resolution $\Rightarrow$ fewer constraints,'' we simulate staggered resolution times for subsets of markets; we then remove the resolved markets and their constraints from the active system and report the resulting change in approachability rates.
++
++\paragraph{Backward/fixing ablations.}
++For each base model, compare:
++\begin{enumerate}[leftmargin=*]
++\item \textbf{Forward-only:} raw forecasts.
++\item \textbf{Repair-at-resolution:} apply an online swap-regret/approachability repair map updated only at resolution times (batch feedback).
++\item \textbf{Always-on repair:} (oracle) update after every observation to upper-bound what is achievable with dense feedback.
++\end{enumerate}
++This directly tests whether ``backward fixing'' is essential to eliminate the residual arbitrage directions highlighted by swap-regret-based theory.
++
++\subsection{Synthetic benchmarks aligned with spectral theory}
+ 
+ \paragraph{Parity markets.}
+ Choose $d$ and a hidden subset $S$ of size $k$.
+@@ -1243,28 +1344,52 @@
+ \begin{enumerate}[leftmargin=*]
+ \item Brier regret (SCE) and log/Kelly regret;
+ \item overall calibration (ECE) and SCE;
+-\item best-trader profit using the benchmark in \cref{thm:arb-L1}.
++\item best-trader profit using the benchmark in \cref{thm:arb-L1};
++\item approachability error $\mathrm{AppErr}_T$ for group--bin constraints on the parity bits.
+ \end{enumerate}
+-Theory predicts an AR ``cliff'' at $k>L$, and a diffusion ``fog'' curve improving smoothly with $\rho\uparrow 1$.
++Theory predicts an AR ``cliff'' at $k>L$, and a diffusion ``fog'' curve improving smoothly with compute.
+ 
+ \paragraph{Small-group stress tests.}
+-Evaluate $\mathrm{GCal}_{\cG_k}$ over subcube groups $G_{S,a}$:
++Evaluate $\mathrm{GCal}_{\cG_k}$ over subcube groups $G_{S,a}$ as in Section~\ref{sec:boolean}:
+ \begin{enumerate}[leftmargin=*]
+ \item Fix a parity Truth function on $k$ bits.
+-\item Evaluate worst-group calibration error over $\cG_k$.
++\item Evaluate worst-group calibration error over $\cG_k$ and approachability of the corresponding group--bin constraint box.
+ \end{enumerate}
+-Theory predicts diffusion can drive worst-group error below $\varepsilon$ by increasing compute, while AR has a constant lower bound independent of $K$ when $k>L$ (\cref{thm:diff-group,thm:ar-group-lb}).
+-
+-\subsection{Real-world benchmark and subgroup robustness}
+-
+-Replicate the forecasting setup of \cite{turtel2025outcomeRL} using prediction-market questions paired with contemporaneous news.
+-Evaluate:
++Theory predicts diffusion can drive worst-group error below $\varepsilon$ by increasing compute, whereas bounded-depth AR exhibits a constant lower bound independent of $K$ when $k>L$ (\cref{thm:diff-group,thm:ar-group-lb}).
++
++\subsection{Real data: Polymarket approachability and empirical constraint discovery}\label{sec:exp-real}
++
++We adapt the same approachability diagnostics to real prediction-market data.
++
++\paragraph{Data and time discretization.}
++Collect historical Polymarket market price trajectories (mid-price or last trade) and final resolutions, and align them on a fixed time grid (e.g.\ hourly or daily snapshots).
++Each record provides $(x_t,q_t,Y)$ where $x_t$ is the textual/contextual information available at time $t$ (headline stream, market description, time-to-resolution, volume/liquidity proxies), $q_t$ is the posted market price, and $Y$ is the eventual outcome.
++
++\paragraph{Estimating constraint families and an empirical Blackwell set.}
++We consider two complementary routes:
+ \begin{enumerate}[leftmargin=*]
+-\item Proper scoring (Brier and log), ECE and SCE.
+-\item Trading simulations under both linear payoff and Kelly log-wealth.
+-\item Group robustness: define subgroups by topic, time-to-resolution, probability bin, and ``rare'' categories (small groups). Report worst-group and average-group calibration metrics.
++\item \textbf{Template constraints:} build $\cH_M$ from group--bin tests (topic tags, time-to-resolution quantiles, price bins, liquidity bins) and, when available, multi-market templates (mutual exclusivity sets, complements, implication-like relations extracted from market metadata/text).
++The induced set $C_\varepsilon$ is explicit.
++\item \textbf{Adversarial constraint discovery:} parameterize a trader family $h_\theta(x,q)$ (e.g.\ a small MLP on embeddings) and train $\theta$ to maximize empirical profit $\sum_t (Y-q_t)h_\theta(x_t,q_t)$ under norm constraints.
++This yields an empirical estimate of the support function of the no-arbitrage set for the chosen trader class and provides a data-driven ``most violated constraint'' direction.
+ \end{enumerate}
+-A key hypothesis suggested by our theory is that diffusion's advantage will be most visible in \emph{rare, high-complexity subgroups}, where AR+CoT must trade depth and sampling width and may exhibit a calibration cliff.
++
++\paragraph{Approachability under resolution-driven feedback.}
++In real markets, feedback arrives at resolution.
++We therefore evaluate a repair-at-resolution protocol:
++when a market resolves, we update the repair map $\sigma_t$ using all newly revealed outcomes, and apply it to subsequent forecasts for still-open markets.
++We report:
++\begin{enumerate}[leftmargin=*]
++\item approachability curves $\mathrm{AppErr}^{\mathrm{active}}_t$ over active markets only,
++\item changes in $\mathrm{AppErr}^{\mathrm{active}}_t$ around resolution times,
++\item and the corresponding trading profit under the fee-aware model (Section~\ref{sec:txfees}).
++\end{enumerate}
++By construction, market resolution reduces the active constraint set (dropping markets and relations that involve them), and the protocol allows explicit backward fixing; both effects should manifest as faster approachability in later stages of the timeline.
++
++\paragraph{Comparing diffusion vs.\ AR in approachability space.}
++For both template and adversarial constraints, compare AR and diffusion models across matched inference budgets.
++A key hypothesis suggested by our theory is that diffusion's iterative refinement will produce a smoother compute--approachability tradeoff and improved behavior on rare groups and complex constraint families, whereas AR+CoT will exhibit saturation when the relevant constraints require higher-order interactions or many simultaneous constraints.
++
+ 
+ \section{Discussion and Limitations}
+ 

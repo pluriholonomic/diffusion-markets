@@ -1,0 +1,240 @@
+--- main_revised7.tex+++ main_revised8.tex@@ -276,22 +276,40 @@ The term $D_C(q+r,q)$ can be interpreted as an \emph{implicit fee} (or curvature charge) that compensates the market maker for taking inventory risk on large trades.
+ This viewpoint makes the connection to Section~\ref{sec:psr-general} concrete: convex potentials simultaneously induce (i) proper scoring rules whose regret is Bregman and (ii) market makers whose payments include a Bregman ``fee'' \cite{abernethy2013convexmm,ovcharov2018bregman}.
+ 
+-\subsection{Constant function market makers (CFMMs) and convex duality}
+-
+-Decentralized exchanges and some on-chain prediction-market designs use \emph{constant function market makers} (CFMMs), which maintain reserves $R\in\R_{\ge 0}^d$ and accept trades that preserve a trading function (or equivalently, keep reserves within a convex feasible set).
+-Angeris et al.\ show that many CFMMs admit a clean convex-optimization formulation for multi-asset trades, with prices given by Lagrange multipliers/duals \cite{angeris2021cfmm}.
+-Angeris and Chitra analyze CFMMs as a broad class of automated market makers and study their price-oracle properties under arbitrage \cite{angeris2020oracles}.
++
++\subsection{CFMMs and replicating market makers: implementing convex market makers}\label{sec:cfmm-rep}
++
++Decentralized exchanges and some on-chain prediction-market designs implement \emph{constant function market makers} (CFMMs), which maintain an invariant of the form $\psi(R)=\mathrm{const}$ over a reserve vector $R$ (or, more generally, keep reserves within a convex feasible set).
++Angeris et al.\ show that many CFMMs admit a clean convex-optimization formulation, with marginal prices given by Lagrange multipliers/duals \cite{angeris2021cfmm}.
++Angeris and Chitra further analyze CFMMs as a broad class of automated market makers, emphasizing oracle and price-discovery properties under arbitrage \cite{angeris2020oracles}.
+ 
+ While CFMMs are not identical to cost-function prediction markets, both families are governed by convex analysis.
+-In particular, the \emph{value function} of a CFMM liquidity provider is concave, monotone, and 1-homogeneous in a suitable numeraire, and its convex-analytic dual objects control marginal prices and slippage \cite{angeris2021cfmm,angeris2020oracles}.
+-
+-\subsection{Replication and replicating market makers}
+-
+-Classical no-arbitrage pricing in mathematical finance is often presented via \emph{replication}: in complete markets, any contingent claim can be replicated by a self-financing portfolio, yielding a unique arbitrage-free price.
+-In prediction markets, each Arrow--Debreu security is itself a contingent claim; hence ``replication'' of the terminal payoff is trivial.
+-However, replication ideas reappear at the \emph{market-maker level}: replicating market makers construct CFMMs whose \emph{portfolio value function} matches a desired payoff profile, and show an equivalence between concave 1-homogeneous payoff functions and convex CFMM trading sets \cite{angeris2021replicating}.
+-This provides a microstructure-level replication lens complementary to our \emph{forecasting-level} lens: we bound the expected profits of statistical-arbitrage strategies against a posted price function $q(x)$ without assuming any particular replication structure or price process.
+-
++In particular, the \emph{value function} of a CFMM liquidity provider can be viewed as a convex potential whose gradients encode local prices and slippage \cite{angeris2021cfmm,angeris2020oracles}.
++A complementary perspective is provided by \emph{replicating market makers}: Angeris, Evans, and Chitra construct AMMs whose trading sets replicate (in a microstructure sense) a target convex cost function, yielding a principled bridge between cost-function market makers and CFMM-style designs \cite{angeris2021replicating}.
++
++\paragraph{Connection to this paper.}
++Our main results are stated in terms of forecast quality (proper-scoring regret), calibration, and statistical-arbitrage regret, and do \emph{not} assume any particular microstructure.
++However, convex market makers provide a concrete interpretation of these quantities as \emph{expected trading profits}.
++For scoring-rule market makers (equivalently, cost-function market makers in complete markets \cite{abernethy2013convexmm}), a trader who moves the market from report $q$ to $q'$ earns a payoff equal to a \emph{score difference}.
++The next lemma records the standard Bregman-geometry identity: in expectation under the true distribution, the trader's gain is exactly the reduction in Bregman divergence to truth.
++
++\begin{lemma}[Bregman profit identity for scoring-rule trades]\label{lem:bregman-profit}
++Let $\Phi:\Delta_m\to\R$ be a strictly convex potential and let $S_\Phi(q,y)$ be the associated strictly proper scoring rule.
++Suppose the true outcome distribution is $p\in\Delta_m$, the current market report is $q\in\Delta_m$, and a trader updates the report to $q'\in\Delta_m$.
++If the trader's payoff is the score difference $S_\Phi(q',Y)-S_\Phi(q,Y)$, then
++\[
++\E_{Y\sim p}\big[S_\Phi(q',Y)-S_\Phi(q,Y)\big]
++\;=\;
++D_\Phi(p,q)\;-\;D_\Phi(p,q').
++\]
++\end{lemma}
++
++\begin{remark}
++Lemma~\ref{lem:bregman-profit} makes the calibration/arbitrage ``dictionary'' operational in concrete mechanisms:
++whenever a forecaster's posted prices are miscalibrated relative to $\mathrm{Truth}$, there exists (in principle) a trade or remapping that achieves positive expected profit.
++Conversely, bounds on robust calibration (or swap regret) can be interpreted as bounds on the best expected profit attainable by classes of traders interacting with such convex mechanisms, even when the mechanism is implemented as a CFMM or as a replicating market maker.
++Explicit transaction fees can be modeled by adding a (possibly price-dependent) surcharge to the trade cost; Section~\ref{sec:fees} develops a prior-independent no-arbitrage bound under such fees.
++\end{remark}
+ 
+ 
+ \section{Calibration, Robust Calibration, and Calibeating}
+@@ -711,6 +729,19 @@ Moreover, $\lim_{\rho\uparrow 1}\mathrm{SCE}(q_{\mathrm{diff},\rho};f)=0$.
+ \end{theorem}
+ 
++
++\begin{corollary}[Learned diffusion inherits the spectral fog bound]\label{cor:learned-fog}
++Under Assumption~\ref{ass:learned-diff}, the implemented diffusion forecaster $\widetilde q_T$ satisfies
++\[
++\mathrm{SCE}(\widetilde q_T;f)
++\ \le\
++2\sum_{S\subseteq[d]} \big(1-\rho(T)^{|S|}\big)^2\,\widehat f(S)^2
++\;+\;
++2\,\epsilon_{\mathrm{learn}}(T)^2.
++\]
++In particular, if $\rho(T)\uparrow 1$ and $\epsilon_{\mathrm{learn}}(T)\downarrow 0$ then $\mathrm{SCE}(\widetilde q_T;f)\to 0$.
++\end{corollary}
++
+ \subsection{From SCE to Kelly/log regret}
+ 
+ Theorem~\ref{thm:proper-regret} implies that Brier regret is exactly SCE.
+@@ -901,6 +932,66 @@ \mathrm{Reg}^{\mathrm{swap}}_T(\cG)\ :=\ \sup_{G\in\cG}\mathrm{Reg}^{\mathrm{swap}}_T(G).
+ \]
+ This is the natural ``sleeping'' analogue: the adversary is evaluated only on the subsequence where $G$ is active.
++
++\paragraph{Swap--external gap and ``maximal forecast-conditional arbitrage''.}
++External regret compares the forecaster only to a \emph{single} constant prediction; it controls what an \emph{unconditional} trader can exploit.
++Swap regret compares the forecaster to the best \emph{remapping} of its own outputs; it controls what a trader can exploit \emph{conditional on the posted price bin} (and is the online-learning analogue of calibeating/multicalibration).
++The next proposition makes this distinction explicit for Brier loss by decomposing swap regret into an external component plus a heterogeneity term.
++
++\begin{proposition}[Swap/external decomposition for Brier loss]\label{prop:swap-ext-decomp}
++For each $a\in\cA_m$, let $N_a:=|\{t\le T: A_t=a\}|$ and (when $N_a\ge 1$) let
++\[
++\overline{Y}_a\ :=\ \frac{1}{N_a}\sum_{t:A_t=a} Y_t,
++\qquad
++\overline{Y}\ :=\ \frac{1}{T}\sum_{t=1}^T Y_t.
++\]
++Then the following hold:
++\begin{enumerate}[leftmargin=*]
++\item Let $\mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]}$ denote swap regret when the comparator is allowed to remap each $a\in\cA_m$ to an arbitrary value in $[0,1]$ (rather than to $\cA_m$).
++Then
++\[
++\mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]}
++\;=\;
++\sum_{a\in\cA_m:\,N_a\ge 1} N_a\,(a-\overline{Y}_a)^2.
++\]
++\item Let $\mathrm{Reg}^{\mathrm{ext}}_{T,[0,1]}$ denote external regret when the comparator is allowed to choose an arbitrary constant in $[0,1]$.
++Then the best constant is $\overline{Y}$ and
++\[
++\mathrm{Reg}^{\mathrm{ext}}_{T,[0,1]}
++\;=\;
++\sum_{a:\,N_a\ge 1} N_a\,(a-\overline{Y}_a)^2
++\;-\;
++\sum_{a:\,N_a\ge 1} N_a\,(\overline{Y}_a-\overline{Y})^2.
++\]
++Consequently,
++\[
++\mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]}-\mathrm{Reg}^{\mathrm{ext}}_{T,[0,1]}
++\;=\;
++\sum_{a:\,N_a\ge 1} N_a\,(\overline{Y}_a-\overline{Y})^2.
++\]
++\item For the grid-based regrets in this section, $\mathrm{Reg}^{\mathrm{swap}}_T$ and $\mathrm{Reg}^{\mathrm{ext}}_T$, the only difference is discretization.
++In particular,
++\[
++0\ \le\ \mathrm{Reg}^{\mathrm{swap}}_T \ \le\ \mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]},
++\qquad
++0\ \le\ \mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]}-\mathrm{Reg}^{\mathrm{swap}}_T\ \le\ \frac{T}{4m^2}.
++\]
++An analogous $\frac{T}{4m^2}$ discretization bound holds for $\mathrm{Reg}^{\mathrm{ext}}_T$ versus $\mathrm{Reg}^{\mathrm{ext}}_{T,[0,1]}$.
++\end{enumerate}
++\end{proposition}
++
++\begin{proposition}[Swap regret is not controlled by external regret]\label{prop:swap-not-ext}
++There is no function $g$ such that $\mathrm{Reg}^{\mathrm{swap}}_T \le g(\mathrm{Reg}^{\mathrm{ext}}_T)$ for all sequences.
++In fact, for any even $m\ge 4$ there exists a sequence with $\mathrm{Reg}^{\mathrm{ext}}_T \le 0$ but $\mathrm{Reg}^{\mathrm{swap}}_T = \Omega(T)$.
++\end{proposition}
++
++\begin{remark}[Reducing forecast-conditional arbitrage]
++Proposition~\ref{prop:swap-ext-decomp} shows that the swap--external gap decomposes into a \emph{heterogeneity term} (variation of conditional means across bins) plus discretization.
++This heterogeneity is \emph{not} itself an inefficiency: it can be large even when the forecaster is informative and calibrated.
++The \emph{exploitability} comes from the within-bin miscalibration term $\sum_a N_a(a-\overline{Y}_a)^2$, which is exactly the continuous-comparator swap regret.
++Thus, to reduce ``maximal forecast-conditional arbitrage'' one must directly control swap/internal regret (e.g.\ via repair-map dynamics or calibeating), or introduce frictions such as transaction fees and tick size (Sections~\ref{sec:fees} and~\ref{sec:intrinsic-vs-post}).
++\end{remark}
++
+ 
+ \subsection{External regret is insufficient for multi-group calibration}
+ 
+@@ -1424,6 +1515,101 @@ \end{proof}
+ 
+ 
++
++
++\subsection{Proof of Corollary~\ref{cor:learned-fog}}
++\begin{proof}
++Let $q^\star := T_{\rho(T)}f$.
++By Assumption~\ref{ass:learned-diff}, $\norm{\widetilde q_T-q^\star}_{L^2}\le \epsilon_{\mathrm{learn}}(T)$.
++Hence, by the triangle inequality and $(a+b)^2\le 2a^2+2b^2$,
++\[
++\mathrm{SCE}(\widetilde q_T;f)
++=\norm{\widetilde q_T-f}_{L^2}^2
++\le 2\norm{\widetilde q_T-q^\star}_{L^2}^2 + 2\norm{q^\star-f}_{L^2}^2
++\le 2\epsilon_{\mathrm{learn}}(T)^2 + 2\,\mathrm{SCE}(T_{\rho(T)}f;f).
++\]
++Apply \cref{thm:diffusion-fog,eq:diff-sce} to expand $\mathrm{SCE}(T_{\rho(T)}f;f)$ in Fourier coordinates.
++\end{proof}
++
++\subsection{Proof of Lemma~\ref{lem:bregman-profit}}
++\begin{proof}
++For Bregman scoring rules (equivalently, proper scoring rules induced by a strictly convex potential $\Phi$), a standard representation states that for each fixed $p\in\Delta_m$,
++\[
++\E_{Y\sim p}\big[S_\Phi(q,Y)\big] \;=\; \Phi(p)\;-\;D_\Phi(p,q),
++\]
++up to an additive constant independent of $q$; see, e.g., \cite{gneiting2007strictly,ovcharov2018bregman}.
++Therefore,
++\[
++\E_{Y\sim p}\big[S_\Phi(q',Y)-S_\Phi(q,Y)\big]
++=
++\Big(\Phi(p)-D_\Phi(p,q')\Big)-\Big(\Phi(p)-D_\Phi(p,q)\Big)
++=
++D_\Phi(p,q)-D_\Phi(p,q'),
++\]
++as claimed.
++\end{proof}
++
++\subsection{Proof of Proposition~\ref{prop:swap-ext-decomp}}
++\begin{proof}
++Fix $a\in\cA_m$ with $N_a\ge 1$.
++Let $\mathcal{I}_a:=\{t\le T: A_t=a\}$.
++For any $b\in[0,1]$,
++\[
++\sum_{t\in \mathcal{I}_a} (a-Y_t)^2 - (b-Y_t)^2
++=
++N_a(a^2-b^2) - 2(a-b)\sum_{t\in \mathcal{I}_a} Y_t
++=
++N_a\Big((a-\overline{Y}_a)^2-(b-\overline{Y}_a)^2\Big).
++\]
++Thus, for swap mappings that may send $a$ to any $b\in[0,1]$, the optimal choice is $b=\overline{Y}_a$ and the resulting improvement is $N_a(a-\overline{Y}_a)^2$.
++Summing over $a$ yields the first claim.
++
++For constants, the loss of a constant $b\in[0,1]$ is $\sum_{t=1}^T(b-Y_t)^2$, minimized at $b=\overline{Y}$; substituting the within-bin decomposition as above yields the stated formula for $\mathrm{Reg}^{\mathrm{ext}}_{T,[0,1]}$ and the identity for the swap--external gap.
++
++For discretization, for any $\mu\in[0,1]$ there exists a grid point $\Pi(\mu)\in\cA_m$ with $|\Pi(\mu)-\mu|\le \tfrac{1}{2m}$, hence $(\Pi(\mu)-\mu)^2\le \tfrac{1}{4m^2}$.
++Replacing the optimal real-valued remapping $\overline{Y}_a$ by $\Pi(\overline{Y}_a)$ increases the post-remap loss for bin $a$ by at most $N_a/(4m^2)$, and summing gives the bound $\mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]}-\mathrm{Reg}^{\mathrm{swap}}_T\le T/(4m^2)$.
++The external-regret discretization bound follows by the same projection argument applied to the optimal constant $\overline{Y}$.
++\end{proof}
++
++\subsection{Proof of Proposition~\ref{prop:swap-not-ext}}
++\begin{proof}
++Fix an even $m\ge 4$ and let $a_-:=\tfrac{1}{2}-\tfrac{1}{m}$ and $a_+:=\tfrac{1}{2}+\tfrac{1}{m}$, both in $\cA_m$.
++Assume $T$ is even and define a sequence by
++\[
++(A_t,Y_t)=
++\begin{cases}
++(a_-,0), & t\le T/2,\\
++(a_+,1), & t> T/2.
++\end{cases}
++\]
++The loss of the forecaster is
++\[
++\sum_{t=1}^T (A_t-Y_t)^2
++=
++\frac{T}{2}\,a_-^2 + \frac{T}{2}\,(1-a_+)^2
++=
++T\left(\frac{1}{2}-\frac{1}{m}\right)^2
++=
++T\left(\frac{1}{4}-\frac{1}{m}+\frac{1}{m^2}\right).
++\]
++The empirical mean outcome is $\overline{Y}=1/2$, which is in $\cA_m$ since $m$ is even, so the best constant action has loss at most $\sum_{t}(1/2-Y_t)^2 = T/4$.
++Therefore $\mathrm{Reg}^{\mathrm{ext}}_T\le T(\tfrac{1}{4}-\tfrac{1}{m}+\tfrac{1}{m^2})-T/4\le 0$.
++
++For swap regret, consider the remapping $\sigma$ that sends $a_-\mapsto 0$ and $a_+\mapsto 1$.
++Then $\ell(\sigma(A_t),Y_t)=0$ for all $t$, so
++\[
++\mathrm{Reg}^{\mathrm{swap}}_T
++\ge
++\sum_{t=1}^T \ell(A_t,Y_t) - \ell(\sigma(A_t),Y_t)
++=
++T\left(\frac{1}{4}-\frac{1}{m}+\frac{1}{m^2}\right)
++=
++\Omega(T).
++\]
++This establishes that external regret alone does not control swap regret.
++\end{proof}
++
++
+ \section{Fourier and Noise-Operator Preliminaries}\label{app:fourier}
+ 
+ We use standard facts about Fourier analysis on the Boolean cube and the noise operator.

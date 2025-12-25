@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forecastbench"
+version = "0.1.0"
+description = "Benchmark harness for diffusion markets vs AR+CoT on synthetic and Polymarket-style datasets."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Tarun Chitra" }]
+dependencies = [
+  "numpy>=1.26",
+  "pandas>=2.2",
+  "pyarrow>=15",
+  "pydantic>=2.7",
+  "requests>=2.31",
+  "tqdm>=4.66",
+  "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+local = [
+  "scikit-learn>=1.4",
+]
+llm = [
+  "torch>=2.2",
+  "transformers>=4.45",
+  "accelerate>=0.34",
+  "sentencepiece>=0.2",
+]
+gpu = [
+  "torch>=2.2",
+  "transformers>=4.45",
+  "accelerate>=0.34",
+  "bitsandbytes>=0.43",
+  "sentencepiece>=0.2",
+]
+dev = [
+  "pytest>=8.2",
+  "ruff>=0.6.9",
+]
+
+[project.scripts]
+forecastbench = "forecastbench.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+

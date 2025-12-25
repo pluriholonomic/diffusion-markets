@@ -1,0 +1,110 @@
+--- /mnt/data/main_revised3.tex	2025-12-23 07:02:59.365146628 +0000
++++ /mnt/data/main_revised5.tex	2025-12-23 07:06:48.100501915 +0000
+@@ -402,6 +402,32 @@
+ In particular, the ``complexity cliff'' occurs when the spectral/Boolean complexity exceeds the \emph{effective} serial compute budget.
+ \end{remark}
+ 
++\paragraph{From juntas to Fourier juntas (approximate cutoffs).}
++The deterministic query models above yield \emph{exact} degree cutoffs.
++To better reflect modern attention-based predictors---which may exhibit some ``spectral leakage'' to high degrees---it is convenient to work with an approximate notion.
++
++\begin{definition}[$(k,\tau)$-Fourier junta]\label{def:fourier-junta}
++A forecaster $q:\{-1,1\}^d\to\mathbb{R}$ is a \emph{$(k,\tau)$-Fourier junta} if its high-degree Fourier tail mass is at most $\tau$, i.e.,
++\[
++\sum_{S\subseteq[d]:\,|S|>k}\widehat q(S)^2\ \le\ \tau.
++\]
++Equivalently, $q$ is within $L^2$-distance $\sqrt{\tau}$ of its degree-$k$ Fourier truncation.
++\end{definition}
++
++\begin{proposition}[Tail mass controls parity correlation]\label{prop:tail-parity}
++If $q$ is a $(k,\tau)$-Fourier junta, then for every $S\subseteq[d]$ with $|S|>k$ we have $|\widehat q(S)|\le \sqrt{\tau}$.
++In particular, for the parity-truth market $p(z)=(1+\chi_S(z))/2$ with $|S|>k$,
++\[
++\mathrm{SCE}(q)\ =\ \|q-p\|_2^2\ \ge\ \bigl(\tfrac12-|\widehat q(S)|\bigr)^2\ \ge\ \bigl(\tfrac12-\sqrt{\tau}\bigr)^2.
++\]
++\end{proposition}
++
++\begin{remark}
++\cref{prop:tail-parity} isolates the only Fourier property of the AR hypothesis class used in our parity lower bounds: a small high-degree spectral tail.
++This allows us to treat transformer non-locality as increasing the effective cutoff $k$ and/or increasing the leakage parameter $\tau$, rather than requiring the strict junta assumption.
++\end{remark}
++
++
+ \paragraph{Soft spectral leakage.}
+ Even the parallel query model remains idealized: real networks may exhibit nonzero (but small) correlation with high-degree structure.
+ To make this explicit, we isolate the single quantity that matters for our parity-based separations: the ability to correlate with degree-$k$ parity, formalized in \cref{cor:parity-envelope}.
+@@ -419,6 +445,30 @@
+ 
+ \subsection{Diffusion/annealing as a noise operator}
+ 
++
++\subsection{Bridging the model--reality gap: attention bandwidth and communication bottlenecks}\label{sec:model-reality-gap}
++
++The $L$-query/$L$-junta abstraction is intentionally stylized; it trades architectural fidelity for a clean and explicit Fourier cutoff.
++Real transformers have global receptive fields: a single attention layer can aggregate information from the entire context window.
++This does \emph{not} invalidate the separation arguments in this paper, for two complementary reasons.
++
++\paragraph{(i) Finite-precision attention is often effectively sparse.}
++A substantial line of work models finite-precision attention via hard or saturated attention abstractions and relates such models to low-depth circuit/logic classes.
++In particular, unique hard-attention transformers (UHAT) are a widely used theoretical abstraction of self-attention, and recent work refines their relationship to fixed-precision soft attention \cite{jerad2025uha,liCotterell2025fixedprecision}.
++In the UHAT regime, each head routes information from a single selected token, so each decoding step has bounded fan-in.
++Recent unconditional results show that in UHAT, solving high-sensitivity tasks such as \textsc{Parity} requires chain-of-thought traces whose length grows at least linearly with the input length \cite{lowerboundsCoT2025}.
++This supports reading our ``serial budget'' $L$ (and the effective budget $Q=Lr$) as a proxy for the amount of global evidence that can be \emph{integrated} into a single prediction, even when the model can \emph{attend} globally.
++
++\paragraph{(ii) Attention layers are pairwise communication bottlenecks.}
++Even when attention is dense, cross-token computation is mediated by low-dimensional pairwise interactions (query--key inner products and weighted sums).
++Sanford, Hsu, and Telgarsky formalize this as a communication bottleneck and prove sharp width/embedding-dimension lower bounds for natural ``sparse averaging'' and higher-order matching tasks \cite{sanford2023transformerlimits}.
++Their proof techniques (communication complexity and bounded-precision geometry) provide an orthogonal way to justify the existence of truth functions with high-order statistical dependencies that are hard for bounded-width attention-based predictors.
++
++\paragraph{Takeaway.}
++Our AR lower bounds should be interpreted as statements about limited ability to represent or \emph{learn} high-degree Fourier structure under bounded \emph{serial compute} and bounded \emph{interaction bandwidth}, rather than as claims about literal information access.
++Indeed, there exist explicit constant-depth transformer constructions that recognize parity \cite{koza2025parity}; the empirical and theoretical challenge is that learning high-sensitivity/high-degree functions by gradient methods appears brittle, and chain-of-thought can mitigate this by externalizing intermediate state \cite{hahnrofin2024sensitive,kimSuzuki2024cotparity}.
++
++
+ Let $T_\rho$ denote the Boolean noise operator on $L^2(\{-1,1\}^d)$: given $z\in\{-1,1\}^d$, sample $\widetilde Z$ by flipping each coordinate independently so that $\E[\widetilde Z_i\mid z_i]=\rho z_i$, and define
+ \[
+ (T_\rho f)(z)\ :=\ \E[f(\widetilde Z)\mid Z=z].
+@@ -1344,6 +1394,43 @@
+ Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li.
+ \newblock Large language diffusion models.
+ \newblock \emph{arXiv preprint arXiv:2502.09992}, 2025.
++
++\bibitem{lowerboundsCoT2025}
++Micha\"el Hahn and Mark Rofin.
++\newblock Lower bounds for chain-of-thought reasoning in hard-attention transformers.
++\newblock \emph{arXiv preprint arXiv:2502.02393}, 2025.
++
++\bibitem{hahnrofin2024sensitive}
++Micha\"el Hahn and Mark Rofin.
++\newblock Why are sensitive functions hard for transformers?
++\newblock In \emph{Proceedings of ACL}, 2024.
++\newblock \emph{arXiv preprint arXiv:2402.09963}.
++
++\bibitem{sanford2023transformerlimits}
++Clayton Sanford, Daniel Hsu, and Matus Telgarsky.
++\newblock Representational strengths and limitations of transformers.
++\newblock \emph{arXiv preprint arXiv:2306.02896}, 2023.
++
++\bibitem{jerad2025uha}
++Selim Jerad, Anej Svete, Jiaoda Li, and Ryan Cotterell.
++\newblock Unique hard attention: a tale of two sides.
++\newblock \emph{arXiv preprint arXiv:2503.14615}, 2025.
++
++\bibitem{liCotterell2025fixedprecision}
++Jiaoda Li and Ryan Cotterell.
++\newblock Characterizing the expressivity of fixed-precision transformer language models.
++\newblock \emph{arXiv preprint arXiv:2505.23623}, 2025.
++
++\bibitem{koza2025parity}
++Alexander Kozachinskiy and Tomasz Steifer.
++\newblock A completely uniform transformer for parity.
++\newblock \emph{arXiv preprint arXiv:2501.02535}, 2025.
++
++\bibitem{kimSuzuki2024cotparity}
++Jung~Hyun Kim and Taiji Suzuki.
++\newblock Transformers provably solve parity efficiently with chain-of-thought.
++\newblock \emph{arXiv preprint arXiv:2410.08633}, 2024.
++
+ \end{thebibliography}
+ 
+ \end{document}

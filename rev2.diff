@@ -1,0 +1,448 @@
+--- /mnt/data/main_revised2.tex	2025-12-23 06:25:47.854985880 +0000
++++ /mnt/data/main_revised3.tex	2025-12-23 06:30:49.473609882 +0000
+@@ -108,6 +108,14 @@
+   \item A concrete experimental protocol (synthetic + real) that leverages the theory, including subgroup stress tests and compute scaling curves.
+ \end{enumerate}
+ 
++\paragraph{Novelty and positioning.}
++The technical ingredients we use---proper scoring rules, calibration and its robust variants, regret notions, and Fourier/noise-operator analysis---are classical in their respective communities.
++Our novelty is in the \emph{synthesis} and the \emph{compute-parametrized separations} it enables for prediction markets:
++(i) we give an exact identification of robust calibration error with a natural class of statistical arbitrage regret (\cref{thm:cal-noarb});
++(ii) we connect inference-time compute knobs to spectral error in a way that yields falsifiable ``cliff vs.\ fog'' scaling laws (\cref{thm:ar-cliff,thm:diffusion-fog});
++(iii) we prove an explicit worst-group robustness separation on exponentially small subgroups (\cref{thm:diff-group,thm:ar-group-lb}); and
++(iv) we propose experiments (including a post-processing control) designed to separate \emph{intrinsic} robustness from improvements achievable by generic multicalibration/multi-calibeating wrappers (Section~\ref{sec:intrinsic-vs-post}).
++
+ \section{Related Work}
+ 
+ \paragraph{Multicalibration, multivalidity, and group robustness.}
+@@ -368,6 +376,38 @@
+ It abstracts the idea that each additional serial reasoning step can incorporate at most one additional atomic fact from the input representation.
+ \end{remark}
+ 
++\subsection{A refined AR abstraction: parallel access and soft spectral leakage}\label{sec:refined-ar}
++
++\paragraph{Why the $L$-query/$L$-junta model is pessimistic.}
++A standard transformer forward pass can attend to many input tokens simultaneously, so it is not literally true that one additional chain-of-thought token corresponds to incorporating exactly one additional ``atomic fact.''
++Rather, a more realistic abstraction is that each serial reasoning step can aggregate \emph{many} input features in parallel (via attention), but that the \emph{total} number of distinct features that can be repeatedly accessed and stored in the generated trace grows with the number of steps.
++
++\paragraph{Parallel query model.}
++We capture this non-locality by allowing $r$ parallel queries per reasoning step.
++
++\begin{definition}[$(L,r)$-query forecaster]\label{def:Lr-query}
++Fix $r\in\mathbb{N}$.
++A deterministic \emph{$(L,r)$-query forecaster} is an algorithm that runs for $L$ serial rounds; in each round it may adaptively query up to $r$ coordinates of $z\in\{-1,1\}^d$ (potentially as a function of previous query answers), and after $L$ rounds outputs a probability $q(z)\in[0,1]$.
++A randomized $(L,r)$-query forecaster is a distribution over deterministic ones.
++\end{definition}
++
++\begin{proposition}[Parallel access implies a degree cutoff]\label{prop:parallel-junta}
++Every deterministic $(L,r)$-query forecaster is a $Q$-junta for some $Q\le Lr$, and hence has $\widehat q(S)=0$ for all $|S|>Q$.
++The expectation of a randomized $(L,r)$-query forecaster is also a $Q$-junta.
++\end{proposition}
++
++\begin{remark}[Reading $r$ as transformer non-locality]
++The parameter $r$ can be viewed as a coarse measure of non-locality/parallelism per serial ``thinking'' step (e.g.\ proportional to the number of attention heads and layers that can extract independent features from the context).
++All of our AR lower bounds continue to hold \emph{verbatim} if we replace $L$ by the effective query budget $Q=Lr$ everywhere.
++In particular, the ``complexity cliff'' occurs when the spectral/Boolean complexity exceeds the \emph{effective} serial compute budget.
++\end{remark}
++
++\paragraph{Soft spectral leakage.}
++Even the parallel query model remains idealized: real networks may exhibit nonzero (but small) correlation with high-degree structure.
++To make this explicit, we isolate the single quantity that matters for our parity-based separations: the ability to correlate with degree-$k$ parity, formalized in \cref{cor:parity-envelope}.
++Empirically estimating $\sup_{|S|=k}|\widehat q(S)|$ on synthetic parity probes offers a direct way to test whether a trained AR+CoT forecaster behaves closer to a hard cutoff, a soft decay, or something else entirely.
++
++
+ \subsection{Multi-chain self-consistency (width $K$)}
+ 
+ Let $q^{(1)},\dots,q^{(K)}$ be i.i.d.\ randomized $L$-query forecasters (different reasoning traces).
+@@ -491,13 +531,21 @@
+ \end{equation}
+ 
+ \begin{theorem}[Parity separation: AR admits linear-time arbitrage, diffusion does not]\label{thm:parity-sep}
+-Let $f$ be the parity Truth function \eqref{eq:parity} of degree $k$.
++Let $f$ be the parity Truth function \eqref{eq:parity} of degree $k$ on coordinates $S\subseteq[d]$, $|S|=k$.
+ \begin{enumerate}[leftmargin=*]
+-\item (\textbf{AR lower bound}) For any $L<k$ and any $L$-junta forecaster $q$, $\mathrm{SCE}(q;f)\ge \alpha^2/4$. Consequently, by \cref{thm:arb-L1},
++\item (\textbf{AR lower bound}) Fix any forecaster $q$ such that $\widehat q(S)=0$.
++Then
+ \[
+-\frac{1}{T}\mathrm{ArbReg}_T(q;\cB_\infty)\ \ge\ B\,\alpha/2.
++\mathrm{SCE}(q;f)\ \ge\ \frac{\alpha^2}{4}
++\qquad\text{and}\qquad
++\E\big[|f(Z)-q(Z)|\big]\ \ge\ \frac{\alpha}{2}.
+ \]
+-This holds for any multi-chain mean $\bar q_K$ of randomized $L$-query forecasters.
++In particular, if $L<k$ and $q$ is an $L$-junta (e.g.\ the mean of an $L$-query AR+CoT forecaster), then $\widehat q(S)=0$ and the bound holds.
++Consequently, by \cref{thm:arb-L1},
++\[
++\frac{1}{T}\mathrm{ArbReg}_T(q;\cB_\infty)\ =\ B\,\E\big[|f(Z)-q(Z)|\big]\ \ge\ B\,\frac{\alpha}{2},
++\]
++and this remains true for any multi-chain mean $\bar q_K$ of randomized $L$-query forecasters.
+ \item (\textbf{Diffusion upper bound}) For the ideal diffusion forecaster $q_{\mathrm{diff},\rho}=T_\rho f$,
+ \[
+ \mathrm{SCE}(q_{\mathrm{diff},\rho};f)=\frac{\alpha^2}{4}(1-\rho^k)^2,
+@@ -508,6 +556,21 @@
+ \end{enumerate}
+ \end{theorem}
+ 
++\begin{corollary}[Parity correlation envelope]\label{cor:parity-envelope}
++Let $f(z)=\tfrac{1}{2}+\tfrac{\alpha}{2}\chi_S(z)$ be a degree-$k$ parity Truth function.
++Then for any forecaster $q$,
++\[
++\mathrm{SCE}(q;f)\ \ge\ \left(\frac{\alpha}{2}-\widehat q(S)\right)^2
++\qquad\text{and}\qquad
++\E\big[|f(Z)-q(Z)|\big]\ \ge\ \left|\frac{\alpha}{2}-\widehat q(S)\right|.
++\]
++Consequently, if a model class $\mathcal{Q}$ satisfies a \emph{parity correlation envelope}
++$\sup_{q\in\mathcal{Q}}\sup_{|S|=k}|\widehat q(S)|\le \epsilon_{\mathcal{Q}}(k)$,
++then every $q\in\mathcal{Q}$ suffers $\mathrm{SCE}(q;f)\ge (\alpha/2-\epsilon_{\mathcal{Q}}(k))^2$ and per-round bounded statistical arbitrage at least $B(\alpha/2-\epsilon_{\mathcal{Q}}(k))$ on some degree-$k$ parity market.
++\end{corollary}
++
++
++
+ \section{Group Robustness: Diffusion Separates from AR on Small Subgroups}
+ 
+ This section proves the requested group-robustness separation with explicit counterexamples.
+@@ -565,18 +628,112 @@
+ \cref{thm:ar-group-lb} is a \emph{counterexample}: AR+CoT with bounded depth $L$ cannot guarantee good calibration (or calibeating resistance) on all groups of size $2^{-(L+1)}$.
+ In contrast, \cref{thm:diff-group} shows diffusion can achieve arbitrarily good calibration on those same groups by increasing compute (taking $\rho\uparrow 1$).
+ 
+-\section{Hysteresis, Forward/Backward Iteration, and Swap-Regret Dynamics}
++\section{Hysteresis, Repair, and Swap-Regret: Formal Connections}\label{sec:hysteresis}
+ 
+-Forward vs backward iteration bounds can differ sharply in outcome-based reward shaping.
+-In particular, ``Reasoning without Regret'' \cite{chitra2025reasoning} provides a no-regret backward reward shaping framework (BARS) whose backward Euler solver achieves $\epsilon$-accuracy in $O((R_{\max}/\Delta)\log(1/\epsilon))$ iterations with $O(\log T)$ dynamic regret, under $(\Delta,\epsilon)$-gap reward assumptions.
+-Separately, process-guided backtracking (VGB) improves robustness to verifier errors in autoregressive generation by interpreting decoding as a random walk on a tree with probabilistic backtracking \cite{rohatgi2025taming}.
+-
+-In this paper, we interpret such ``hysteresis'' phenomena through the lens of \emph{internal/swap regret} and robust calibration:
++Forward vs.\ backward iteration bounds can differ sharply in outcome-based training and verification loops, including RLVR-style reward shaping and backtracking-based decoding \cite{chitra2025reasoning,rohatgi2025taming}.
++In prediction markets, a closely related asymmetry appears between \emph{forward} price posting and \emph{backward} correction: systematic miscalibration can be exploited by traders for profit (statistical arbitrage), and eliminating such profit opportunities typically requires updating prices using \emph{feedback} from realized outcomes.
++This section formalizes one concrete version of the intuition ``\emph{arbitrage = hysteresis}'' using regret notions.
++
++\paragraph{Scope of what we claim.}
++A sweeping equivalence between ``forward-only'' inference/training procedures and external-regret guarantees (and between ``backward/repair'' procedures and swap-regret guarantees) is \emph{not} established in the literature to our knowledge.
++What we \emph{can} prove is the following chain of statements in an explicit sequential prediction game:
+ \begin{enumerate}[leftmargin=*]
+-\item Forward-only procedures naturally certify external-regret-type guarantees, which are insufficient for robust calibration in adversarial environments.
+-\item Backward/repair mechanisms enable internal/swap-regret control, which in turn implies multivalid (group-conditional) guarantees \cite{ramalingam2025conformal}.
++\item external regret is insufficient to guarantee robust (multi-group) calibration;
++\item swap regret \emph{is} sufficient (and in several settings essentially necessary) for robust calibration and group-conditional guarantees \cite{ramalingam2025conformal,perchet2013approachability};
++\item swap-regret minimization admits algorithms that can be written as ``forward play + backward repair'' via action-remapping updates (e.g.\ internal-regret dynamics) \cite{blum2007externalinternal}.
+ \end{enumerate}
+-We leave a full ``reverse-time'' swap-regret analysis for diffusion forecasters as future work, but our group-robust calibration separations provide a concrete target for such analyses.
++Together with \cref{thm:cal-noarb} (robust calibration $\Leftrightarrow$ no statistical arbitrage in a class), this provides a formal sense in which eliminating arbitrage requires controlling a swap-regret-like quantity, and why ``repair'' mechanisms matter.
++
++\subsection{A discretized prediction game}\label{sec:disc-game}
++
++For simplicity we focus on a single binary market.
++Fix a grid of actions (probability bins)
++\[
++\cA_m \ :=\ \left\{0,\frac{1}{m},\frac{2}{m},\ldots,1\right\},
++\]
++and let $\ell(a,y)=(a-y)^2$ be Brier loss.
++At each round $t$, a forecaster outputs an action $A_t\in\cA_m$ (possibly as a function of the context $X_t$), then the outcome $Y_t\in\{0,1\}$ is revealed.
++
++\subsection{External vs.\ swap regret}\label{sec:regrets}
++
++Define external regret against constant actions
++\[
++\mathrm{Reg}^{\mathrm{ext}}_T \ :=\ \sum_{t=1}^T \ell(A_t,Y_t)\;-\;\min_{a\in\cA_m}\sum_{t=1}^T \ell(a,Y_t).
++\]
++Define swap regret against all remappings $\sigma:\cA_m\to\cA_m$:
++\[
++\mathrm{Reg}^{\mathrm{swap}}_T \ :=\ \sup_{\sigma:\cA_m\to\cA_m}\ \sum_{t=1}^T \ell(A_t,Y_t)\;-\;\ell(\sigma(A_t),Y_t).
++\]
++To reason about group-conditional guarantees, fix a group family $\cG$ and define \emph{group-restricted swap regret}
++\[
++\mathrm{Reg}^{\mathrm{swap}}_T(G)
++\ :=\ \sup_{\sigma:\cA_m\to\cA_m}\ \sum_{t: X_t\in G}\ \ell(A_t,Y_t)\;-\;\ell(\sigma(A_t),Y_t),
++\qquad
++\mathrm{Reg}^{\mathrm{swap}}_T(\cG)\ :=\ \sup_{G\in\cG}\mathrm{Reg}^{\mathrm{swap}}_T(G).
++\]
++This is the natural ``sleeping'' analogue: the adversary is evaluated only on the subsequence where $G$ is active.
++
++\subsection{External regret is insufficient for multi-group calibration}
++
++The next theorem formalizes the first bullet: external regret does not control worst-group calibration, even in a benign stochastic setting with two groups.
++
++\begin{theorem}[External regret does not imply group calibration]\label{thm:ext-not-gcal}
++Let $\cX=\{0,1\}$ and let $G_0=\{0\}$, $G_1=\{1\}$.
++Consider an i.i.d.\ environment with $\Prob(X=0)=\Prob(X=1)=1/2$ and
++\[
++\Prob(Y=1\mid X=0)=0,\qquad \Prob(Y=1\mid X=1)=1.
++\]
++Let the forecaster always predict $A_t\equiv 1/2$.
++Then $\mathrm{Reg}^{\mathrm{ext}}_T=0$ for every $T$, but $\mathrm{GCal}_{\{G_0,G_1\}}(A)=1/2$ (constant worst-group miscalibration).
++\end{theorem}
++
++\subsection{Swap regret implies multivalid calibration}
++
++The second bullet is that swap-regret control \emph{is} sufficient for robust calibration.
++We state a clean version for Brier loss on a discretized grid.
++
++\begin{theorem}[Group-restricted swap regret implies group calibration]\label{thm:swap-implies-gcal}
++Fix $m\ge 1$ and a group $G$.
++Let $N_{G,a}:=\big|\{t\le T:\ X_t\in G,\ A_t=a\}\big|$ be the number of times action $a\in\cA_m$ is played on group rounds.
++Define the empirical group-bin calibration residual
++\[
++\widehat\mu_{G,a}\ :=\ \begin{cases}
++\frac{1}{N_{G,a}}\sum_{t:\,X_t\in G,\,A_t=a} (Y_t-a) & \text{if } N_{G,a}>0,\\
++0 & \text{if } N_{G,a}=0.
++\end{cases}
++\]
++Then for every $a\in\cA_m$,
++\[
++|\widehat\mu_{G,a}|\ \le\ \sqrt{\frac{\mathrm{Reg}^{\mathrm{swap}}_T(G)}{N_{G,a}}}\ +\ \frac{1}{m}.
++\]
++In particular, if $\mathrm{Reg}^{\mathrm{swap}}_T(\cG)\le \varepsilon T$ and every active group-bin cell satisfies $N_{G,a}\ge \gamma T$,
++then $\sup_{G\in\cG,a\in\cA_m}|\widehat\mu_{G,a}|\ \le\ \sqrt{\varepsilon/\gamma}+1/m$.
++\end{theorem}
++
++\begin{remark}
++Results in \cite{ramalingam2025conformal} establish a tight connection between swap regret and threshold-calibrated (group-conditional) coverage guarantees in adversarial settings, and show how to obtain group-conditional guarantees for arbitrary grouping functions using FPL-family no-regret algorithms.
++\cref{thm:swap-implies-gcal} is a self-contained ``Brier-grid'' analogue tailored to our market setting.
++\end{remark}
++
++\subsection{Repair mechanisms as swap-regret minimization}
++
++Finally, we formalize the third bullet in an explicit way: swap regret admits algorithms whose state is a \emph{backward-looking repair map}.
++Concretely, a swap $\sigma$ is exactly a ``repair'' rule that says: \emph{whenever you output action $a$, you should have output $\sigma(a)$ instead}.
++Minimizing swap regret means learning, from feedback, that no such systematic repairs remain beneficial.
++
++\begin{theorem}[Swap regret via backward repair maps]\label{thm:repair-swap}
++For any finite action set $\cA_m$, there exists an online algorithm that guarantees
++\[
++\mathrm{Reg}^{\mathrm{swap}}_T\ =\ O\!\left(|\cA_m|\sqrt{T\log|\cA_m|}\right).
++\]
++Moreover, the algorithm can be implemented by maintaining and updating a row-stochastic matrix $R_t\in\Delta(\cA_m)^{\cA_m}$ whose $a$-th row specifies a distribution over ``repairs'' $a\mapsto a'$, updated using past losses (a backward-looking step).
++\end{theorem}
++
++\paragraph{Interpretation for hysteresis.}
++Theorems~\ref{thm:ext-not-gcal}--\ref{thm:repair-swap} provide a clean lens for hysteresis phenomena observed in RLVR/backtracking systems:
++\emph{forward-only} updates that only compete with a fixed baseline (external regret) do not rule out profitable conditional deviations (repairs), while \emph{repair} mechanisms that learn conditional deviations (swap regret) do.
++In our market interpretation, such conditional deviations correspond to profitable statistical arbitrage strategies (\cref{thm:cal-noarb}), so ``arbitrage = hysteresis'' can be read as: \emph{persistent arbitrage profit witnesses the presence of beneficial repair maps (swap regret), and eliminating it requires a backward correction mechanism that drives swap regret to zero.}
++
+ 
+ \section{Experimental Protocol: Stress Tests for Complexity and Group Robustness}
+ 
+@@ -600,6 +757,28 @@
+ \item At test time, run $T$ denoising steps ending at noise level $\sigma_T$ (analog of $\rho$).
+ \end{enumerate}
+ 
++
++\subsection{Intrinsic robustness vs.\ post-processing}\label{sec:intrinsic-vs-post}
++
++A recurring concern in the calibration literature is that \emph{any} forecaster can be wrapped by a sufficiently powerful online post-processor (multicalibration/multivalidity, multi-calibeating) to obtain strong subgroup guarantees, at the cost of additional samples and computation \cite{hebertjohnson2018multicalibration,lee2022multicalibeating,ramalingam2025conformal}.
++To isolate the contribution of the \emph{base} model family (AR+CoT vs.\ diffusion) from generic post-processing, we propose a controlled experiment with four variants:
++\begin{enumerate}[leftmargin=*]
++\item \textbf{AR-intrinsic:} raw AR+CoT(+self-consistency) forecasts.
++\item \textbf{Diffusion-intrinsic:} raw diffusion forecasts at matched compute.
++\item \textbf{AR+post:} apply the \emph{same} multi-group post-processor to AR forecasts.
++\item \textbf{Diffusion+post:} apply the \emph{same} post-processor to diffusion forecasts.
++\end{enumerate}
++
++\paragraph{Post-processing choices.}
++Two natural options are:
++(i) an online multi-calibeating wrapper in the style of \cite{lee2022multicalibeating}, treating each group/scoring objective as a coordinate in a vector-valued game; and
++(ii) an online multivalid calibration wrapper following the swap-regret-based reductions of \cite{ramalingam2025conformal}.
++In either case, post-processing should be fed the same stream of $(x_t,q_t,y_t)$ triples and should be evaluated on held-out data to avoid overfitting the group family.
++
++\paragraph{Hypothesis.}
++If diffusion's advantage is primarily \emph{intrinsic} (e.g.\ better rare-group robustness at fixed compute), then Diffusion-intrinsic should already dominate AR-intrinsic on worst-group metrics, and the gap should persist (perhaps shrink) even after post-processing.
++If instead AR's deficiencies are largely ``wrapper-fixable,'' then AR+post should close the gap with Diffusion-intrinsic, but one should observe a \emph{sampling/group-frequency tax} (larger data and compute requirements) for AR on rare groups, consistent with Proposition~\ref{prop:group-sample} and \cite{lee2022multicalibeating}.
++
+ \subsection{Synthetic benchmarks aligned with theory}
+ 
+ \paragraph{Parity markets.}
+@@ -639,7 +818,22 @@
+ Our separations are proved under explicit computation models:
+ AR+CoT is modeled as an $L$-query forecaster (hence an $L$-junta), and diffusion is modeled as an ideal noise-operator forecaster $T_\rho f$.
+ This abstraction is deliberate: it yields rigorous end-to-end theorems connecting compute to calibration and to arbitrage regret.
+-Bridging these abstractions to trained transformers requires additional assumptions about how CoT length constrains effective feature access and about the fidelity of learned diffusion denoisers; the proposed experiments are intended to directly test whether the theoretical scaling laws manifest empirically.
++
++\paragraph{Model--reality gap for AR+CoT.}
++The strict $L$-query/$L$-junta abstraction should be read as a \emph{worst-case} model of serial information acquisition: it forces a hard spectral cutoff and makes the ``complexity cliff'' exact.
++Real transformers are non-local in a single forward pass and can aggregate many features in parallel.
++To partially address this, Section~\ref{sec:refined-ar} introduces a parallel-access $(L,r)$-query model whose effective budget is $Q=Lr$; all AR theorems extend by substituting $L\leftarrow Q$.
++More generally, our parity-based separations only require upper bounds on high-degree parity correlation (the ``spectral leakage'' envelope of \cref{cor:parity-envelope}), which can be measured empirically via synthetic probes.
++
++\paragraph{Model--reality gap for diffusion.}
++Our idealized diffusion model assumes that inference computes (or closely approximates) the noise operator $T_\rho f$.
++Bridging this to learned denoisers requires assumptions about approximation error (captured explicitly in \cref{ass:learned-diff}) and discretization error (Appendix~\ref{app:diffusion-discretization}).
++The experiments we propose are designed to test whether diffusion-like forecasters empirically exhibit the predicted smooth compute--accuracy scaling and rare-group robustness.
++
++\paragraph{Open problems.}
++A fully faithful abstraction of transformer inference that simultaneously captures non-local attention, finite compute, and the geometry of diffusion denoising remains open.
++In particular, proving lower bounds for general transformer families (beyond query-based surrogates) on parity-like or multigroup calibration tasks would significantly strengthen the theoretical story.
++
+ 
+ \section{Conclusion}
+ 
+@@ -696,6 +890,16 @@
+ If the algorithm is randomized, then conditional on its internal randomness $\omega$, it outputs an $L$-junta $q_\omega$. The expectation $\E_\omega[q_\omega(z)]$ still depends only on the union of queried coordinates (which is at most $L$ almost surely), hence is an $L$-junta as well.
+ \end{proof}
+ 
++\subsection{Proof of \cref{prop:parallel-junta}}
++\begin{proof}
++A deterministic $(L,r)$-query forecaster queries at most $r$ coordinates in each of $L$ serial rounds, hence queries at most $Q\le Lr$ \emph{distinct} coordinates overall.
++Therefore its output depends only on those queried coordinates and is a $Q$-junta.
++The Fourier-support claim follows exactly as in the proof of \cref{prop:junta-degree}.
++
++If the forecaster is randomized, then conditioning on its internal randomness yields a deterministic $(L,r)$-query forecaster, hence a $Q$-junta; taking expectations preserves the dependence set, so the mean predictor is also a $Q$-junta.
++\end{proof}
++
++
+ \subsection{Proof of \cref{thm:ar-cliff}}
+ \begin{proof}
+ Let $q$ be an $L$-junta. By \cref{prop:junta-degree}, $\widehat q(S)=0$ for all $|S|>L$.
+@@ -748,18 +952,42 @@
+ 
+ \subsection{Proof of \cref{thm:parity-sep}}
+ \begin{proof}
+-For the parity Truth function $f(z)=1/2+(\alpha/2)\chi_S(z)$ with $|S|=k$, we have $\widehat f(S)=\alpha/2$ and all other nonempty Fourier coefficients are $0$.
++Let $f(z)=\tfrac{1}{2}+\tfrac{\alpha}{2}\chi_S(z)$ with $|S|=k$.
++Then $\widehat f(\emptyset)=1/2$, $\widehat f(S)=\alpha/2$, and $\widehat f(T)=0$ for all other $T\neq \emptyset,S$.
++
++Fix any forecaster $q$.
++By Parseval,
++\[
++\mathrm{SCE}(q;f)\ =\ \E[(q(Z)-f(Z))^2]\ =\ \sum_{T\subseteq[d]}(\widehat q(T)-\widehat f(T))^2
++\ \ge\ (\widehat q(S)-\widehat f(S))^2.
++\]
++In particular, if $\widehat q(S)=0$ then $\mathrm{SCE}(q;f)\ge (\alpha/2)^2=\alpha^2/4$.
+ 
+-If $q$ is an $L$-junta with $L<k$, then $\widehat q(S)=0$. Parseval yields
++For the $L^1$ lower bound, note that
++\[
++\E[(f(Z)-q(Z))\chi_S(Z)]\ =\ \widehat f(S)-\widehat q(S).
++\]
++Since $|\chi_S(Z)|\equiv 1$, Hölder gives
+ \[
+-\mathrm{SCE}(q;f)\ge (\widehat f(S)-\widehat q(S))^2=(\alpha/2)^2.
++\big|\widehat f(S)-\widehat q(S)\big|
++\ =\ \big|\E[(f(Z)-q(Z))\chi_S(Z)]\big|
++\ \le\ \E[|f(Z)-q(Z)|].
+ \]
+-The arbitrage bound follows from \cref{thm:arb-L1} and the fact that for this $f$ and any $q$ with no $S$-coefficient, $\E[|f-q|]\ge \alpha/2$ (achieved by the pointwise sign trader; see \cref{thm:arb-L1}).
++If $\widehat q(S)=0$ this yields $\E|f-q|\ge \alpha/2$.
++Applying \cref{thm:arb-L1} gives the stated per-round arbitrage lower bound.
+ 
+-For diffusion, $T_\rho \chi_S = \rho^k \chi_S$, hence $q_{\mathrm{diff},\rho}=1/2+(\alpha/2)\rho^k \chi_S$.
+-Then $f-q_{\mathrm{diff},\rho}=(\alpha/2)(1-\rho^k)\chi_S$, giving the stated SCE and $L^1$ formulas.
++For diffusion, $T_\rho \chi_S = \rho^k \chi_S$, hence
++$q_{\mathrm{diff},\rho}=T_\rho f = \tfrac{1}{2}+(\alpha/2)\rho^k \chi_S$.
++Therefore $f-q_{\mathrm{diff},\rho}=(\alpha/2)(1-\rho^k)\chi_S$, so
++\[
++\mathrm{SCE}(q_{\mathrm{diff},\rho};f)=\frac{\alpha^2}{4}(1-\rho^k)^2,
++\qquad
++\E\big[|f-q_{\mathrm{diff},\rho}|\big]=\frac{\alpha}{2}(1-\rho^k),
++\]
++and another application of \cref{thm:arb-L1} yields the diffusion arbitrage formula.
+ \end{proof}
+ 
++
+ \subsection{Proof of \cref{thm:diff-group}}
+ \begin{proof}
+ Recall the parity Truth function $f(z) = \frac{1}{2} + \frac{\alpha}{2}\chi_S(z)$ with $|S|=k$, and the diffusion forecaster $q_{\mathrm{diff},\rho} = T_\rho f = \frac{1}{2} + \frac{\alpha}{2}\rho^k \chi_S(z)$.
+@@ -845,6 +1073,84 @@
+ \end{proof}
+ 
+ 
++
++\subsection{Proof of \cref{thm:ext-not-gcal}}
++\begin{proof}
++Because the forecaster always predicts $A_t\equiv 1/2$, its cumulative Brier loss is
++\[
++\sum_{t=1}^T (A_t-Y_t)^2 \;=\; \sum_{t=1}^T (1/2-Y_t)^2 \;=\; \frac{T}{4}.
++\]
++Since $\Prob(Y=1)=1/2$ under the stated environment, the best constant predictor in hindsight is also $a^\star=1/2$, yielding the same loss $T/4$.
++Hence $\mathrm{Reg}^{\mathrm{ext}}_T=0$.
++
++For group calibration, on $G_0$ we have $Y\equiv 0$ but the prediction is $1/2$, so
++$\E[Y-A\mid X\in G_0]=-1/2$.
++On $G_1$ we have $Y\equiv 1$ so $\E[Y-A\mid X\in G_1]=+1/2$.
++Therefore $\mathrm{GCal}_{\{G_0,G_1\}}(A)=1/2$.
++\end{proof}
++
++\subsection{Proof of \cref{thm:swap-implies-gcal}}
++\begin{proof}
++Fix a group $G$ and an action $a\in\cA_m$ with $N:=N_{G,a}>0$.
++Let $\bar Y:=\frac{1}{N}\sum_{t:\,X_t\in G,\,A_t=a} Y_t$ denote the empirical mean outcome on these rounds, so that $\widehat\mu_{G,a}=\bar Y-a$.
++
++Let $\tilde a$ be the closest grid point in $\cA_m$ to $\bar Y$ (breaking ties arbitrarily), so $|\tilde a-\bar Y|\le 1/m$.
++Consider the swap mapping $\sigma$ that sends $a\mapsto \tilde a$ and leaves all other actions fixed.
++By definition of group-restricted swap regret,
++\[
++\mathrm{Reg}^{\mathrm{swap}}_T(G)
++\ \ge\
++\sum_{t:\,X_t\in G,\,A_t=a} \Big(\ell(a,Y_t)-\ell(\tilde a,Y_t)\Big).
++\]
++Using the identity (valid for any fixed $\bar Y$)
++\[
++\frac{1}{N}\sum_{t:\,X_t\in G,\,A_t=a} (u-Y_t)^2
++\ =\ (u-\bar Y)^2 + \bar Y(1-\bar Y),
++\]
++we obtain
++\[
++\sum_{t:\,X_t\in G,\,A_t=a}\!\!\Big((a-Y_t)^2-(\tilde a-Y_t)^2\Big)
++\ =\ N\Big((a-\bar Y)^2-(\tilde a-\bar Y)^2\Big)
++\ \ge\ N(a-\bar Y)^2 - \frac{N}{m^2}.
++\]
++Rearranging gives $(a-\bar Y)^2 \le \mathrm{Reg}^{\mathrm{swap}}_T(G)/N + 1/m^2$.
++Taking square roots and using $\sqrt{u+v}\le \sqrt{u}+\sqrt{v}$ yields
++\[
++|\widehat\mu_{G,a}|
++\ =\ |\bar Y-a|
++\ \le\ \sqrt{\frac{\mathrm{Reg}^{\mathrm{swap}}_T(G)}{N_{G,a}}}\ +\ \frac{1}{m}.
++\]
++\end{proof}
++
++\subsection{Proof of \cref{thm:repair-swap}}
++\begin{proof}
++Let $M:=|\cA_m|=m+1$.
++For each pair of actions $(i,j)\in\cA_m^2$, define the \emph{pairwise internal regret}
++\[
++R_{i\to j}\ :=\ \sum_{t:\,A_t=i}\Big(\ell(i,Y_t)-\ell(j,Y_t)\Big).
++\]
++The (max) internal regret is $\mathrm{Reg}^{\mathrm{int}}_T:=\max_{i,j} R_{i\to j}$.
++It is classical that there exist online algorithms (e.g.\ regret-matching or the reduction of \cite{blum2007externalinternal}) guaranteeing
++\[
++\mathrm{Reg}^{\mathrm{int}}_T\ =\ O\!\left(\sqrt{T\log M}\right)
++\]
++for any bounded loss sequence.
++
++To bound swap regret, observe that for any mapping $\sigma:\cA_m\to\cA_m$,
++\[
++\sum_{t=1}^T \ell(A_t,Y_t)-\ell(\sigma(A_t),Y_t)
++\ =\ \sum_{i\in\cA_m} R_{i\to \sigma(i)}
++\ \le\ \sum_{i\in\cA_m}\max_{j\in\cA_m} R_{i\to j}
++\ \le\ M\cdot \mathrm{Reg}^{\mathrm{int}}_T.
++\]
++Taking the supremum over $\sigma$ gives $\mathrm{Reg}^{\mathrm{swap}}_T \le M\,\mathrm{Reg}^{\mathrm{int}}_T$, hence
++$\mathrm{Reg}^{\mathrm{swap}}_T = O\!\left(M\sqrt{T\log M}\right)$.
++
++Finally, regret-matching and related internal-regret algorithms maintain (implicitly or explicitly) a nonnegative ``regret matrix'' whose $i$-th row specifies how strongly one should replace action $i$ by alternative actions $j$.
++Normalizing each row yields a row-stochastic matrix $R_t\in\Delta(\cA_m)^{\cA_m}$, which can be viewed as a \emph{repair map} updated from past losses; see \cite{blum2007externalinternal,perchet2013approachability} for explicit constructions.
++\end{proof}
++
++
+ \section{Fourier and Noise-Operator Preliminaries}\label{app:fourier}
+ 
+ We use standard facts about Fourier analysis on the Boolean cube and the noise operator.
+@@ -927,6 +1233,17 @@
+ \newblock The relationship between no-regret learning and online conformal prediction.
+ \newblock \emph{arXiv preprint arXiv:2502.10947}, 2025.
+ 
++
++\bibitem{blum2007externalinternal}
++Avrim Blum and Yishay Mansour.
++\newblock From external to internal regret.
++\newblock \emph{Journal of Machine Learning Research}, 8:1307--1324, 2007.
++
++\bibitem{perchet2013approachability}
++Vianney Perchet.
++\newblock Approachability, regret and calibration: implications and equivalences.
++\newblock \emph{arXiv preprint arXiv:1301.2663}, 2013.
++
+ \bibitem{kiyani2025decisiontheory}
+ Shayan Kiyani, George Pappas, Aaron Roth, and Hamed Hassani.
+ \newblock Decision theoretic foundations for conformal prediction: Optimal uncertainty quantification for risk-averse agents.

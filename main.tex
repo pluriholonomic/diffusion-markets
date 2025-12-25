@@ -1,0 +1,1921 @@
+
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+% Capitalize cleveref names for statement references (e.g. "Proposition 3.1", not "proposition 3.1").
+\crefname{proposition}{Proposition}{Propositions}
+\Crefname{proposition}{Proposition}{Propositions}
+\crefname{corollary}{Corollary}{Corollaries}
+\Crefname{corollary}{Corollary}{Corollaries}
+\crefname{lemma}{Lemma}{Lemmas}
+\Crefname{lemma}{Lemma}{Lemmas}
+\crefname{definition}{Definition}{Definitions}
+\Crefname{definition}{Definition}{Definitions}
+\crefname{assumption}{Assumption}{Assumptions}
+\Crefname{assumption}{Assumption}{Assumptions}
+\crefname{remark}{Remark}{Remarks}
+\Crefname{remark}{Remark}{Remarks}
+\crefname{example}{Example}{Examples}
+\Crefname{example}{Example}{Examples}
+\usepackage{enumitem}
+\usepackage{microtype}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+}
+
+% --- theorem-like environments ---
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{assumption}[definition]{Assumption}
+\newtheorem{remark}[definition]{Remark}
+\newtheorem{example}[definition]{Example}
+
+\theoremstyle{plain}
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{corollary}[definition]{Corollary}
+
+\newcommand{\E}{\mathbb{E}}
+% \P is already defined by LaTeX (paragraph symbol); use \Prob for probability.
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\1}{\mathbf{1}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\TV}{\mathrm{TV}}
+\newcommand{\supp}{\mathrm{supp}}
+\newcommand{\cX}{\mathcal{X}}
+\newcommand{\cF}{\mathcal{F}}
+\newcommand{\cG}{\mathcal{G}}
+\newcommand{\cH}{\mathcal{H}}
+\newcommand{\cP}{\mathcal{P}}
+\newcommand{\cA}{\mathcal{A}}
+\newcommand{\cD}{\mathcal{D}}
+\newcommand{\cM}{\mathcal{M}}
+\newcommand{\cT}{\mathcal{T}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\cU}{\mathcal{U}}
+\newcommand{\cV}{\mathcal{V}}
+\newcommand{\cW}{\mathcal{W}}
+\newcommand{\cB}{\mathcal{B}}
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\cR}{\mathcal{R}}
+\newcommand{\cE}{\mathcal{E}}
+\newcommand{\cK}{\mathcal{K}}
+\newcommand{\cJ}{\mathcal{J}}
+\newcommand{\cO}{\mathcal{O}}
+
+\newcommand{\inner}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+
+\title{Statistical Arbitrage in Prediction Markets is Calibeating}
+\author{Tarun Chitra}
+\date{December 2025}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study prediction markets as forecasting problems: given an information string $x\in\cX$, a forecaster outputs prices in $[0,1]^n$, and optimal prices are the conditional mean of a canonical \emph{Truth} operator.
+Our main message is economic: \emph{statistical arbitrage is calibeating}.
+We formalize classes of bounded traders and show that any systematic calibration defect yields a profitable trading strategy and an explicit post-processing that strictly improves Brier loss (calibeating); conversely, robust calibration certificates rule out such arbitrage (up to transaction costs).
+
+We then evaluate two ``language-model-like'' pricers as predictors of statistical arbitrage: diffusion/annealing models and autoregressive reasoning models (depth $L$, width $K$).
+We give theoretical results suggesting diffusion dominates bounded-depth AR asymptotically, via soft spectral attenuation (a ``fog'') versus an AR spectral cutoff (a ``cliff'').
+Finally, we design synthetic and real benchmarks and evaluate these predictions experimentally.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+
+Prediction markets convert heterogeneous evidence into probabilities.
+A forecaster that posts probabilities for market events should be accurate under a \emph{proper} scoring rule, and should be \emph{calibrated}: its probabilities should match empirical frequencies.
+Strong forms of calibration (e.g.\ multicalibration/multivalidity) provide decision-theoretic and fairness-like semantics, and are tightly connected to internal/swap regret and no-profitable-remapping guarantees \cite{ramalingam2025conformal,hebertjohnson2018multicalibration}.
+In market settings, systematic miscalibration is also an \emph{economic} defect: it can be exploited by traders for positive expected profit over time (statistical arbitrage).
+
+Recent work has applied reinforcement learning with verifiable rewards (RLVR) to forecasting.
+In particular, \cite{turtel2025outcomeRL} trains a 14B reasoning model on prediction-market questions and accompanying news headlines, improving calibration and obtaining hypothetical profit in a Polymarket trading simulation.
+This raises the question: \emph{how far can AR+CoT scale as a market pricer and as an ``arbitrage learner''?}
+This paper presents a complexity- and compute-sensitive theory suggesting a structural limitation: when the mapping from information to truth prices is logically/spectrally complex, bounded-depth AR+CoT suffers a hard topological barrier that cannot be repaired by sampling width, while diffusion-style inference exhibits a continuous compute--accuracy tradeoff.
+
+\paragraph{Contributions.}
+We provide:
+\begin{enumerate}[leftmargin=*]
+  \item A formal model of prediction-market forecasting with a Truth operator and sequential evaluation under proper scoring, calibration, and trading regret.
+  \item A unified calibration scaling theory relating squared calibration error (SCE) and Kelly/log-score regret to spectral complexity and compute resources $(L,K)$ or $(\rho,T)$.
+  \item A regret-theoretic connection between robust calibration, swap regret, calibeating, and statistical arbitrage profit.
+  \item A \emph{group robustness separation} with explicit counterexamples: diffusion can calibrate arbitrarily small subgroups with sufficient compute, while bounded-depth AR provably cannot.
+  \item A concrete experimental protocol (synthetic + real) that leverages the theory, including subgroup stress tests and compute scaling curves.
+\end{enumerate}
+
+\paragraph{Novelty and positioning.}
+The technical ingredients we use---proper scoring rules, calibration and its robust variants, regret notions, and Fourier/noise-operator analysis---are classical in their respective communities.
+Our novelty is in the \emph{synthesis} and the \emph{compute-parametrized separations} it enables for prediction markets:
+(i) we give an exact identification of robust calibration error with a natural class of statistical arbitrage regret (\cref{thm:cal-noarb});
+(ii) we connect inference-time compute knobs to spectral error in a way that yields falsifiable ``cliff vs.\ fog'' scaling laws (\cref{thm:ar-cliff,thm:diffusion-fog});
+(iii) we prove an explicit worst-group robustness separation on exponentially small subgroups (\cref{thm:diff-group,thm:ar-group-lb}); and
+(iv) we propose experiments (including a post-processing control) designed to separate \emph{intrinsic} robustness from improvements achievable by generic multicalibration/multi-calibeating wrappers (Section~\ref{sec:intrinsic-vs-post}).
+
+\section{Related Work}
+
+\paragraph{Multicalibration, multivalidity, and group robustness.}
+Multicalibration strengthens classical calibration by requiring approximate unbiasedness conditional on membership in each group from a large (potentially intersecting) family, and has become a standard tool for ensuring robust behavior on subpopulations \cite{hebertjohnson2018multicalibration}.
+A rich line of follow-up work studies multicalibration and its extensions in batch and online/adversarial settings, including \emph{multivalid} prediction of means, moments, and prediction intervals \cite{gupta2022onlineMultivalid}, as well as \emph{multivalid conformal prediction} guarantees in the batch setting \cite{jung2022batchMultivalid}.
+Recent work further tightens the connection between no-regret learning and multivalid guarantees in online conformal prediction, highlighting the centrality of swap regret for group-conditional coverage \cite{ramalingam2025conformal}.
+
+\paragraph{Multi-group calibeating.}
+Calibeating \cite{fosterhart2022calibeating} produces forecasts that are calibrated while improving Brier loss relative to a baseline forecaster.
+A recent NeurIPS paper by Lee, Noarov, Pai, and Roth develops an online minimax multiobjective framework that yields \emph{multi-calibeating}: simultaneously calibeating a collection of forecasters on each group from a protected family, with rates that depend logarithmically on the number of groups and models and explicitly on group frequency \cite{lee2022multicalibeating}.
+These results can be viewed as a general-purpose post-processing layer in an online adversarial model.
+Our results are complementary: we study \emph{intrinsic} limitations and advantages of compute-limited forecasting architectures (AR+CoT vs.\ diffusion) in a realizable stochastic model, and we give population-level separations for worst-group calibration on exponentially small groups under explicit computation models.
+
+\paragraph{Scope and computational aspects of multicalibration.}
+Noarov and Roth characterize which statistical properties admit multicalibration via property elicitation, clarifying which targets can be meaningfully calibrated beyond means \cite{noarov2023scope}.
+Globus-Harris et al.\ connect multicalibration to boosting for regression \cite{globusharris2023boosting}.
+On the online side, improved and oracle-efficient rates for $\ell_1$-multicalibration have recently been obtained \cite{ghuge2025l1multicalibration}.
+Finally, high-dimensional (vector-valued) online prediction under rich conditioning events has been studied in the context of sequential decision making \cite{noarov2025hdp}; this perspective is closely aligned with our market interpretation, where the forecaster's output is a vector of prices whose downstream use induces rich decision rules.
+
+\paragraph{Decision making under partial calibration.}
+A complementary decision-theoretic line of work studies how downstream agents should act when forecasts are only partially calibrated or miscalibrated, including minimax-optimal robust decision rules \cite{kiyani2025robustdecision} and robust thresholding under miscalibration \cite{rothblumyona2022miscalibration}.
+Our paper connects these ideas to prediction markets by interpreting profitable trading strategies as witnesses of calibration failures.
+
+\paragraph{Diffusion models and non-autoregressive generation.}
+Diffusion and score-based generative models parameterize a reverse-time denoising dynamics that transforms noise into data \cite{ho2020ddpm,song2020sde}.
+While diffusion is most developed in continuous domains, both continuous and discrete diffusion have been explored for text generation \cite{li2022diffusionlm,nie2025llada}.
+In our setting, diffusion is used as an \emph{inference-time computation primitive} for producing calibrated probability vectors, and we analyze an idealized ``noise-operator'' abstraction that makes the spectral attenuation mechanism explicit.
+
+\section{Forecasting Setup and the Truth Operator}
+
+\subsection{Information strings, markets, and outcomes}
+
+Let $\cX$ be a set of input strings.
+There are $n$ binary markets with outcomes $Y=(Y_1,\dots,Y_n)\in\{0,1\}^n$.
+We work in a \emph{realizable stochastic} environment: there exists an unknown measurable Truth function
+\[
+f:\cX\to [0,1]^n,\qquad f_j(x)=\Prob(Y_j=1\mid X=x).
+\]
+Given a sequence of contexts $X_1,\dots,X_T$, outcomes are conditionally independent with $Y_{t,j}\sim\mathrm{Bern}(f_j(X_t))$.
+
+\subsection{Truth as a distribution over probability vectors}
+
+We define the Truth operator $\mathrm{Truth}:\cX\to \Delta([0,1]^n)$ as follows.
+Let $X^\star$ be a maximal-information string and let $p^\star(X^\star)\in[0,1]^n$ denote the (world) true probability vector on $X^\star$.
+For a partial string $x$ we define
+\[
+\mathrm{Truth}(x)\ :=\ \cL(p^\star(X^\star)\mid X=x),
+\qquad
+f(x)\ :=\ \E_{p\sim \mathrm{Truth}(x)}[p].
+\]
+Thus $f$ is the conditional mean of $\mathrm{Truth}$ and is Bayes-optimal for every strictly proper scoring rule.
+
+\subsection{Forecasters}
+
+A prediction-market model is a map
+\[
+M:\cX\to \Delta([0,1]^n).
+\]
+Its posted price is its mean prediction
+\[
+\hat f_M(x)\ :=\ \E_{p\sim M(x)}[p]\in[0,1]^n.
+\]
+We evaluate $M$ via $\hat f_M$ unless stated otherwise.
+
+\section{Proper Scoring Rules: Brier vs.\ Kelly}
+
+For a single binary market, a \emph{(strictly) proper scoring rule} is a loss $\ell:[0,1]\times\{0,1\}\to\R$ whose conditional expectation is uniquely minimized by the true conditional probability.
+Two canonical examples are:
+\begin{align*}
+\ell_{\mathrm{Br}}(q,y) &= (q-y)^2 \qquad \text{(Brier/quadratic)},\\
+\ell_{\log}(q,y) &= -\big(y\log q+(1-y)\log(1-q)\big)\qquad \text{(log/Kelly)}.
+\end{align*}
+Both extend additively across $n$ markets.
+
+\subsection{Scoring regret and divergences}
+
+Define the population risk $\cL_\ell(q):=\E[\ell(q(X),Y)]$.
+The next Proposition (proved in Appendix~\ref{app:proofs}) states that scoring regret equals a divergence to the Bayes predictor; for Brier this is squared error (SCE), while for log loss it is a Bernoulli KL divergence.
+
+\begin{proposition}[Proper scoring regret decomposition]\label{thm:proper-regret}
+Let $\ell$ be a strictly proper scoring rule for binary outcomes with Bayes risk $\phi(p):=\inf_q \E[\ell(q,Y)\mid p]$.
+Let $f(x)=\Prob(Y=1\mid X=x)$.
+Then for any measurable $q:\cX\to(0,1)$,
+\[
+\cL_\ell(q)-\cL_\ell(f) \;=\; \E\left[D_\phi\big(f(X),q(X)\big)\right],
+\]
+where $D_\phi$ is the Bregman divergence generated by $\phi$.
+In particular,
+\begin{align*}
+\cL_{\mathrm{Br}}(q)-\cL_{\mathrm{Br}}(f) &= \E\big[(q(X)-f(X))^2\big],\\
+\cL_{\log}(q)-\cL_{\log}(f) &= \E\big[\KL(\mathrm{Bern}(f(X))\,\|\,\mathrm{Bern}(q(X)))\big].
+\end{align*}
+\end{proposition}
+
+\subsection{Squared calibration error (SCE)}
+
+Motivated by \cref{thm:proper-regret}, we define (for one market)
+\[
+\mathrm{SCE}(q;f)\ :=\ \E\big[(q(X)-f(X))^2\big].
+\]
+For $n$ markets, we use $\E[\norm{q(X)-f(X)}_2^2]=\sum_{j=1}^n \mathrm{SCE}(q_j;f_j)$.
+
+\subsection{Beyond Brier and log: general proper scoring rules}\label{sec:psr-general}
+
+Proposition~\ref{thm:proper-regret} already shows that, for binary outcomes, \emph{every} strictly proper scoring rule induces a Bregman divergence through its Bayes risk.
+An analogous representation holds on any finite outcome space: (regular) strictly proper scoring rules are in one-to-one correspondence with strictly convex ``entropy'' functions on the probability simplex, and \emph{expected scoring regret equals the associated Bregman divergence} \cite{gneiting2007strictly,ovcharov2018bregman}.
+
+Concretely, let $\Delta_m:=\{p\in\R_{\ge 0}^m:\sum_{i=1}^m p_i=1\}$.
+Let $\Phi:\Delta_m\to\R$ be differentiable and strictly convex.
+Define the score (higher is better)
+\[
+S_\Phi(q,y)\ :=\ \Phi(q)+\inner{\nabla\Phi(q)}{e_y-q},
+\]
+and the corresponding loss $\ell_\Phi(q,y):=-S_\Phi(q,y)$.
+Then $\ell_\Phi$ is strictly proper, and for any true $p\in\Delta_m$,
+\begin{equation}\label{eq:psr-bregman}
+\E_{y\sim p}\big[\ell_\Phi(q,y)-\ell_\Phi(p,y)\big]\;=\;D_\Phi(p,q),
+\end{equation}
+where $D_\Phi$ is the Bregman divergence generated by $\Phi$.
+Thus, in principle, \emph{any} strictly convex potential $\Phi$ (with mild regularity) yields a valid proper scoring rule whose regret geometry is Bregman.%
+\footnote{More generally, proper \emph{affine} scoring rules correspond to convex $\Phi$ with (possibly set-valued) subgradients; see \cite{ovcharov2018bregman}.}
+
+\paragraph{Why we focus on Brier and log.}
+Brier and log loss are canonical because they correspond to two widely used market objectives: squared error calibration (Brier) and multiplicative wealth / Kelly growth (log).
+However, most of our arguments---in particular, the reduction from ``predictive error'' to ``economic exploitability''---only rely on \eqref{eq:psr-bregman} and on basic curvature properties of $D_\Phi$.
+This makes it straightforward to generalize the regret-to-calibration and regret-to-arbitrage bounds to other proper losses (e.g.\ pseudospherical scores, Tsallis/power scores) by tracking their induced Bregman geometry \cite{gneiting2007strictly,ovcharov2018bregman}.
+
+
+\section{Proper Scoring Rules, Convex Market Makers, and CFMMs}\label{sec:amm}
+
+Proper scoring rules are not only evaluation metrics: they also induce \emph{market mechanisms}.
+This section records two well-known correspondences---(i) scoring rules $\leftrightarrow$ convex cost-function market makers, and (ii) convex market makers $\leftrightarrow$ CFMMs via convex duality---because they help interpret our calibration/arbitrage results as statements about real market microstructure.
+
+\subsection{Cost-function market makers and scoring-rule markets}
+
+In a complete $m$-outcome market, let $q\in\R^m$ denote the vector of outstanding shares of Arrow--Debreu securities (one per outcome).
+A \emph{cost-function market maker} is specified by a convex differentiable function $C:\R^m\to\R$; the instantaneous price vector is
+\[
+p(q)\ :=\ \nabla C(q)\in\Delta_m,
+\]
+and a trader who changes inventory from $q$ to $q' = q+r$ pays
+\[
+\mathrm{Pay}(q,r)\ :=\ C(q+r)-C(q).
+\]
+This framework unifies utility-based market makers, market scoring rules, and online learning potentials \cite{hanson2003msr,chenpennock2012utility,abernethy2013convexmm}.
+When $C$ is the log-partition function, $\nabla C$ recovers the LMSR prices; when $C$ is quadratic, the induced prices correspond to a Brier-like quadratic market.
+More generally, for complete markets, market scoring rules induced by proper entropies can be implemented via an equivalent convex cost function \cite{hanson2003msr,abernethy2013convexmm}.
+
+\subsection{Bregman geometry as an implicit ``curvature fee''}
+
+A key identity is that the cost-function payment decomposes into an instantaneous linear price term plus a Bregman divergence:
+\begin{equation}\label{eq:cost-bregman}
+C(q+r)-C(q)\;=\;\inner{\nabla C(q)}{r}\;+\;D_C(q+r,q),
+\end{equation}
+where $D_C$ is the Bregman divergence generated by $C$.
+The term $D_C(q+r,q)$ can be interpreted as an \emph{implicit fee} (or curvature charge) that compensates the market maker for taking inventory risk on large trades.
+This viewpoint makes the connection to Section~\ref{sec:psr-general} concrete: convex potentials simultaneously induce (i) proper scoring rules whose regret is Bregman and (ii) market makers whose payments include a Bregman ``fee'' \cite{abernethy2013convexmm,ovcharov2018bregman}.
+
+\subsection{CFMMs and replicating market makers: implementing convex market makers}\label{sec:cfmm-rep}
+
+Decentralized exchanges and some on-chain prediction-market designs implement \emph{constant function market makers} (CFMMs), which maintain an invariant of the form $\psi(R)=\mathrm{const}$ over a reserve vector $R$ (or, more generally, keep reserves within a convex feasible set).
+Angeris et al.\ show that many CFMMs admit a clean convex-optimization formulation, with marginal prices given by Lagrange multipliers/duals \cite{angeris2021cfmm}.
+Angeris and Chitra further analyze CFMMs as a broad class of automated market makers, emphasizing oracle and price-discovery properties under arbitrage \cite{angeris2020oracles}.
+
+While CFMMs are not identical to cost-function prediction markets, both families are governed by convex analysis.
+In particular, the \emph{value function} of a CFMM liquidity provider can be viewed as a convex potential whose gradients encode local prices and slippage \cite{angeris2021cfmm,angeris2020oracles}.
+A complementary perspective is provided by \emph{replicating market makers}: Angeris, Evans, and Chitra construct AMMs whose trading sets replicate (in a microstructure sense) a target convex cost function, yielding a principled bridge between cost-function market makers and CFMM-style designs \cite{angeris2021replicating}.
+
+\paragraph{Connection to this paper.}
+Our main results are stated in terms of forecast quality (proper-scoring regret), calibration, and statistical-arbitrage regret, and do \emph{not} assume any particular microstructure.
+However, convex market makers provide a concrete interpretation of these quantities as \emph{expected trading profits}.
+For scoring-rule market makers (equivalently, cost-function market makers in complete markets \cite{abernethy2013convexmm}), a trader who moves the market from report $q$ to $q'$ earns a payoff equal to a \emph{score difference}.
+The next lemma records the standard Bregman-geometry identity: in expectation under the true distribution, the trader's gain is exactly the reduction in Bregman divergence to truth.
+
+\begin{lemma}[Bregman profit identity for scoring-rule trades]\label{lem:bregman-profit}
+Let $\Phi:\Delta_m\to\R$ be a strictly convex potential and let $S_\Phi(q,y)$ be the associated strictly proper scoring rule.
+Suppose the true outcome distribution is $p\in\Delta_m$, the current market report is $q\in\Delta_m$, and a trader updates the report to $q'\in\Delta_m$.
+If the trader's payoff is the score difference $S_\Phi(q',Y)-S_\Phi(q,Y)$, then
+\[
+\E_{Y\sim p}\big[S_\Phi(q',Y)-S_\Phi(q,Y)\big]
+\;=\;
+D_\Phi(p,q)\;-\;D_\Phi(p,q').
+\]
+\end{lemma}
+
+\begin{remark}
+Lemma~\ref{lem:bregman-profit} makes the calibration/arbitrage ``dictionary'' operational in concrete mechanisms:
+whenever a forecaster's posted prices are miscalibrated relative to $\mathrm{Truth}$, there exists (in principle) a trade or remapping that achieves positive expected profit.
+Conversely, bounds on robust calibration (or swap regret) can be interpreted as bounds on the best expected profit attainable by classes of traders interacting with such convex mechanisms, even when the mechanism is implemented as a CFMM or as a replicating market maker.
+Explicit transaction fees can be modeled by adding a (possibly price-dependent) surcharge to the trade cost; Section~\ref{sec:txfees} develops a prior-independent no-arbitrage bound under such fees.
+\end{remark}
+
+\section{Calibration, Robust Calibration, and Calibeating}
+
+\subsection{Robust calibration as test-function orthogonality}
+
+Fix a class $\cH$ of measurable tests $h:\cX\times[0,1]\to[-1,1]$.
+Define the $\cH$-calibration error of a forecaster $q$ as
+\begin{equation}\label{eq:H-cal}
+\mathrm{Cal}_{\cH}(q)\ :=\ \sup_{h\in\cH}\left|\E\big[(Y-q(X))\,h(X,q(X))\big]\right|.
+\end{equation}
+This formulation subsumes group-conditional calibration (take $h(x,q)=\1\{x\in G\}$), binning-based calibration (take $h$ as threshold indicators in $q$), and multivalid variants that allow intersections.
+
+\begin{remark}[Swap regret and robust calibration]
+In adversarial online prediction, several works show that controlling internal/swap regret is essentially equivalent to guaranteeing suitable notions of (threshold) calibration, and that these equivalences extend to group-conditional (multivalid) guarantees; see, e.g., \cite{ramalingam2025conformal,lee2022multicalibeating}.
+We use robust calibration as the analytic bridge from prediction error to economic exploitability (statistical arbitrage), via \cref{thm:cal-noarb}.
+\end{remark}
+
+\subsection{Group calibration and multivalidity}
+
+Let $\cG$ be a class of measurable subgroups $G\subseteq\cX$.
+Define group calibration error
+\begin{equation}\label{eq:group-cal}
+\mathrm{GCal}_{\cG}(q)\ :=\ \sup_{G\in\cG} \left| \E[Y-q(X)\mid X\in G]\right|.
+\end{equation}
+If $\cG$ is large (e.g.\ exponentially many overlapping groups), this corresponds to multivalid/multicalibration-style robustness \cite{hebertjohnson2018multicalibration}.
+
+\paragraph{Finite-sample limits on small-group evaluation.}
+Our group-robustness propositions in later sections are stated at the population level.
+In finite samples, estimating group calibration on rare groups requires correspondingly many labeled examples from those groups.
+The following standard bound clarifies the dependence on the group mass $\Prob(X\in G)$ and matches the appearance of group-frequency terms in online multicalibration and multicalibeating bounds \cite{lee2022multicalibeating,ghuge2025l1multicalibration}.
+
+\begin{proposition}[Sample complexity for estimating group calibration]\label{prop:group-sample}
+Fix a forecaster $q:\cX\to[0,1]$ and a group $G\subseteq\cX$ with $p_G:=\Prob(X\in G)>0$.
+Suppose $(X_i,Y_i)_{i=1}^m$ are i.i.d.\ with $Y_i\mid X_i\sim\mathrm{Bern}(f(X_i))$ and define the empirical group calibration estimate
+\[
+\widehat\mu_G \ :=\ \frac{1}{N_G}\sum_{i=1}^m \1\{X_i\in G\}\,(Y_i-q(X_i)),\qquad N_G:=\sum_{i=1}^m \1\{X_i\in G\}.
+\]
+Then for any $\delta\in(0,1)$, with probability at least $1-\delta$,
+\[
+\left|\widehat\mu_G - \E[Y-q(X)\mid X\in G]\right|
+\ \le\
+\sqrt{\frac{2\ln(2/\delta)}{N_G}}
+\quad\text{whenever } N_G\ge 1.
+\]
+In particular, if $m \ge \frac{4}{p_G\varepsilon^2}\ln\frac{2}{\delta}$ then $\left|\widehat\mu_G - \E[Y-q(X)\mid X\in G]\right|\le \varepsilon$ with probability at least $1-\delta$.
+\end{proposition}
+
+\subsection{Calibeating}
+
+Calibeating is the task of transforming a forecaster into one that is calibrated while \emph{improving} its Brier score.
+Foster--Hart provide deterministic and stochastic online calibeating procedures \cite{fosterhart2022calibeating}.
+Gupta--Ramdas incorporate calibeating into online post-hoc calibration \cite{gupta2023onlineplatt}.
+Our results treat calibeating as a \emph{witness} of exploitable miscalibration: whenever $\mathrm{Cal}_{\cH}(q)$ is large, there exist $\cH$-measurable remappings that strictly improve Brier score and correspond to profitable statistical arbitrage strategies (Section~\ref{sec:arbitrage}).
+
+\section{Statistical Arbitrage and Regret}\label{sec:arbitrage}
+
+We formalize the set of \emph{statistical arbitrage} strategies and connect their attainable profit to robust calibration and scoring regret.
+
+\subsection{A stylized trading protocol}
+
+Consider one binary market. At round $t$:
+\begin{enumerate}[leftmargin=*]
+\item Context $X_t$ is revealed and a forecaster posts price $q_t=q(X_t)\in(0,1)$.
+\item A trader chooses a position $b_t\in[-B,B]$ (number of shares; sign indicates direction).
+\item Outcome $Y_t\in\{0,1\}$ is realized.
+\end{enumerate}
+The trader's \emph{linear} profit is $\Pi_t=b_t(Y_t-q_t)$.
+With proportional transaction cost $c\ge 0$, profit is $\Pi_t=b_t(Y_t-q_t)-c|b_t|$.
+
+\subsection{Price-dependent transaction fees}\label{sec:txfees}\label{sec:fees}
+
+Real prediction markets impose execution frictions through explicit fees (commissions), bid--ask spreads, and (for on-chain venues) network gas costs.
+To keep the theory prior-independent and microstructure-agnostic, we use a minimal \emph{price-dependent fee} model that subsumes several deployed fee schedules.
+
+\begin{definition}[Price-dependent fee model]\label{def:fee-model}
+Fix a nonnegative function $\tau:(0,1)\to\R_{\ge 0}$ (a per-share fee as a function of the executed price) and an optional fixed overhead $g\ge 0$ (per trade).
+Given posted price $q_t$, a trade of size $b_t\in[-B,B]$ yields profit
+\begin{equation}\label{eq:profit-fee}
+\Pi_t^{(\tau,g)} \ :=\ b_t(Y_t-q_t)\;-\;\tau(q_t)\,|b_t|\;-\;g\,\1\{b_t\neq 0\}.
+\end{equation}
+When $\tau\equiv c$ and $g=0$, this reduces to proportional transaction cost $c$.
+\end{definition}
+
+The next Proposition shows that, for the \emph{maximal} class of bounded measurable trading rules $b(x,q)\in[-B,B]$, the best achievable expected profit is a simple thresholding functional of the mispricing magnitude and the fee schedule.
+
+\begin{proposition}[Fee-adjusted bounded statistical arbitrage]\label{thm:fee-arb}
+Let $f(x)=\Prob(Y=1\mid X=x)$ and let $q:\cX\to(0,1)$ be a posted price function.
+Let $\cB_{\mathrm{all}}:=\{b:\cX\times(0,1)\to[-B,B]\ \text{measurable}\}$ be the class of all bounded (possibly randomized) trading rules that depend on $(x,q(x))$ only.
+Then for any horizon $T$,
+\begin{equation}\label{eq:fee-arb-exact}
+\mathrm{ArbReg}^{(\tau,g)}_T(q;\cB_{\mathrm{all}})
+\;=\;
+T\cdot \E\Big[\,B\cdot\big(|f(X)-q(X)|-\tau(q(X))-\tfrac{g}{B}\big)_+\,\Big].
+\end{equation}
+In particular, when $g=0$,
+\[
+\mathrm{ArbReg}^{(\tau,0)}_T(q;\cB_{\mathrm{all}})
+\;=\;
+T\cdot \E\Big[\,B\cdot\big(|f(X)-q(X)|-\tau(q(X))\big)_+\,\Big].
+\]
+\end{proposition}
+
+\begin{remark}[Prior-independence and comparison to calibration]\label{rem:fees-prior}
+The expression \eqref{eq:fee-arb-exact} is \emph{prior-independent} in the sense that it depends only on the joint law of $(X,Y)$ through the conditional mean $f(X)$ and the posted price $q(X)$; it does not assume any particular dynamics for $q_t$ (order books, AMMs, inventory constraints, etc.).
+It also makes clear that fees introduce a \emph{margin}: mispricing must exceed $\tau(q)+g/B$ to support positive expected profit for bounded statistical arbitrage.
+Conservative robust-calibration bounds such as \cref{thm:cal-noarb} can be recovered by lower-bounding $\tau(q)$ by a constant fee floor.
+\end{remark}
+
+\begin{remark}[Example fee schedules: Kalshi and Polymarket]\label{rem:fees-real}
+Kalshi publicly specifies a taker fee charged as a percentage of ``expected earnings.'' In its October 2025 fee schedule, for a trade of $C$ contracts at price $P\in(0,1)$ dollars, the fee is
+$\mathrm{fee}=\lceil 0.07\cdot C\cdot P(1-P)\rceil$ dollars (rounded up to the next cent), and the corresponding maker fee (when applicable) uses coefficient $0.0175$ \cite{kalshiFeeSchedule2025}.
+A minimal model compatible with \cref{def:fee-model} is therefore to set
+\[
+\tau_{\mathrm{Kalshi}}(P)=0.07\,P(1-P)\quad\text{(taker)}\qquad\text{or}\qquad
+\tau_{\mathrm{Kalshi}}^{\mathrm{maker}}(P)=0.0175\,P(1-P)\quad\text{(maker)},
+\]
+and to include a fixed overhead $g\le 0.01$ dollars per trade to capture the cent-rounding (since $\lceil x\rceil = x+\delta$ with $\delta\in[0,0.01)$).%
+\footnote{Kalshi also lists product-specific coefficients (e.g.\ $0.035$ for INX/NASDAQ100 markets).} \cite{kalshiFeeSchedule2025}
+
+Polymarket's documentation states that it does not charge trading fees for shares in its markets \cite{polymarketFees2025}; a minimal model is $\tau\equiv 0$ with an overhead $g$ capturing network gas costs (and, if desired, a spread/slippage term).
+For Polymarket~US, a published schedule charges a taker fee equal to $1$ basis point ($0.01\%$) of the total contract premium, with a minimum fee of $1$ basis point ($0.0001$) per trade \cite{polymarketUSFees2025}.
+This is compatible with $\tau_{\mathrm{PMUS}}(P)\approx 10^{-4}P$ and $g\approx 10^{-4}$ in \cref{def:fee-model}.
+\end{remark}
+
+\subsection{Strategy classes and arbitrage regret}
+
+Let $\Pi$ be a class of predictable trading strategies, where a strategy $\pi\in\Pi$ selects $b_t=\pi_t(X_t,q_t,\text{history})$.
+We study an \emph{in-hindsight} benchmark: the best fixed measurable trader in a rich class. Concretely:
+
+\begin{definition}[Static statistical arbitrage class]\label{def:static-traders}
+Fix a measurable class $\cB$ of bet functions $b:\cX\times[0,1]\to[-B,B]$.
+A \emph{static} strategy is $b_t=b(X_t,q_t)$ for some $b\in\cB$.
+\end{definition}
+
+Define the forecaster's \emph{arbitrage regret} against $\cB$:
+\begin{equation}\label{eq:arb-regret}
+\mathrm{ArbReg}_T(q;\cB)\ :=\ \sup_{b\in\cB}\ \E\left[\sum_{t=1}^T b(X_t,q_t)\,(Y_t-q_t)\right].
+\end{equation}
+We also define the \emph{cost-adjusted} regret $\mathrm{ArbReg}_T^{(c)}$ by replacing the summand with $b(Y-q)-c|b|$.
+
+\subsection{Calibration $\Leftrightarrow$ no statistical arbitrage (in a class)}
+
+The next Proposition gives an exact equivalence between robust calibration \eqref{eq:H-cal} and arbitrage regret for bet-function traders.
+
+\begin{proposition}[Robust calibration controls statistical arbitrage]\label{thm:cal-noarb}
+Fix a test class $\cH$ and define the corresponding bet class
+\[
+\cB_{\cH}\ :=\ \{\, b(x,q)=B\,h(x,q)\ :\ h\in\cH\,\}.
+\]
+Then for any forecaster $q$ and any horizon $T$,
+\[
+\mathrm{ArbReg}_T(q;\cB_{\cH}) \;=\; B\,T\cdot \mathrm{Cal}_{\cH}(q).
+\]
+Moreover, with transaction cost $c\ge 0$,
+\[
+\mathrm{ArbReg}^{(c)}_T(q;\cB_{\cH}) \;\le\; B\,T\cdot \max\{\mathrm{Cal}_{\cH}(q)-c,\,0\}.
+\]
+\end{proposition}
+
+\paragraph{Implication.}
+If a forecaster is $\cH$-robustly calibrated at level $\varepsilon$, then no $\cH$-measurable bounded statistical arbitrage has per-round expected profit exceeding $B\varepsilon$ (or $B(\varepsilon-c)_+$ with costs).
+Conversely, any positive long-run profit for such traders implies nontrivial $\cH$-calibration error.
+Proof is in Appendix~\ref{app:proofs}.
+
+\subsection{Approachability view: the no-arbitrage set and why swap regret matters}\label{sec:approachability}
+
+The equivalence in \cref{thm:cal-noarb} admits a concrete geometric interpretation using \emph{Blackwell approachability} \cite{blackwell1956approachability,foster1999blackwell,perchet2013approachability}.
+This perspective provides a simple reason why \emph{swap/internal} regret---rather than external regret---is the economically relevant efficiency notion: statistical arbitrage corresponds to violations of \emph{many} conditional correlation constraints, i.e.\ a high-dimensional no-arbitrage set.
+
+\paragraph{Finite test families and vector payoffs.}
+Fix a finite subfamily $\cH_M=\{h^1,\dots,h^M\}\subseteq \cH$ and consider the per-round \emph{vector payoff}
+\begin{equation}\label{eq:blackwell-gt}
+g_t \in \R^M,\qquad g_t(i)\ :=\ (Y_t-q_t)\,h^i(X_t,q_t),\quad i\in[M].
+\end{equation}
+The empirical average $\bar g_T:=\frac{1}{T}\sum_{t=1}^T g_t$ satisfies $\E[\bar g_T(i)]\approx \E[(Y-q(X))h^i(X,q(X))]$ under stationarity.
+
+\paragraph{The no-arbitrage target set.}
+In the two-sided setting of this paper (traders may take either sign, corresponding to $h$ and $-h$), ``no statistical arbitrage up to margin $\varepsilon$'' for the family $\cH_M$ is exactly the hypercube
+\begin{equation}\label{eq:blackwell-Ceps}
+C_\varepsilon\ :=\ \{v\in\R^M:\ |v_i|\le \varepsilon\ \ \forall i\in[M]\}.
+\end{equation}
+Indeed, if $\bar g_T(i)$ is positive then the trader that activates on $h^i$ has positive average profit, and if it is negative then the opposite-sign trader profits.
+With proportional per-round costs of the form $c|b_t|$ for $|b_t|\le B$, the non-exploitable region expands to $|v_i|\le c/B$ (cf.\ \cref{thm:cal-noarb} and \cref{sec:txfees}).
+
+Approachability asks whether the forecaster can choose prices $q_t$ so that $\bar g_T$ converges (in distance) to $C_\varepsilon$ against an adversarial environment.
+Classical results show that (randomized) calibration can be proved as an instance of Blackwell approachability \cite{foster1999blackwell,fostervohra1998asymptotic}; \cref{thm:cal-noarb} can be read as a specialized economic corollary.
+
+\subsubsection{Example: group--bin arbitrage as a four-dimensional box}
+
+Let there be two groups $\cG=\{G_0,G_1\}$ and two probability bins $\mathcal{I}=\{[0,1/2),[1/2,1]\}$.
+Define the indicator tests
+\[
+h_{G,I}(x,q)\ :=\ \1\{x\in G\}\,\1\{q\in I\},\qquad (G,I)\in\cG\times\mathcal{I},
+\]
+so $M=4$.
+Then $g_t(G,I)=(Y_t-q_t)\1\{X_t\in G\}\1\{q_t\in I\}$ measures the residual on rounds where the forecaster placed $X_t$ in subgroup $G$ and posted a price in bin $I$.
+If $\bar g_T(G,I)=+0.03$, the trader ``buy $B$ shares whenever $(X\in G,\,q\in I)$'' achieves average profit $0.03B$ per round (conditional profit is larger on activated rounds); if $\bar g_T(G,I)=-0.03$, the shorting trader profits.
+Thus the natural no-arbitrage set is the box \eqref{eq:blackwell-Ceps}.
+
+This example also clarifies why \emph{external} regret is insufficient: external regret controls performance against \emph{unconditional} comparators (e.g.\ the best constant forecast), but does not force each coordinate of $\bar g_T$ to be small.
+Swap regret (or the equivalent internal-regret formulations) is precisely the guarantee that controls such forecast-conditional deviations; see \cref{sec:regrets} for formal statements and decompositions.
+
+\subsubsection{Example: multi-market static arbitrage and how structure shrinks $C$}
+
+Consider two underlying binary events $A,B\in\{0,1\}$ and three related markets:
+an Arrow security on $A$, one on $B$, and one on the conjunction $(A\wedge B)$.
+Let posted prices be $p=(p_A,p_B,p_{AB})\in[0,1]^3$.
+
+\paragraph{Unknown correlation structure.}
+If no additional structure is assumed about the joint law of $(A,B)$, then arbitrage-free prices satisfy the Fr\'echet bounds
+\[
+\max\{0,p_A+p_B-1\}\ \le\ p_{AB}\ \le\ \min\{p_A,p_B\}.
+\]
+Equivalently, defining the \emph{violation vector}
+\begin{equation}\label{eq:frechet-viol}
+g_{\mathrm{unk}}(p)\ :=\
+\begin{pmatrix}
+p_{AB}-p_A\\[2pt]
+p_{AB}-p_B\\[2pt]
+(p_A+p_B-1)-p_{AB}
+\end{pmatrix},
+\end{equation}
+the no-static-arbitrage region is $g_{\mathrm{unk}}(p)\in\R^3_{\le 0}$ (a polytope in price space).
+For example $p=(0.60,0.30,0.25)$ satisfies the bounds and yields $g_{\mathrm{unk}}(p)=(-0.35,-0.05,-0.35)$, so no purely logical static-arbitrage portfolio exists.
+
+\paragraph{Known correlation structure shrinks the target.}
+Now suppose a structural fact is known, e.g.\ $A=B$ almost surely (perfect correlation).
+Then the payoffs coincide ($A=B=AB$), so no-arbitrage requires the equalities
+\[
+p_A=p_B=p_{AB},
+\]
+i.e.\ a one-dimensional diagonal line segment in $[0,1]^3$.
+One can express this again as an orthant constraint by including both directions:
+\[
+g_{\mathrm{known}}(p)=
+\begin{pmatrix}
+p_A-p_B\\
+p_B-p_A\\
+p_A-p_{AB}\\
+p_{AB}-p_A\\
+p_B-p_{AB}\\
+p_{AB}-p_B
+\end{pmatrix}\in \R^6_{\le 0}.
+\]
+The same price vector $p=(0.60,0.30,0.25)$ becomes \emph{highly arbitrageable} because $A$ and $B$ are identical payoffs but differently priced: selling $A$ and buying $B$ yields immediate profit $0.30$ with zero future payoff in all feasible states.
+
+\paragraph{Why this matters for learning and regret.}
+The above illustrates that the ``no-arbitrage set'' $C$ depends on which constraints/traders are admissible.
+With \emph{unknown} correlation structure, the natural trader/test class is typically large (many conditional correlations must be controlled), while additional structural knowledge can either (i) reduce the admissible trader class or (ii) compress the relevant constraints into a smaller representation.
+In Blackwell-style procedures, each constraint corresponds to a coordinate of the vector payoff \eqref{eq:blackwell-gt}, so the ``size'' of $\cH_M$ directly controls the dimension of the approachability problem.
+
+To make this concrete, suppose $|g_t(i)|\le B$ and one seeks $\ell_\infty$-approachability of $C_0$ (i.e.\ all coordinates of $\bar g_T$ are small).
+Standard reductions from $\ell_\infty$-approachability to online learning yield rates scaling like\footnote{The precise constants and norm choices depend on the reduction; our goal here is to highlight the dependence on the number of constraints.}
+\begin{equation}\label{eq:linfty-approach-rate}
+\E\big[d_\infty(\bar g_T, C_0)\big]\ \lesssim\ B\sqrt{\frac{\log M}{T}},
+\end{equation}
+where $d_\infty(v,C)=\inf_{u\in C}\norm{v-u}_\infty$ \cite{perchet2013approachability,dann2023pseudonorm}.
+Thus, when correlations are \emph{unknown} and one must guard against a large family of conditional bets (large $M$), certifying ``no arbitrage'' in all directions becomes statistically and computationally harder.
+Conversely, if structural knowledge yields a smaller effective constraint family (or a lower-dimensional representation of distance to $C$), approach can be faster, sometimes even achieving $1/T$ rates in special geometric settings \cite{perchet2013fastslow}.
+
+
+\subsubsection{Can diffusion vs.\ AR be viewed as ``learning $C$''?}
+
+In our reduction, $C$ is not an arbitrary convex set: it is the set of correlation vectors for which every trader in the chosen class has non-positive attainable profit (up to margins/fees).
+For a large test family $\cH$ (e.g.\ all intersections of groups and forecast bins, or all bounded parity-like tests in a Boolean surrogate), the corresponding $C$ is an intersection of many slabs,
+\[
+C_\varepsilon \;=\; \bigcap_{h\in\cH}\{\mu:\ |\mu(h)|\le \varepsilon\},
+\qquad
+\mu_q(h):=\E[(Y-q(X))h(X,q(X))].
+\]
+
+\paragraph{``Learning $C$'' versus enforcing $C$ (and where ``repair'' fits).}
+Fixing the test/trader class $\cH$ and tolerance $\varepsilon$ fixes the feasible region $C_\varepsilon$; a model does not learn the set itself, but rather learns a forecaster $q$ whose induced moment vector $\mu_q:=(\mu_q(h))_{h\in\cH}$ lies near $C_\varepsilon$ under the data distribution.
+In this lens, a \emph{repair} step---whether implemented as an explicit projection, a gradient-like update targeting an empirically violated test, or an action-remapping rule in a discretized prediction game---takes a current $q$ and modifies it to reduce the largest violations $|\mu_q(h)|$, i.e.\ to push $\mu_q$ back toward $C_\varepsilon$ (cf.\ \cref{sec:disc-game,thm:repair-swap}).
+
+\paragraph{AR vs.\ diffusion under this lens.}
+If a forecaster family imposes a hard representational cutoff (e.g.\ bounded Fourier degree / bounded query depth in our Boolean surrogate), then it can only ever detect and repair violations inside the corresponding restricted test family (say $\cH_{\le k}$), and thus it effectively learns/approaches the coarser region $C_{\le k,\varepsilon}$.
+By contrast, the diffusion/noise-operator abstraction provides \emph{graded} access to constraints: increasing compute (lower noise, more denoising steps) can reveal and correct progressively higher-complexity violations, giving a continuous route from coarse $C_{\le k,\varepsilon}$ toward $C_\varepsilon$.
+
+\paragraph{A multiscale ``constraint ladder''.}
+In the Boolean surrogate of \cref{sec:boolean}, Fourier degree induces a natural filtration of test classes.
+Let $\cH_{\le k}$ denote tests that can be expressed using only degree-$\le k$ Fourier features, and let $C_{\le k,\varepsilon}$ be the corresponding no-arbitrage set.
+Then $C_{\le 0,\varepsilon}\supseteq C_{\le 1,\varepsilon}\supseteq\cdots$ and approaching $C_{\le k,\varepsilon}$ enforces progressively more refined conditional constraints.
+The ideal noise operator $T_\rho$ attenuates degree-$s$ components by $\rho^s$, so high-noise views effectively ``see'' only low-degree constraints.
+This suggests an interpretation of diffusion-style inference (possibly interleaved with explicit repair/projection steps) as a coarse-to-fine approachability procedure: early denoising steps enforce low-degree coherence constraints, and later steps (lower noise) reveal and correct higher-degree constraint violations.
+
+We emphasize that this is a \emph{modeling hypothesis}: it requires that the learned diffusion score/denoiser is accurate enough at each noise level (captured by $\epsilon_{\mathrm{learn}}(T)$ in \cref{ass:learned-diff}) and that the market-relevant constraints are indeed organized by a spectral notion (Fourier degree or an analogous harmonic basis).
+
+A forecaster must therefore (i) \emph{identify} which constraints are violated (which tests have large $\mu_q(h)$) and (ii) \emph{update/repair} its predictions so as to drive those violations toward zero.
+
+Our spectral separations can be interpreted as \emph{representational barriers} to learning and enforcing these constraints.
+For instance, in the parity market of \cref{thm:parity-sep}, $C_0$ contains the single constraint $\mu(\chi_S)=0$.
+Any forecaster family whose effective hypothesis class has negligible correlation with $\chi_S$ (e.g.\ bounded-degree Fourier mass or bounded parity correlation envelope) cannot reliably detect or correct this violation, so the corresponding statistical arbitrage persists.
+By contrast, the diffusion/noise-operator abstraction implies that high-degree constraints are not \emph{invisible} but rather \emph{attenuated} and can be recovered by increasing compute (lowering noise), which yields a continuous route toward $C_\varepsilon$.
+
+\begin{remark}[Critical caveat]
+This ``learning $C$'' interpretation is a unifying \emph{lens}, not a proved equivalence.
+Our propositions establish that (i) certain AR abstractions enforce hard spectral cutoffs (making some constraints permanently unreachable), and (ii) ideal diffusion induces a semigroup attenuation that can approximate any $L^2$ Truth function with enough compute.
+Turning this into a fully general statement about the \emph{rate} at which a trained model can learn the relevant constraint set (especially when $\cH$ is infinite and correlations are estimated from finite data) would require additional complexity assumptions on $\cH$, on the environment, and on the model's training dynamics.
+We therefore treat ``diffusion learns $C$ more effectively'' as a hypothesis suggested by the multiscale operator structure, and we rely on the explicit parity/group counterexamples as formal separations.
+\end{remark}
+
+
+\section{Spectral Complexity and a Boolean Surrogate}
+\label{sec:boolean}
+
+We now specialize to a Boolean surrogate where spectral complexity is explicit and the AR-vs-diffusion separation can be proved end-to-end.
+
+\subsection{Boolean feature representation}
+
+Assume there is a measurable feature map $\varphi:\cX\to\{-1,+1\}^d$ and write $Z=\varphi(X)$.
+We analyze functions $f(z)=\Prob(Y=1\mid Z=z)$ over the Boolean cube with uniform distribution unless stated otherwise.
+
+\subsection{Fourier expansion and tail energy}
+
+For $S\subseteq[d]$, define the Walsh characters $\chi_S(z):=\prod_{i\in S} z_i$.
+Every $f\in L^2(\{-1,1\}^d)$ has a Fourier expansion
+\[
+f(z)=\sum_{S\subseteq[d]}\widehat f(S)\chi_S(z),
+\qquad
+\widehat f(S)=\E[f(Z)\chi_S(Z)].
+\]
+Define the degree-$L$ tail energy:
+\begin{equation}\label{eq:tail-energy}
+W_{>L}(f)\ :=\ \sum_{|S|>L} \widehat f(S)^2.
+\end{equation}
+
+\section{Model Classes and Compute Resources}
+
+We formalize AR+CoT and diffusion as two computable forecaster families.
+This section implements the ``Appendix~B'' tightening items: we pick explicit model classes for which the spectral statements are provable, specify the diffusion abstraction, state explicit arbitrage classes, and include market frictions.
+
+\subsection{Autoregressive reasoning as $L$-query predictors}
+
+We model an AR+CoT system of depth $L$ as an $L$-query algorithm that adaptively accesses at most $L$ coordinates of $z\in\{-1,1\}^d$ and then outputs a probability.
+
+\begin{definition}[$L$-query forecaster and $L$-juntas]\label{def:L-junta}
+A forecaster $q:\{-1,1\}^d\to[0,1]$ is an \emph{$L$-junta} if it depends on at most $L$ coordinates; equivalently, there exists $J\subseteq[d]$ with $|J|\le L$ such that $q(z)=q(z')$ whenever $z_J=z'_J$.
+An \emph{$L$-query forecaster} is any (possibly randomized) algorithm that adaptively queries at most $L$ coordinates of $z$ and then outputs a probability.
+\end{definition}
+
+\begin{proposition}[Query depth implies a spectral cutoff]\label{prop:junta-degree}
+Every deterministic $L$-query forecaster is an $L$-junta and has Fourier support contained in subsets of its relevant coordinates; in particular $\widehat q(S)=0$ for all $|S|>L$.
+The expectation of a randomized $L$-query forecaster is also an $L$-junta.
+\end{proposition}
+
+\begin{remark}
+\cref{prop:junta-degree} is an \emph{explicit} (and provable) computation model realizing the ``AR spectral cutoff'' used throughout.
+It abstracts the idea that each additional serial reasoning step can incorporate at most one additional atomic fact from the input representation.
+\end{remark}
+
+\subsection{A refined AR abstraction: parallel access and soft spectral leakage}\label{sec:refined-ar}
+
+\paragraph{Why the $L$-query/$L$-junta model is pessimistic.}
+A standard transformer forward pass can attend to many input tokens simultaneously, so it is not literally true that one additional chain-of-thought token corresponds to incorporating exactly one additional ``atomic fact.''
+Rather, a more realistic abstraction is that each serial reasoning step can aggregate \emph{many} input features in parallel (via attention), but that the \emph{total} number of distinct features that can be repeatedly accessed and stored in the generated trace grows with the number of steps.
+
+\paragraph{Parallel query model.}
+We capture this non-locality by allowing $r$ parallel queries per reasoning step.
+
+\begin{definition}[$(L,r)$-query forecaster]\label{def:Lr-query}
+Fix $r\in\mathbb{N}$.
+A deterministic \emph{$(L,r)$-query forecaster} is an algorithm that runs for $L$ serial rounds; in each round it may adaptively query up to $r$ coordinates of $z\in\{-1,1\}^d$ (potentially as a function of previous query answers), and after $L$ rounds outputs a probability $q(z)\in[0,1]$.
+A randomized $(L,r)$-query forecaster is a distribution over deterministic ones.
+\end{definition}
+
+\begin{proposition}[Parallel access implies a degree cutoff]\label{prop:parallel-junta}
+Every deterministic $(L,r)$-query forecaster is a $Q$-junta for some $Q\le Lr$, and hence has $\widehat q(S)=0$ for all $|S|>Q$.
+The expectation of a randomized $(L,r)$-query forecaster is also a $Q$-junta.
+\end{proposition}
+
+\begin{remark}[Reading $r$ as transformer non-locality]
+The parameter $r$ can be viewed as a coarse measure of non-locality/parallelism per serial ``thinking'' step (e.g.\ proportional to the number of attention heads and layers that can extract independent features from the context).
+All of our AR lower bounds continue to hold \emph{verbatim} if we replace $L$ by the effective query budget $Q=Lr$ everywhere.
+In particular, the ``complexity cliff'' occurs when the spectral/Boolean complexity exceeds the \emph{effective} serial compute budget.
+\end{remark}
+
+\paragraph{From juntas to Fourier juntas (approximate cutoffs).}
+The deterministic query models above yield \emph{exact} degree cutoffs.
+To better reflect modern attention-based predictors---which may exhibit some ``spectral leakage'' to high degrees---it is convenient to work with an approximate notion.
+
+\begin{definition}[$(k,\tau)$-Fourier junta]\label{def:fourier-junta}
+A forecaster $q:\{-1,1\}^d\to\mathbb{R}$ is a \emph{$(k,\tau)$-Fourier junta} if its high-degree Fourier tail mass is at most $\tau$, i.e.,
+\[
+\sum_{S\subseteq[d]:\,|S|>k}\widehat q(S)^2\ \le\ \tau.
+\]
+Equivalently, $q$ is within $L^2$-distance $\sqrt{\tau}$ of its degree-$k$ Fourier truncation.
+\end{definition}
+
+\begin{proposition}[Tail mass controls parity correlation]\label{prop:tail-parity}
+If $q$ is a $(k,\tau)$-Fourier junta, then for every $S\subseteq[d]$ with $|S|>k$ we have $|\widehat q(S)|\le \sqrt{\tau}$.
+In particular, for the parity-truth market $p(z)=(1+\chi_S(z))/2$ with $|S|>k$,
+\[
+\mathrm{SCE}(q)\ =\ \|q-p\|_2^2\ \ge\ \bigl(\tfrac12-|\widehat q(S)|\bigr)^2\ \ge\ \bigl(\tfrac12-\sqrt{\tau}\bigr)^2.
+\]
+\end{proposition}
+
+\begin{remark}
+\cref{prop:tail-parity} isolates the only Fourier property of the AR hypothesis class used in our parity lower bounds: a small high-degree spectral tail.
+This allows us to treat transformer non-locality as increasing the effective cutoff $k$ and/or increasing the leakage parameter $\tau$, rather than requiring the strict junta assumption.
+\end{remark}
+
+\paragraph{Soft spectral leakage.}
+Even the parallel query model remains idealized: real networks may exhibit nonzero (but small) correlation with high-degree structure.
+To make this explicit, we isolate the single quantity that matters for our parity-based separations: the ability to correlate with degree-$k$ parity, formalized in \cref{cor:parity-envelope}.
+Empirically estimating $\sup_{|S|=k}|\widehat q(S)|$ on synthetic parity probes offers a direct way to test whether a trained AR+CoT forecaster behaves closer to a hard cutoff, a soft decay, or something else entirely.
+
+
+\subsection{Multi-chain self-consistency (width $K$)}
+
+Let $q^{(1)},\dots,q^{(K)}$ be i.i.d.\ randomized $L$-query forecasters (different reasoning traces).
+A standard self-consistency aggregator is the mean:
+\[
+\bar q_K(z):=\frac{1}{K}\sum_{k=1}^K q^{(k)}(z).
+\]
+This reduces variance as $K$ increases but cannot change the spectral support described in \cref{prop:junta-degree}.
+
+\subsection{Diffusion/annealing as a noise operator}
+
+Let $T_\rho$ denote the Boolean noise operator on $L^2(\{-1,1\}^d)$: given $z\in\{-1,1\}^d$, sample $\widetilde Z$ by flipping each coordinate independently so that $\E[\widetilde Z_i\mid z_i]=\rho z_i$, and define
+\[
+(T_\rho f)(z)\ :=\ \E[f(\widetilde Z)\mid Z=z].
+\]
+A standard Fourier identity gives $\widehat{(T_\rho f)}(S)=\rho^{|S|}\widehat f(S)$ \cite{odonnell2014analysis}.
+
+\begin{definition}[Ideal diffusion forecaster]\label{def:ideal-diff}
+Given a Truth function $f$, the ideal diffusion forecaster at noise level $\rho\in[0,1]$ outputs
+\[
+q_{\mathrm{diff},\rho}\ :=\ T_\rho f.
+\]
+\end{definition}
+
+\begin{remark}[Step budget $T$ and discretization]
+To model finite compute, we interpret $T$ as the number of discretization steps in an annealing schedule $\rho_0<\rho_1<\cdots<\rho_T=\rho$.
+In Appendix~\ref{app:diffusion-discretization} we state an explicit per-step approximation model and propagate it to an end-to-end error bound.
+\end{remark}
+
+\begin{assumption}[Learned diffusion approximates the noise operator]\label{ass:learned-diff}
+For each compute budget $T$, the implemented diffusion forecaster outputs a function $\widetilde q_T$ such that
+\[
+\norm{\widetilde q_T - T_{\rho(T)} f}_{L^2} \le \epsilon_{\mathrm{learn}}(T),
+\]
+for some effective correlation level $\rho(T)\uparrow 1$ as $T\to\infty$ and some approximation error $\epsilon_{\mathrm{learn}}(T)\downarrow 0$.
+This assumption abstracts the phenomenon that denoising/score models implement a reverse-time smoothing-to-sharpening map \cite{ho2020ddpm,song2020sde}, and it is the point at which learning quality enters our theory.
+\end{assumption}
+
+\subsubsection{Justifying the noise-operator abstraction}\label{sec:justify-noise-operator}
+
+Assumption~\ref{ass:learned-diff} is the strongest modeling idealization in our theory: it posits that (at a given compute budget) the diffusion forecaster behaves like a \emph{Markov smoothing operator} applied to the Truth function.
+This is a natural abstraction for two reasons.
+
+\paragraph{(i) Population optimality of denoising objectives.}
+Fix a noising kernel $K_\rho(\cdot\mid z)$ on $\{-1,1\}^d$ and a target label $Y\in[0,1]$ with regression function $f(z)=\E[Y\mid Z=z]$.
+Consider the supervised denoising objective at noise level $\rho$,
+\[
+\min_{g:\{-1,1\}^d\to\R}\ \E\bigl[(g(\widetilde Z)-Y)^2\bigr],\qquad \widetilde Z\sim K_\rho(\cdot\mid Z).
+\]
+The unique minimizer is the conditional expectation $g^\star(\tilde z)=\E[Y\mid \widetilde Z=\tilde z]$.
+For the standard $\rho$--bit-flip kernel, this conditional expectation is exactly the Boolean noise operator applied to $f$.
+
+\begin{proposition}[Denoising regression learns the Boolean noise operator]\label{prop:denoise-noise-operator}
+Let $Z\sim\mathrm{Unif}(\{-1,1\}^d)$ and let $Y\in[0,1]$ satisfy $\E[Y\mid Z=z]=f(z)$.
+Let $\widetilde Z$ be obtained from $Z$ by independent $\rho$--correlated bit flips.
+Then the unique minimizer of $\E[(g(\widetilde Z)-Y)^2]$ over measurable $g$ is
+\[
+g^\star\ =\ T_\rho f.
+\]
+Equivalently, if $f(z)=\sum_{S\subseteq[d]}\widehat f(S)\chi_S(z)$, then $g^\star(z)=\sum_S \rho^{|S|}\widehat f(S)\chi_S(z)$.
+\end{proposition}
+
+\paragraph{(ii) Diffusion score models estimate conditional-expectation semigroups.}
+In continuous diffusion models, the forward noising process induces a Markov semigroup $(P_t)_{t\ge 0}$ acting on test functions by
+$P_t h(x)=\E[h(X_t)\mid X_0=x]$.
+Denoising score matching (DSM) and its variants are designed so that, in the population limit, the learned network recovers the \emph{score} of the noise-perturbed marginals $\nabla_x\log p_t(x)$ \cite{hyvarinen2005scorematching,vincent2011smdae,song2019score}.
+With exact scores, reverse-time sampling depends only on these marginal scores \cite{song2020sde,ho2020ddpm}.
+Moreover, for Gaussian perturbations the Bayes-optimal denoiser (posterior mean) is an explicit functional of the score (a form of Tweedie's formula), so ``learning the score'' is equivalent to ``learning the denoising operator'' at each noise level.
+
+\paragraph{Operator-theoretic/harmonic-analysis perspective.}
+For Markov forward processes, $(P_t)$ is literally a family of conditional-expectation operators with a generator $L$ and a spectral decomposition $P_t=e^{tL}$.
+Recent work develops \emph{operator-informed score matching} by exploiting the eigenfunctions/eigenvalues of $L$ to approximate scores and conditional expectations across all noise levels \cite{shen2025oism}.
+This viewpoint is exactly the analytic analogue of the hypercube identity $\widehat{(T_\rho f)}(S)=\rho^{|S|}\widehat f(S)$: in the Gaussian/OU case the eigenfunctions are Hermite polynomials and high-frequency components decay exponentially in time.
+
+\paragraph{Evidence from kernel limits and learning theory.}
+While there is (to our knowledge) no complete ``kernel limit'' theory specific to \emph{diffusion LLMs}, there are increasingly sharp analyses of \emph{score estimation} in kernel and random-feature regimes.
+For example, Han et al.\ show that (with appropriate parameterizations) gradient descent training for score estimation can be modeled by a sequence of kernel regression problems, yielding sample-complexity/generalization bounds for score learning \cite{han2024scoreNTK}.
+Complementary results provide finite-sample generalization bounds for DSM under relaxed geometric assumptions \cite{yakovlev2025dsmgen}, and asymptotically precise learning curves for DSM with random features \cite{george2025dsmRF}.
+Related work explicitly interprets empirical score estimators as noisy operators and studies bias--variance tradeoffs via kernel smoothing \cite{gabriel2025kernelsmoothedscores}.
+Collectively, these results support interpreting trained diffusion/score models as approximating a smoothing operator, with an error term that decreases with more data, width, and compute.
+
+\paragraph{Empirical caveat.}
+Empirically, trained denoisers need not equal the Bayes-optimal posterior mean at every noise level.
+Mechanistic studies of image diffusion find systematic deviations from the optimal denoiser (especially at intermediate noise), consistent with architectural inductive biases \cite{niedoba2024mechanistic}.
+Our theory explicitly tracks such gaps via $\epsilon_{\mathrm{learn}}(T)$ in Assumption~\ref{ass:learned-diff}; all diffusion guarantees degrade gracefully as $\epsilon_{\mathrm{learn}}(T)$ increases.
+
+\subsection{Bridging the model--reality gap: attention bandwidth and communication bottlenecks}\label{sec:model-reality-gap}
+
+The $L$-query/$L$-junta abstraction is intentionally stylized; it trades architectural fidelity for a clean and explicit Fourier cutoff.
+Real transformers have global receptive fields: a single attention layer can aggregate information from the entire context window.
+This does \emph{not} invalidate the separation arguments in this paper, for two complementary reasons.
+
+\paragraph{(i) Finite-precision attention is often effectively sparse.}
+A substantial line of work models finite-precision attention via hard or saturated attention abstractions and relates such models to low-depth circuit/logic classes.
+In particular, unique hard-attention transformers (UHAT) are a widely used theoretical abstraction of self-attention, and recent work refines their relationship to fixed-precision soft attention \cite{jerad2025uha,liCotterell2025fixedprecision}.
+In the UHAT regime, each head routes information from a single selected token, so each decoding step has bounded fan-in.
+Recent unconditional results show that in UHAT, solving high-sensitivity tasks such as \textsc{Parity} requires chain-of-thought traces whose length grows at least linearly with the input length \cite{lowerboundsCoT2025}.
+This supports reading our ``serial budget'' $L$ (and the effective budget $Q=Lr$) as a proxy for the amount of global evidence that can be \emph{integrated} into a single prediction, even when the model can \emph{attend} globally.
+
+\paragraph{(ii) Attention layers are pairwise communication bottlenecks.}
+Even when attention is dense, cross-token computation is mediated by low-dimensional pairwise interactions (query--key inner products and weighted sums).
+Sanford, Hsu, and Telgarsky formalize this as a communication bottleneck and prove sharp width/embedding-dimension lower bounds for natural ``sparse averaging'' and higher-order matching tasks \cite{sanford2023transformerlimits}.
+Their proof techniques (communication complexity and bounded-precision geometry) provide an orthogonal way to justify the existence of truth functions with high-order statistical dependencies that are hard for bounded-width attention-based predictors.
+
+\paragraph{Takeaway.}
+Our AR lower bounds should be interpreted as statements about limited ability to represent or \emph{learn} high-degree Fourier structure under bounded \emph{serial compute} and bounded \emph{interaction bandwidth}, rather than as claims about literal information access.
+Indeed, there exist explicit constant-depth transformer constructions that recognize parity \cite{koza2025parity}; the empirical and theoretical challenge is that learning high-sensitivity/high-degree functions by gradient methods appears brittle, and chain-of-thought can mitigate this by externalizing intermediate state \cite{hahnrofin2024sensitive,kimSuzuki2024cotparity}.
+
+\section{Main Results: Calibration, Compute, and Complexity}
+
+\subsection{AR+CoT: a complexity cliff}
+
+The next Proposition is the formal ``complexity cliff'' lower bound: bounded-depth AR+CoT incurs irreducible SCE equal to the high-degree Fourier energy.
+
+\begin{proposition}[AR SCE lower bound and sampling tax]\label{thm:ar-cliff}
+Let $f:\{-1,1\}^d\to[0,1]$ be the Truth price function under uniform $Z$.
+Let $q$ be any $L$-junta forecaster (equivalently, any deterministic $L$-query AR+CoT forecaster).
+Then
+\[
+\mathrm{SCE}(q;f)\ \ge\ W_{>L}(f).
+\]
+If $\bar q_K$ is the mean of $K$ i.i.d.\ randomized $L$-query forecasters, then
+\[
+\mathrm{SCE}(\bar q_K;f)\ =\ \mathrm{SCE}(\E[q^{(1)}(\cdot)];f)\ +\ \frac{1}{K}\,\E\big[(q^{(1)}(Z)-\E[q^{(1)}(Z)])^2\big]
+\ \ge\ W_{>L}(f).
+\]
+\end{proposition}
+
+\subsection{Diffusion: a spectral fog with continuous recovery}
+
+The next Proposition gives the exact diffusion SCE and shows it can be driven to $0$ as $\rho\uparrow 1$ (with more compute).
+
+\begin{proposition}[Diffusion SCE formula and consistency]\label{thm:diffusion-fog}
+Let $f\in L^2(\{-1,1\}^d)$ and let $q_{\mathrm{diff},\rho}=T_\rho f$.
+Then
+\begin{equation}\label{eq:diff-sce}
+\mathrm{SCE}(q_{\mathrm{diff},\rho};f)
+\;=\;
+\sum_{S\subseteq[d]} \big(1-\rho^{|S|}\big)^2\,\widehat f(S)^2.
+\end{equation}
+Moreover, $\lim_{\rho\uparrow 1}\mathrm{SCE}(q_{\mathrm{diff},\rho};f)=0$.
+\end{proposition}
+
+\begin{corollary}[Learned diffusion inherits the spectral fog bound]\label{cor:learned-fog}
+Under Assumption~\ref{ass:learned-diff}, the implemented diffusion forecaster $\widetilde q_T$ satisfies
+\[
+\mathrm{SCE}(\widetilde q_T;f)
+\ \le\
+2\sum_{S\subseteq[d]} \big(1-\rho(T)^{|S|}\big)^2\,\widehat f(S)^2
+\;+\;
+2\,\epsilon_{\mathrm{learn}}(T)^2.
+\]
+In particular, if $\rho(T)\uparrow 1$ and $\epsilon_{\mathrm{learn}}(T)\downarrow 0$ then $\mathrm{SCE}(\widetilde q_T;f)\to 0$.
+\end{corollary}
+
+\subsection{From SCE to Kelly/log regret}
+
+Proposition~\ref{thm:proper-regret} implies that Brier regret is exactly SCE.
+For log/Kelly, one can convert SCE control into log regret under clipping.
+
+\begin{proposition}[Brier-to-Kelly conversion under clipping]\label{thm:brier-kelly}
+Fix $\eta\in(0,1/2)$ and suppose $f(x),q(x)\in[\eta,1-\eta]$ for all $x$.
+Then there exist constants $0<c_\eta\le C_\eta<\infty$ such that
+\[
+c_\eta\,\mathrm{SCE}(q;f)\ \le\ \cL_{\log}(q)-\cL_{\log}(f)\ \le\ C_\eta\,\mathrm{SCE}(q;f).
+\]
+\end{proposition}
+
+\section{Statistical Arbitrage Separation: Diffusion Can Eliminate, AR Cannot}
+
+We now make the arbitrage implications fully explicit.
+
+\subsection{Arbitrage regret as an $L^1$ distance}
+
+Let $\cB_\infty:=\{b:\{-1,1\}^d\times[0,1]\to[-B,B]\ \text{measurable}\}$.
+This is the richest static class.
+The next Proposition shows that the best expected profit in this class is exactly $B$ times an $L^1$ mispricing measure.
+
+\begin{proposition}[Best bounded statistical arbitrage equals $L^1$ mispricing]\label{thm:arb-L1}
+Let $Z\sim\mathrm{Unif}(\{-1,1\}^d)$ and $Y\mid Z\sim\mathrm{Bern}(f(Z))$.
+Let $q:\{-1,1\}^d\to[0,1]$ be any forecaster.
+Then the per-round optimal expected profit over $\cB_\infty$ is
+\[
+\frac{1}{T}\mathrm{ArbReg}_T(q;\cB_\infty)\ =\ B\,\E\big[|f(Z)-q(Z)|\big].
+\]
+With transaction cost $c\ge 0$, the per-round optimal expected profit is
+\[
+\frac{1}{T}\mathrm{ArbReg}^{(c)}_T(q;\cB_\infty)
+\ =\ B\,\E\big[(|f(Z)-q(Z)|-c)_+\big].
+\]
+\end{proposition}
+
+Combining \cref{thm:arb-L1} with Cauchy--Schwarz gives
+$\E[|f-q|]\le \sqrt{\mathrm{SCE}(q;f)}$, so SCE control implies vanishing arbitrage.
+
+\subsection{A clean counterexample: parity markets}
+
+Fix $S\subseteq[d]$ with $|S|=k$ and $\alpha\in(0,1)$.
+Define a Truth function
+\begin{equation}\label{eq:parity}
+f(z)\ :=\ \frac{1}{2}+\frac{\alpha}{2}\chi_S(z).
+\end{equation}
+
+\begin{proposition}[Parity separation: AR admits linear-time arbitrage, diffusion does not]\label{thm:parity-sep}
+Let $f$ be the parity Truth function \eqref{eq:parity} of degree $k$ on coordinates $S\subseteq[d]$, $|S|=k$.
+\begin{enumerate}[leftmargin=*]
+\item (\textbf{AR lower bound}) Fix any forecaster $q$ such that $\widehat q(S)=0$.
+Then
+\[
+\mathrm{SCE}(q;f)\ \ge\ \frac{\alpha^2}{4}
+\qquad\text{and}\qquad
+\E\big[|f(Z)-q(Z)|\big]\ \ge\ \frac{\alpha}{2}.
+\]
+In particular, if $L<k$ and $q$ is an $L$-junta (e.g.\ the mean of an $L$-query AR+CoT forecaster), then $\widehat q(S)=0$ and the bound holds.
+Consequently, by \cref{thm:arb-L1},
+\[
+\frac{1}{T}\mathrm{ArbReg}_T(q;\cB_\infty)\ =\ B\,\E\big[|f(Z)-q(Z)|\big]\ \ge\ B\,\frac{\alpha}{2},
+\]
+and this remains true for any multi-chain mean $\bar q_K$ of randomized $L$-query forecasters.
+\item (\textbf{Diffusion upper bound}) For the ideal diffusion forecaster $q_{\mathrm{diff},\rho}=T_\rho f$,
+\[
+\mathrm{SCE}(q_{\mathrm{diff},\rho};f)=\frac{\alpha^2}{4}(1-\rho^k)^2,
+\qquad
+\frac{1}{T}\mathrm{ArbReg}_T(q_{\mathrm{diff},\rho};\cB_\infty)=B\,\frac{\alpha}{2}\,(1-\rho^k).
+\]
+In particular, for any $\varepsilon>0$ there exists $\rho$ such that the per-round arbitrage regret is at most $\varepsilon$.
+\end{enumerate}
+\end{proposition}
+
+\begin{corollary}[Parity correlation envelope]\label{cor:parity-envelope}
+Let $f(z)=\tfrac{1}{2}+\tfrac{\alpha}{2}\chi_S(z)$ be a degree-$k$ parity Truth function.
+Then for any forecaster $q$,
+\[
+\mathrm{SCE}(q;f)\ \ge\ \left(\frac{\alpha}{2}-\widehat q(S)\right)^2
+\qquad\text{and}\qquad
+\E\big[|f(Z)-q(Z)|\big]\ \ge\ \left|\frac{\alpha}{2}-\widehat q(S)\right|.
+\]
+Consequently, if a model class $\mathcal{Q}$ satisfies a \emph{parity correlation envelope}
+$\sup_{q\in\mathcal{Q}}\sup_{|S|=k}|\widehat q(S)|\le \epsilon_{\mathcal{Q}}(k)$,
+then every $q\in\mathcal{Q}$ suffers $\mathrm{SCE}(q;f)\ge (\alpha/2-\epsilon_{\mathcal{Q}}(k))^2$ and per-round bounded statistical arbitrage at least $B(\alpha/2-\epsilon_{\mathcal{Q}}(k))$ on some degree-$k$ parity market.
+\end{corollary}
+
+
+
+\section{Group Robustness: Diffusion Separates from AR on Small Subgroups}
+
+This section proves the requested group-robustness separation with explicit counterexamples.
+
+\subsection{Subcube groups and their size}
+
+For $S\subseteq[d]$ and an assignment $a\in\{-1,1\}^S$, define the \emph{subcube} (a subgroup/condition)
+\[
+G_{S,a}\ :=\ \{z\in\{-1,1\}^d:\ z_i=a_i\ \forall i\in S\}.
+\]
+Its probability under uniform $Z$ is $\Prob(Z\in G_{S,a})=2^{-|S|}$.
+Let
+\[
+\cG_k\ :=\ \{G_{S,a}:\ S\subseteq[d],\ |S|=k,\ a\in\{-1,1\}^S\}.
+\]
+These are exponentially many groups of exponentially small size $2^{-k}$.
+
+\subsection{Exact formula for group calibration on subcubes}
+
+The next lemma expresses conditional expectations on subcubes in Fourier terms.
+
+\begin{lemma}[Subcube conditioning picks Fourier coefficients]\label{lem:subcube-fourier}
+Let $h:\{-1,1\}^d\to\R$ have Fourier expansion $h(z)=\sum_T \widehat h(T)\chi_T(z)$.
+Then for any $S\subseteq[d]$ and $a\in\{-1,1\}^S$,
+\[
+\E[h(Z)\mid Z\in G_{S,a}] \;=\; \sum_{T\subseteq S} \widehat h(T)\,\chi_T(a).
+\]
+\end{lemma}
+
+\subsection{Diffusion achieves vanishing worst-group error with compute}
+
+\begin{proposition}[Diffusion group robustness on parity markets]\label{thm:diff-group}
+Let $f$ be the parity Truth function \eqref{eq:parity} with $|S|=k$ and let $\cG_k$ be the class of subcubes of codimension $k$.
+Then for $q_{\mathrm{diff},\rho}=T_\rho f$,
+\[
+\mathrm{GCal}_{\cG_k}(q_{\mathrm{diff},\rho})\ =\ \sup_{G\in\cG_k}\left|\E[f(Z)-q_{\mathrm{diff},\rho}(Z)\mid Z\in G]\right|\ =\ \frac{\alpha}{2}\,(1-\rho^k).
+\]
+In particular, for any $\varepsilon>0$, choosing $\rho \ge (1-2\varepsilon/\alpha)^{1/k}$ ensures $\mathrm{GCal}_{\cG_k}(q_{\mathrm{diff},\rho})\le \varepsilon$.
+\end{proposition}
+
+\subsection{AR fails on exponentially small groups: explicit counterexamples}
+
+\begin{proposition}[AR worst-group lower bound on small subcubes]\label{thm:ar-group-lb}
+Fix any depth budget $L$ and any $\alpha\in(0,1)$.
+There exist a Truth function $f$ and a group class $\cG_{L+1}$ (subcubes of size $2^{-(L+1)}$) such that for every $L$-junta forecaster $q$,
+\[
+\mathrm{GCal}_{\cG_{L+1}}(q)\ \ge\ \frac{\alpha}{2},
+\qquad
+\frac{1}{T}\mathrm{ArbReg}_T(q;\cB_\infty)\ \ge\ B\frac{\alpha}{2}.
+\]
+In fact, one may take $f$ to be a parity market on $k=L+1$ bits and $\cG_{L+1}$ to be the corresponding subcube groups on those bits.
+\end{proposition}
+
+\paragraph{Reading.}
+\cref{thm:ar-group-lb} is a \emph{counterexample}: AR+CoT with bounded depth $L$ cannot guarantee good calibration (or calibeating resistance) on all groups of size $2^{-(L+1)}$.
+In contrast, \cref{thm:diff-group} shows diffusion can achieve arbitrarily good calibration on those same groups by increasing compute (taking $\rho\uparrow 1$).
+
+\section{Hysteresis, Repair, and Swap-Regret: Formal Connections}\label{sec:hysteresis}
+
+Forward vs.\ backward iteration bounds can differ sharply in outcome-based training and verification loops, including RLVR-style reward shaping and backtracking-based decoding \cite{chitra2025reasoning,rohatgi2025taming}.
+In prediction markets, a closely related asymmetry appears between \emph{forward} price posting and \emph{backward} correction: systematic miscalibration can be exploited by traders for profit (statistical arbitrage), and eliminating such profit opportunities typically requires updating prices using \emph{feedback} from realized outcomes.
+This section formalizes one concrete version of the intuition ``\emph{arbitrage = hysteresis}'' using regret notions.
+
+\paragraph{Scope of what we claim.}
+A sweeping equivalence between ``forward-only'' inference/training procedures and external-regret guarantees (and between ``backward/repair'' procedures and swap-regret guarantees) is \emph{not} established in the literature to our knowledge.
+What we \emph{can} prove is the following chain of statements in an explicit sequential prediction game:
+\begin{enumerate}[leftmargin=*]
+\item external regret is insufficient to guarantee robust (multi-group) calibration;
+\item swap regret \emph{is} sufficient (and in several settings essentially necessary) for robust calibration and group-conditional guarantees \cite{ramalingam2025conformal,perchet2013approachability};
+\item swap-regret minimization admits algorithms that can be written as ``forward play + backward repair'' via action-remapping updates (e.g.\ internal-regret dynamics) \cite{blum2007externalinternal}.
+\end{enumerate}
+Together with \cref{thm:cal-noarb} (robust calibration $\Leftrightarrow$ no statistical arbitrage in a class), this provides a formal sense in which eliminating arbitrage requires controlling a swap-regret-like quantity, and why ``repair'' mechanisms matter.
+
+\subsection{A discretized prediction game}\label{sec:disc-game}
+
+For simplicity we focus on a single binary market.
+Fix a grid of actions (probability bins)
+\[
+\cA_m \ :=\ \left\{0,\frac{1}{m},\frac{2}{m},\ldots,1\right\},
+\]
+and let $\ell(a,y)=(a-y)^2$ be Brier loss.
+At each round $t$, a forecaster outputs an action $A_t\in\cA_m$ (possibly as a function of the context $X_t$), then the outcome $Y_t\in\{0,1\}$ is revealed.
+
+\subsection{External vs.\ swap regret}\label{sec:regrets}
+
+Define external regret against constant actions
+\[
+\mathrm{Reg}^{\mathrm{ext}}_T \ :=\ \sum_{t=1}^T \ell(A_t,Y_t)\;-\;\min_{a\in\cA_m}\sum_{t=1}^T \ell(a,Y_t).
+\]
+Define swap regret against all remappings $\sigma:\cA_m\to\cA_m$:
+\[
+\mathrm{Reg}^{\mathrm{swap}}_T \ :=\ \sup_{\sigma:\cA_m\to\cA_m}\ \sum_{t=1}^T \ell(A_t,Y_t)\;-\;\ell(\sigma(A_t),Y_t).
+\]
+To reason about group-conditional guarantees, fix a group family $\cG$ and define \emph{group-restricted swap regret}
+\[
+\mathrm{Reg}^{\mathrm{swap}}_T(G)
+\ :=\ \sup_{\sigma:\cA_m\to\cA_m}\ \sum_{t: X_t\in G}\ \ell(A_t,Y_t)\;-\;\ell(\sigma(A_t),Y_t),
+\qquad
+\mathrm{Reg}^{\mathrm{swap}}_T(\cG)\ :=\ \sup_{G\in\cG}\mathrm{Reg}^{\mathrm{swap}}_T(G).
+\]
+This is the natural ``sleeping'' analogue: the adversary is evaluated only on the subsequence where $G$ is active.
+
+\paragraph{Swap--external gap and ``maximal forecast-conditional arbitrage''.}
+External regret compares the forecaster only to a \emph{single} constant prediction; it controls what an \emph{unconditional} trader can exploit.
+Swap regret compares the forecaster to the best \emph{remapping} of its own outputs; it controls what a trader can exploit \emph{conditional on the posted price bin} (and is the online-learning analogue of calibeating/multicalibration).
+The next proposition makes this distinction explicit for Brier loss by decomposing swap regret into an external component plus a heterogeneity term.
+
+\begin{proposition}[Swap/external decomposition for Brier loss]\label{prop:swap-ext-decomp}
+For each $a\in\cA_m$, let $N_a:=|\{t\le T: A_t=a\}|$ and (when $N_a\ge 1$) let
+\[
+\overline{Y}_a\ :=\ \frac{1}{N_a}\sum_{t:A_t=a} Y_t,
+\qquad
+\overline{Y}\ :=\ \frac{1}{T}\sum_{t=1}^T Y_t.
+\]
+Then the following hold:
+\begin{enumerate}[leftmargin=*]
+\item Let $\mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]}$ denote swap regret when the comparator is allowed to remap each $a\in\cA_m$ to an arbitrary value in $[0,1]$ (rather than to $\cA_m$).
+Then
+\[
+\mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]}
+\;=\;
+\sum_{a\in\cA_m:\,N_a\ge 1} N_a\,(a-\overline{Y}_a)^2.
+\]
+\item Let $\mathrm{Reg}^{\mathrm{ext}}_{T,[0,1]}$ denote external regret when the comparator is allowed to choose an arbitrary constant in $[0,1]$.
+Then the best constant is $\overline{Y}$ and
+\[
+\mathrm{Reg}^{\mathrm{ext}}_{T,[0,1]}
+\;=\;
+\sum_{a:\,N_a\ge 1} N_a\,(a-\overline{Y}_a)^2
+\;-\;
+\sum_{a:\,N_a\ge 1} N_a\,(\overline{Y}_a-\overline{Y})^2.
+\]
+Consequently,
+\[
+\mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]}-\mathrm{Reg}^{\mathrm{ext}}_{T,[0,1]}
+\;=\;
+\sum_{a:\,N_a\ge 1} N_a\,(\overline{Y}_a-\overline{Y})^2.
+\]
+\item For the grid-based regrets in this section, $\mathrm{Reg}^{\mathrm{swap}}_T$ and $\mathrm{Reg}^{\mathrm{ext}}_T$, the only difference is discretization.
+In particular,
+\[
+0\ \le\ \mathrm{Reg}^{\mathrm{swap}}_T \ \le\ \mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]},
+\qquad
+0\ \le\ \mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]}-\mathrm{Reg}^{\mathrm{swap}}_T\ \le\ \frac{T}{4m^2}.
+\]
+An analogous $\frac{T}{4m^2}$ discretization bound holds for $\mathrm{Reg}^{\mathrm{ext}}_T$ versus $\mathrm{Reg}^{\mathrm{ext}}_{T,[0,1]}$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proposition}[Swap regret is not controlled by external regret]\label{prop:swap-not-ext}
+There is no function $g$ such that $\mathrm{Reg}^{\mathrm{swap}}_T \le g(\mathrm{Reg}^{\mathrm{ext}}_T)$ for all sequences.
+In fact, for any even $m\ge 4$ there exists a sequence with $\mathrm{Reg}^{\mathrm{ext}}_T \le 0$ but $\mathrm{Reg}^{\mathrm{swap}}_T = \Omega(T)$.
+\end{proposition}
+
+\begin{remark}[Reducing forecast-conditional arbitrage]
+Proposition~\ref{prop:swap-ext-decomp} shows that the swap--external gap decomposes into a \emph{heterogeneity term} (variation of conditional means across bins) plus discretization.
+This heterogeneity is \emph{not} itself an inefficiency: it can be large even when the forecaster is informative and calibrated.
+The \emph{exploitability} comes from the within-bin miscalibration term $\sum_a N_a(a-\overline{Y}_a)^2$, which is exactly the continuous-comparator swap regret.
+Thus, to reduce ``maximal forecast-conditional arbitrage'' one must directly control swap/internal regret (e.g.\ via repair-map dynamics or calibeating), or introduce frictions such as transaction fees and tick size (Sections~\ref{sec:txfees} and~\ref{sec:intrinsic-vs-post}).
+\end{remark}
+
+\subsection{External regret is insufficient for multi-group calibration}
+
+The next Proposition formalizes the first bullet: external regret does not control worst-group calibration, even in a benign stochastic setting with two groups.
+
+\begin{proposition}[External regret does not imply group calibration]\label{thm:ext-not-gcal}
+Let $\cX=\{0,1\}$ and let $G_0=\{0\}$, $G_1=\{1\}$.
+Consider an i.i.d.\ environment with $\Prob(X=0)=\Prob(X=1)=1/2$ and
+\[
+\Prob(Y=1\mid X=0)=0,\qquad \Prob(Y=1\mid X=1)=1.
+\]
+Let the forecaster always predict $A_t\equiv 1/2$.
+Then $\mathrm{Reg}^{\mathrm{ext}}_T=0$ for every $T$, but $\mathrm{GCal}_{\{G_0,G_1\}}(A)=1/2$ (constant worst-group miscalibration).
+\end{proposition}
+
+\subsection{Swap regret implies multivalid calibration}
+
+The second bullet is that swap-regret control \emph{is} sufficient for robust calibration.
+We state a clean version for Brier loss on a discretized grid.
+
+\begin{proposition}[Group-restricted swap regret implies group calibration]\label{thm:swap-implies-gcal}
+Fix $m\ge 1$ and a group $G$.
+Let $N_{G,a}:=\big|\{t\le T:\ X_t\in G,\ A_t=a\}\big|$ be the number of times action $a\in\cA_m$ is played on group rounds.
+Define the empirical group-bin calibration residual
+\[
+\widehat\mu_{G,a}\ :=\ \begin{cases}
+\frac{1}{N_{G,a}}\sum_{t:\,X_t\in G,\,A_t=a} (Y_t-a) & \text{if } N_{G,a}>0,\\
+0 & \text{if } N_{G,a}=0.
+\end{cases}
+\]
+Then for every $a\in\cA_m$,
+\[
+|\widehat\mu_{G,a}|\ \le\ \sqrt{\frac{\mathrm{Reg}^{\mathrm{swap}}_T(G)}{N_{G,a}}}\ +\ \frac{1}{m}.
+\]
+In particular, if $\mathrm{Reg}^{\mathrm{swap}}_T(\cG)\le \varepsilon T$ and every active group-bin cell satisfies $N_{G,a}\ge \gamma T$,
+then $\sup_{G\in\cG,a\in\cA_m}|\widehat\mu_{G,a}|\ \le\ \sqrt{\varepsilon/\gamma}+1/m$.
+\end{proposition}
+
+\begin{remark}
+Results in \cite{ramalingam2025conformal} establish a tight connection between swap regret and threshold-calibrated (group-conditional) coverage guarantees in adversarial settings, and show how to obtain group-conditional guarantees for arbitrary grouping functions using FPL-family no-regret algorithms.
+\cref{thm:swap-implies-gcal} is a self-contained ``Brier-grid'' analogue tailored to our market setting.
+\end{remark}
+
+\subsection{Repair mechanisms as swap-regret minimization}
+
+Finally, we formalize the third bullet in an explicit way: swap regret admits algorithms whose state is a \emph{backward-looking repair map}.
+Concretely, a swap $\sigma$ is exactly a ``repair'' rule that says: \emph{whenever you output action $a$, you should have output $\sigma(a)$ instead}.
+Minimizing swap regret means learning, from feedback, that no such systematic repairs remain beneficial.
+
+\begin{proposition}[Swap regret via backward repair maps]\label{thm:repair-swap}
+For any finite action set $\cA_m$, there exists an online algorithm that guarantees
+\[
+\mathrm{Reg}^{\mathrm{swap}}_T\ =\ O\!\left(|\cA_m|\sqrt{T\log|\cA_m|}\right).
+\]
+Moreover, the algorithm can be implemented by maintaining and updating a row-stochastic matrix $R_t\in\Delta(\cA_m)^{\cA_m}$ whose $a$-th row specifies a distribution over ``repairs'' $a\mapsto a'$, updated using past losses (a backward-looking step).
+\end{proposition}
+
+\paragraph{Interpretation for hysteresis.}
+Propositions~\ref{thm:ext-not-gcal}--\ref{thm:repair-swap} provide a clean lens for hysteresis phenomena observed in RLVR/backtracking systems:
+\emph{forward-only} updates that only compete with a fixed baseline (external regret) do not rule out profitable conditional deviations (repairs), while \emph{repair} mechanisms that learn conditional deviations (swap regret) do.
+In our market interpretation, such conditional deviations correspond to profitable statistical arbitrage strategies (\cref{thm:cal-noarb}), so ``arbitrage = hysteresis'' can be read as: \emph{persistent arbitrage profit witnesses the presence of beneficial repair maps (swap regret), and eliminating it requires a backward correction mechanism that drives swap regret to zero.}
+
+\section{Experimental Protocol: Stress Tests for Complexity, Group Robustness, and Blackwell Approachability}\label{sec:experiments}
+
+This section describes experimental methodologies designed to (i) test the compute--complexity scaling predictions of Sections~\ref{sec:boolean}--\ref{sec:regrets}, (ii) quantify \emph{group robustness} (worst-group calibration and calibeating gaps), and (iii) directly measure the \emph{Blackwell approachability dynamics} of the no-arbitrage set induced by a constraint family (Section~\ref{sec:approachability}).
+We emphasize two complementary axes:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Constraint complexity:} settings with a small, known constraint family versus settings where the relevant constraints are unknown and must be learned/covered by a large test family.
+\item \textbf{Repair/backward updates:} forward-only forecasting versus explicitly allowing \emph{backward fixing} (online repair) using realized outcomes at resolution times.
+\end{enumerate}
+All experiments can be run in both a \emph{fee-free} and a \emph{fee-aware} regime using the transaction-cost margin model of Section~\ref{sec:txfees}.
+
+\subsection{Models and compute knobs}
+
+\paragraph{AR baselines.}
+Fine-tune an autoregressive transformer forecaster that outputs probabilities (or logits) for a fixed set of markets.
+We vary two inference-time compute knobs:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Depth:} chain-of-thought length $L$ (controlled by limiting rationale length / maximum generated tokens).
+\item \textbf{Width:} self-consistency samples $K$ (sample $K$ independent rationales and aggregate predictions by mean/median).
+\end{enumerate}
+We recommend including (i) a strong instruction-tuned base model (e.g.\ Qwen3) and (ii) an RLVR-style outcome-only training variant following \cite{turtel2025outcomeRL}.
+
+\paragraph{Diffusion forecaster.}
+Fine-tune a diffusion/denoising model to generate a probability (or logit) via iterative refinement.
+Concretely:
+\begin{enumerate}[leftmargin=*]
+\item Represent the target as logit $u=\log(p/(1-p))$ (or an $n$-vector of logits).
+\item Define a forward noising process $u_t = u + \sigma_t \xi$ with $\xi\sim\mathcal N(0,I)$ and train a denoiser to estimate $\E[u\mid u_t,x]$ (or the score $\nabla\log p(u_t\mid x)$), conditioned on the same string $x$ as the AR model.
+\item At test time, run $T$ denoising steps (or an SDE/ODE solver) ending at a small noise level $\sigma_T$ (the analogue of $\rho\uparrow 1$ in the Boolean abstraction).
+\end{enumerate}
+We vary compute by changing $T$ (step budget) and the terminal noise level.
+
+\subsection{Blackwell approachability diagnostics and evaluation protocol}\label{sec:exp-approachability}
+
+We evaluate models not only by proper-scoring regret and calibration, but also by \emph{how quickly} their induced payoff vectors approach a no-arbitrage set.
+
+\paragraph{Finite constraint families and payoff vectors.}
+Fix a finite constraint family $\cH_M=\{h^1,\dots,h^M\}$ as in Section~\ref{sec:approachability}, and define the vector payoff
+\[
+g_t(i)\ :=\ (Y_t-q_t)\,h^i(X_t,q_t),\qquad i\in[M],
+\]
+for calibration/arbitrage traders.
+The corresponding ``two-sided no-arbitrage'' target is the box
+\[
+C_\varepsilon \ :=\ [-\varepsilon,\varepsilon]^M,
+\]
+where $\varepsilon$ is set either to $0$ (fee-free) or to the fee margin implied by Section~\ref{sec:txfees} (fee-aware).
+We report the approachability error
+\[
+\mathrm{AppErr}_T\ :=\ d_\infty(\bar g_T,C_\varepsilon),\qquad \bar g_T := \frac{1}{T}\sum_{t=1}^T g_t,
+\]
+and plot $\mathrm{AppErr}_T$ as a function of $T$ and inference compute.
+
+\paragraph{Static no-arbitrage constraints across markets.}
+For synthetic and real settings with multiple related markets, we also evaluate approachability to a \emph{static-arbitrage} no-arbitrage set.
+Let $p_t\in[0,1]^m$ denote the vector of posted prices for a bundle of related contracts at time $t$ (e.g.\ $(p_A,p_B,p_{AB})$).
+Define a violation map $v:\,[0,1]^m\to \R^M$ such that $v(p)\le 0$ encodes no-arbitrage (e.g.\ Fr\'echet inequalities, implication chains, mutual-exclusion simplices).
+Then we set $g_t := v(p_t)$ and target $C:=\R^M_{\le 0}$ (or a buffered orthant under fees), and report
+\[
+\mathrm{AppErr}^{\mathrm{stat}}_T\ :=\ d\!\left(\bar v_T,\;C\right),\qquad \bar v_T := \frac{1}{T}\sum_{t=1}^T v(p_t),
+\]
+where $d$ is the distance to the orthant (e.g.\ $\norm{(\bar v_T)_+}_\infty$).
+
+\paragraph{Time-varying constraints and market resolution.}
+To make ``market resolution $\Rightarrow$ fewer constraints'' explicit, we define a time-varying active constraint family $\cH_{M(t)}$ (or violation map $v_t$) that includes only markets that are \emph{open} at time $t$ and only relations among open markets.
+When a market resolves, we remove the corresponding coordinates and any constraints that involve that market.
+We then report a \emph{piecewise} approachability curve for the active system:
+\[
+\mathrm{AppErr}^{\mathrm{active}}_t \ :=\ d\!\left(\frac{1}{t}\sum_{s=1}^t g_s^{\mathrm{active}},\;C_t\right),
+\]
+and we visualize changes in slope around resolution times.
+
+\paragraph{Backward fixing as online repair.}
+To isolate the role of ``backward/fixing,'' we compare (i) \textbf{forward-only} predictors that output $q_t$ and never revise, versus (ii) \textbf{repair} procedures that maintain a time-varying remapping $\sigma_t$ (a swap map / calibration layer) and output $\tilde q_t=\sigma_t(q_t,X_t)$.
+We update $\sigma_t$ only when outcomes for a batch of markets become known (resolution events), which mirrors the real market setting where feedback arrives at resolution.
+The repair update is implemented by standard swap-regret / approachability algorithms (Section~\ref{sec:regrets}), and its effect is measured by comparing $\mathrm{AppErr}_T$ and downstream trading profit with and without repair.
+
+\subsection{Intrinsic robustness vs.\ post-processing}\label{sec:intrinsic-vs-post}
+
+A recurring concern in the calibration literature is that sufficiently powerful post-processing can ``fix'' many predictors, potentially obscuring differences between base model families \cite{hebertjohnson2018multicalibration,lee2022multicalibeating,ramalingam2025conformal}.
+To isolate the contribution of the \emph{base} model family (AR+CoT vs.\ diffusion) from generic post-processing, we propose a controlled experiment with four variants:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{AR-intrinsic:} raw AR+CoT(+self-consistency) forecasts.
+\item \textbf{Diffusion-intrinsic:} raw diffusion forecasts at matched compute.
+\item \textbf{AR+post:} apply the \emph{same} multi-group post-processor to AR forecasts.
+\item \textbf{Diffusion+post:} apply the \emph{same} post-processor to diffusion forecasts.
+\end{enumerate}
+
+\paragraph{Post-processing choices.}
+Two natural options are:
+(i) an online multi-calibeating wrapper in the style of \cite{lee2022multicalibeating}, which treats each group/scoring objective as a coordinate in a vector-valued game; and
+(ii) an online multivalid calibration wrapper following swap-regret-based reductions such as \cite{ramalingam2025conformal}.
+In either case, post-processing must be evaluated on held-out data and must be restricted to the same group family to avoid overfitting.
+
+\subsection{Synthetic data: sampled price trajectories with known vs.\ unknown correlation structure}\label{sec:exp-synth}
+
+We propose two synthetic families that generate \emph{sampled price trajectories} and ground-truth outcomes, enabling controlled approachability experiments.
+
+\paragraph{Family S1: three-market Fr\'echet system with optional structure.}
+Consider two latent binary events $(A,B)\in\{0,1\}^2$ and three contracts $(S_A,S_B,S_{AB})$ paying $A$, $B$, and $A\wedge B$.
+We generate a time series of ``true'' marginal probabilities $(p_{A,t},p_{B,t},p_{AB,t})$ by:
+\begin{enumerate}[leftmargin=*]
+\item Sampling latent logits $(u_t,v_t)$ from a correlated Gaussian AR(1) process (or OU process), and setting $p_{A,t}=\sigma(u_t)$, $p_{B,t}=\sigma(v_t)$.
+\item Sampling $p_{AB,t}$ either (i) from the Fr\'echet interval $[\max(0,p_{A,t}+p_{B,t}-1),\min(p_{A,t},p_{B,t})]$ using a parametric family that controls dependence, or (ii) from a \emph{structured} regime such as $A=B$ (perfect correlation) or conditional independence $p_{AB,t}=p_{A,t}p_{B,t}$.
+\item Producing a synthetic ``market price path'' by adding microstructure noise and mean reversion:
+$p^{\mathrm{mkt}}_{t}= \mathrm{clip}(p_t+\eta_t)$ with $\eta_t$ temporally correlated.
+\end{enumerate}
+The input string $x_t$ provides a noisy summary of $(u_t,v_t)$ and metadata (time-to-resolution, volatility regime, and optional ``known structure'' tags).
+At a fixed resolution time $t^\star$, we sample $(A,B)$ from a joint distribution consistent with $(p_{A,t^\star},p_{B,t^\star},p_{AB,t^\star})$ and reveal outcomes.
+
+\paragraph{Known vs.\ unknown constraints (few vs.\ many).}
+We vary constraint complexity in two ways:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Few constraints (structure known):} provide a small constraint family (e.g.\ implication/equality constraints implied by $A=B$, or a sparse dependence graph).
+\item \textbf{Many constraints (structure unknown):} evaluate the same trajectories against a large, generic constraint family, e.g.\ all Fr\'echet constraints for all pairs in a larger bundle of markets, plus group--bin calibration traders over contextual groups.
+\end{enumerate}
+We then measure how $\mathrm{AppErr}_T$ scales with compute for AR and diffusion, and how quickly repair reduces $\mathrm{AppErr}_T$ after resolution feedback.
+
+\paragraph{Family S2: scalable bundles with sparse logical graphs.}
+To obtain a knob that increases constraint complexity, generate $m$ events $(E_1,\dots,E_m)$ with a sparse implication graph (e.g.\ a chain $E_1\Rightarrow E_2\Rightarrow\cdots\Rightarrow E_m$ or a tree).
+Provide markets for each $E_i$ and (optionally) for selected conjunctions.
+\begin{enumerate}[leftmargin=*]
+\item In the \emph{known-graph} setting, the no-arbitrage constraint family contains only the $O(m)$ edge constraints $p_i\le p_j$ for each implication edge.
+\item In the \emph{unknown-graph} setting, the constraint family contains a much larger dictionary (e.g.\ all pairwise dominance constraints and conjunction Fr\'echet constraints), mimicking a setting where correlations are unknown and the approachability procedure must cover many potential arbitrage directions.
+\end{enumerate}
+
+\paragraph{Compute-matched fine-tuning and approachability curves.}
+For each synthetic family, fine-tune AR+CoT and diffusion predictors to output the full price vector given $x_t$.
+Train with proper scoring (Brier and log/Kelly) against the realized outcomes, optionally augmented with a penalty on constraint violations.
+Evaluation reports:
+\begin{enumerate}[leftmargin=*]
+\item Proper scoring: Brier regret (SCE) and log/Kelly regret.
+\item Calibration: ECE, SCE, and worst-group calibration for rare groups.
+\item \textbf{Approachability:} $\mathrm{AppErr}_T$ and $\mathrm{AppErr}^{\mathrm{stat}}_T$ as a function of compute (varying $(L,K)$ or $T$) and as a function of time $T$.
+\end{enumerate}
+To highlight ``market resolution $\Rightarrow$ fewer constraints,'' we simulate staggered resolution times for subsets of markets; we then remove the resolved markets and their constraints from the active system and report the resulting change in approachability rates.
+
+\paragraph{Backward/fixing ablations.}
+For each base model, compare:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Forward-only:} raw forecasts.
+\item \textbf{Repair-at-resolution:} apply an online swap-regret/approachability repair map updated only at resolution times (batch feedback).
+\item \textbf{Always-on repair:} (oracle) update after every observation to upper-bound what is achievable with dense feedback.
+\end{enumerate}
+This directly tests whether ``backward fixing'' is essential to eliminate the residual arbitrage directions highlighted by swap-regret-based theory.
+
+\subsection{Synthetic benchmarks aligned with spectral theory}
+
+\paragraph{Parity markets.}
+Choose $d$ and a hidden subset $S$ of size $k$.
+Encode $z\in\{-1,1\}^d$ as a string $x(z)$ listing bits in natural language (to remove an information bottleneck).
+Generate $Y\sim\mathrm{Bern}(f(z))$ with $f$ parity as in \eqref{eq:parity}.
+Vary $(k,L,K)$ for AR and $(k,\rho,T)$ for diffusion.
+Metrics:
+\begin{enumerate}[leftmargin=*]
+\item Brier regret (SCE) and log/Kelly regret;
+\item overall calibration (ECE) and SCE;
+\item best-trader profit using the benchmark in \cref{thm:arb-L1};
+\item approachability error $\mathrm{AppErr}_T$ for group--bin constraints on the parity bits.
+\end{enumerate}
+Theory predicts an AR ``cliff'' at $k>L$, and a diffusion ``fog'' curve improving smoothly with compute.
+
+\paragraph{Small-group stress tests.}
+Evaluate $\mathrm{GCal}_{\cG_k}$ over subcube groups $G_{S,a}$ as in Section~\ref{sec:boolean}:
+\begin{enumerate}[leftmargin=*]
+\item Fix a parity Truth function on $k$ bits.
+\item Evaluate worst-group calibration error over $\cG_k$ and approachability of the corresponding group--bin constraint box.
+\end{enumerate}
+Theory predicts diffusion can drive worst-group error below $\varepsilon$ by increasing compute, whereas bounded-depth AR exhibits a constant lower bound independent of $K$ when $k>L$ (\cref{thm:diff-group,thm:ar-group-lb}).
+
+\subsection{Real data: Polymarket approachability and empirical constraint discovery}\label{sec:exp-real}
+
+We adapt the same approachability diagnostics to real prediction-market data.
+
+\paragraph{Data and time discretization.}
+Collect historical Polymarket market price trajectories (mid-price or last trade) and final resolutions, and align them on a fixed time grid (e.g.\ hourly or daily snapshots).
+Each record provides $(x_t,q_t,Y)$ where $x_t$ is the textual/contextual information available at time $t$ (headline stream, market description, time-to-resolution, volume/liquidity proxies), $q_t$ is the posted market price, and $Y$ is the eventual outcome.
+
+\paragraph{Estimating constraint families and an empirical Blackwell set.}
+We consider two complementary routes:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Template constraints:} build $\cH_M$ from group--bin tests (topic tags, time-to-resolution quantiles, price bins, liquidity bins) and, when available, multi-market templates (mutual exclusivity sets, complements, implication-like relations extracted from market metadata/text).
+The induced set $C_\varepsilon$ is explicit.
+\item \textbf{Adversarial constraint discovery:} parameterize a trader family $h_\theta(x,q)$ (e.g.\ a small MLP on embeddings) and train $\theta$ to maximize empirical profit $\sum_t (Y-q_t)h_\theta(x_t,q_t)$ under norm constraints.
+This yields an empirical estimate of the support function of the no-arbitrage set for the chosen trader class and provides a data-driven ``most violated constraint'' direction.
+\end{enumerate}
+
+\paragraph{Approachability under resolution-driven feedback.}
+In real markets, feedback arrives at resolution.
+We therefore evaluate a repair-at-resolution protocol:
+when a market resolves, we update the repair map $\sigma_t$ using all newly revealed outcomes, and apply it to subsequent forecasts for still-open markets.
+We report:
+\begin{enumerate}[leftmargin=*]
+\item approachability curves $\mathrm{AppErr}^{\mathrm{active}}_t$ over active markets only,
+\item changes in $\mathrm{AppErr}^{\mathrm{active}}_t$ around resolution times,
+\item and the corresponding trading profit under the fee-aware model (Section~\ref{sec:txfees}).
+\end{enumerate}
+By construction, market resolution reduces the active constraint set (dropping markets and relations that involve them), and the protocol allows explicit backward fixing; both effects should manifest as faster approachability in later stages of the timeline.
+
+\paragraph{Comparing diffusion vs.\ AR in approachability space.}
+For both template and adversarial constraints, compare AR and diffusion models across matched inference budgets.
+A key hypothesis suggested by our theory is that diffusion's iterative refinement will produce a smoother compute--approachability tradeoff and improved behavior on rare groups and complex constraint families, whereas AR+CoT will exhibit saturation when the relevant constraints require higher-order interactions or many simultaneous constraints.
+
+\section{Discussion and Limitations}
+
+Our separations are proved under explicit computation models:
+AR+CoT is modeled as an $L$-query forecaster (hence an $L$-junta), and diffusion is modeled as an ideal noise-operator forecaster $T_\rho f$.
+This abstraction is deliberate: it yields rigorous end-to-end propositions connecting compute to calibration and to arbitrage regret.
+
+\paragraph{Model--reality gap for AR+CoT.}
+The strict $L$-query/$L$-junta abstraction should be read as a \emph{worst-case} model of serial information acquisition: it forces a hard spectral cutoff and makes the ``complexity cliff'' exact.
+Real transformers are non-local in a single forward pass and can aggregate many features in parallel.
+To partially address this, Section~\ref{sec:refined-ar} introduces a parallel-access $(L,r)$-query model whose effective budget is $Q=Lr$; all AR propositions extend by substituting $L\leftarrow Q$.
+More generally, our parity-based separations only require upper bounds on high-degree parity correlation (the ``spectral leakage'' envelope of \cref{cor:parity-envelope}), which can be measured empirically via synthetic probes.
+
+\paragraph{Model--reality gap for diffusion.}
+Our idealized diffusion model assumes that inference computes (or closely approximates) the noise operator $T_\rho f$.
+Bridging this to learned denoisers requires assumptions about approximation error (captured explicitly in \cref{ass:learned-diff}) and discretization error (Appendix~\ref{app:diffusion-discretization}).
+The experiments we propose are designed to test whether diffusion-like forecasters empirically exhibit the predicted smooth compute--accuracy scaling and rare-group robustness.
+
+\paragraph{Open problems.}
+A fully faithful abstraction of transformer inference that simultaneously captures non-local attention, finite compute, and the geometry of diffusion denoising remains open.
+In particular, proving lower bounds for general transformer families (beyond query-based surrogates) on parity-like or multigroup calibration tasks would significantly strengthen the theoretical story.
+
+\section{Conclusion}
+
+We developed a formal theory connecting calibration, calibeating, robust subgroup guarantees, and statistical arbitrage to compute and spectral complexity, and used it to separate diffusion forecasters from bounded-depth autoregressive reasoning forecasters.
+The propositions predict that diffusion should provide a smoother compute--accuracy tradeoff and stronger group robustness, especially on small subpopulations whose identification requires high-degree structure.
+We propose experiments to test these predictions on synthetic parity markets and on real prediction-market datasets.
+
+\appendix
+
+\section{Proofs of Main Results}\label{app:proofs}
+
+\subsection{Proof of \cref{thm:proper-regret}}
+\begin{proof}
+This is a standard characterization of strictly proper scoring rules via convex Bayes risk.
+Let $\phi(p)=\inf_q \E[\ell(q,Y)\mid p]$.
+Strict propriety implies the minimizer is unique at $q=p$ and $\phi$ is strictly convex.
+For any $q$, the conditional expected loss satisfies
+\[
+\E[\ell(q,Y)\mid p] = \phi(p) + D_\phi(p,q),
+\]
+where $D_\phi$ is the Bregman divergence associated with $\phi$; see, e.g., \cite{gneiting2007strictly}.
+Taking $p=f(X)$ and expectation over $X$ yields the result.
+
+For Brier, $\phi(p)=p(1-p)$ and $D_\phi(p,q)=(p-q)^2$.
+For log loss, $\phi(p)= -p\log p-(1-p)\log(1-p)$ and $D_\phi(p,q)=\KL(\mathrm{Bern}(p)\|\mathrm{Bern}(q))$.
+\end{proof}
+
+\subsection{Proof of \cref{prop:denoise-noise-operator}}
+\begin{proof}
+Let $\mathcal{G}$ be the Hilbert space $L^2(\{-1,1\}^d)$ under the marginal law of $\widetilde Z$ (which is uniform when $Z$ is uniform and the bit-flip kernel is used).
+The square-loss risk can be decomposed by the standard $L^2$ projection identity:
+for any measurable $g$,
+\[
+\E\bigl[(g(\widetilde Z)-Y)^2\bigr]
+=\E\bigl[(g(\widetilde Z)-\E[Y\mid \widetilde Z])^2\bigr]+\E\bigl[(\E[Y\mid \widetilde Z]-Y)^2\bigr].
+\]
+The second term does not depend on $g$, and the first term is minimized uniquely (in $\mathcal{G}$) when $g(\widetilde Z)=\E[Y\mid \widetilde Z]$ a.s.
+Thus the unique minimizer is $g^\star(\tilde z)=\E[Y\mid \widetilde Z=\tilde z]$.
+
+By the tower property,
+\[
+g^\star(\tilde z)=\E\bigl[\E[Y\mid Z]\mid \widetilde Z=\tilde z\bigr]=\E[f(Z)\mid \widetilde Z=\tilde z].
+\]
+For the $\rho$--bit-flip kernel with $Z\sim\mathrm{Unif}(\{-1,1\}^d)$, the joint law of $(Z,\widetilde Z)$ is exchangeable (the kernel is symmetric and preserves the uniform measure), so
+\[
+\E[f(Z)\mid \widetilde Z=\tilde z]=\E[f(\widetilde Z)\mid Z=\tilde z] = (T_\rho f)(\tilde z),
+\]
+where $T_\rho$ is the Boolean noise operator as defined in the main text.
+The Fourier coefficient identity $\widehat{(T_\rho f)}(S)=\rho^{|S|}\widehat f(S)$ is standard \cite{odonnell2014analysis}.
+\end{proof}
+
+\subsection{Proof of \cref{thm:cal-noarb}}
+\begin{proof}
+For any $b(x,q)=B h(x,q)$ with $h\in\cH$,
+\[
+\E[b(X,q(X))(Y-q(X))] = B\,\E[(Y-q(X))h(X,q(X))].
+\]
+Taking the supremum over $h\in\cH$ gives
+\[
+\sup_{b\in\cB_{\cH}} \E[b(X,q(X))(Y-q(X))] = B\,\mathrm{Cal}_{\cH}(q).
+\]
+Summing over $t=1,\dots,T$ (linearity of expectation) yields the first claim.
+
+With transaction cost $c$, the per-round objective is
+\[
+B\,h(X,q(X))(Y-q(X)) - c\,B|h(X,q(X))|.
+\]
+Since $|h|\le 1$, the second term is at least $-cB$, and the supremum is achieved by choosing $h$ to align with the sign of the residual when the magnitude exceeds $c$; this yields the bound
+$B(\mathrm{Cal}_{\cH}(q)-c)_+$ and hence the stated inequality after multiplying by $T$.
+\end{proof}
+
+\subsection{Proof of \cref{prop:junta-degree}}
+\begin{proof}
+A deterministic $L$-query algorithm reads at most $L$ coordinates of $z$ and its output is a deterministic function of those queried bits; hence the output depends on at most $L$ coordinates and is an $L$-junta.
+
+For Fourier support: if $q$ depends only on coordinates in a set $J$ with $|J|\le L$, then $\widehat q(S)=0$ whenever $S\not\subseteq J$. In particular, $\widehat q(S)=0$ for all $|S|>L$.
+
+If the algorithm is randomized, then conditional on its internal randomness $\omega$, it outputs an $L$-junta $q_\omega$. The expectation $\E_\omega[q_\omega(z)]$ still depends only on the union of queried coordinates (which is at most $L$ almost surely), hence is an $L$-junta as well.
+\end{proof}
+
+\subsection{Proof of \cref{prop:parallel-junta}}
+\begin{proof}
+A deterministic $(L,r)$-query forecaster queries at most $r$ coordinates in each of $L$ serial rounds, hence queries at most $Q\le Lr$ \emph{distinct} coordinates overall.
+Therefore its output depends only on those queried coordinates and is a $Q$-junta.
+The Fourier-support claim follows exactly as in the proof of \cref{prop:junta-degree}.
+
+If the forecaster is randomized, then conditioning on its internal randomness yields a deterministic $(L,r)$-query forecaster, hence a $Q$-junta; taking expectations preserves the dependence set, so the mean predictor is also a $Q$-junta.
+\end{proof}
+
+
+\subsection{Proof of \cref{thm:ar-cliff}}
+\begin{proof}
+Let $q$ be an $L$-junta. By \cref{prop:junta-degree}, $\widehat q(S)=0$ for all $|S|>L$.
+Parseval's identity gives
+\[
+\mathrm{SCE}(q;f)=\E[(f(Z)-q(Z))^2]=\sum_{S}(\widehat f(S)-\widehat q(S))^2 \ge \sum_{|S|>L} \widehat f(S)^2 = W_{>L}(f).
+\]
+
+For $\bar q_K=\frac{1}{K}\sum_{k=1}^K q^{(k)}$, the standard bias--variance decomposition yields
+\[
+\E[(f-\bar q_K)^2] = \E[(f-\E[q^{(1)}])^2] + \E[(\E[q^{(1)}]-\bar q_K)^2]
+= \mathrm{SCE}(\E[q^{(1)}];f) + \frac{1}{K}\E[(q^{(1)}-\E[q^{(1)}])^2].
+\]
+The lower bound follows by applying the first part to $\E[q^{(1)}]$, which is still an $L$-junta.
+\end{proof}
+
+\subsection{Proof of \cref{thm:diffusion-fog}}
+\begin{proof}
+The noise operator satisfies $\widehat{(T_\rho f)}(S)=\rho^{|S|}\widehat f(S)$ \cite{odonnell2014analysis}. Hence
+\[
+f - T_\rho f = \sum_{S} (1-\rho^{|S|})\widehat f(S)\chi_S.
+\]
+Parseval yields \eqref{eq:diff-sce}.
+As $\rho\uparrow 1$, each factor $(1-\rho^{|S|})\to 0$ and the sum converges to $0$ by dominated convergence (since $\sum_S \widehat f(S)^2 <\infty$).
+\end{proof}
+
+\subsection{Proof of \cref{thm:brier-kelly}}
+\begin{proof}
+For $p,q\in[\eta,1-\eta]$, the Bernoulli KL divergence is twice differentiable and its second derivative in $q$ is bounded above and below by constants depending on $\eta$.
+Equivalently, the log loss is strongly convex and smooth on $[\eta,1-\eta]$.
+A Taylor expansion around $q=p$ yields
+\[
+c_\eta (p-q)^2 \le \KL(\mathrm{Bern}(p)\|\mathrm{Bern}(q)) \le C_\eta (p-q)^2.
+\]
+Apply pointwise with $p=f(X)$ and $q=q(X)$ and take expectation.
+\end{proof}
+
+\subsection{Proof of \cref{thm:arb-L1}}
+\begin{proof}
+Condition on $Z=z$. Since $\E[Y\mid Z=z]=f(z)$,
+\[
+\E[b(z,q(z))(Y-q(z))\mid Z=z] = b(z,q(z))\,(f(z)-q(z)).
+\]
+Maximizing over $b\in[-B,B]$ yields the pointwise optimizer $b^\star(z)=B\,\mathrm{sign}(f(z)-q(z))$ and value $B|f(z)-q(z)|$.
+Taking expectation over $Z$ yields the first formula, and multiplying by $T$ gives $\mathrm{ArbReg}_T$.
+
+With transaction cost $c$, the pointwise objective is $b(f-q)-c|b|$.
+Optimizing over $b\in[-B,B]$ gives value $B(|f-q|-c)_+$.
+\end{proof}
+
+\subsection{Proof of \cref{thm:fee-arb}}
+\begin{proof}
+Fix $x\in\cX$ and abbreviate $q=q(x)$, $a=f(x)-q$, and $t=\tau(q)$.
+Conditioning on $X=x$, we have $\E[Y-q\mid X=x]=a$, so the conditional expected profit of any $b\in[-B,B]$ is
+\[
+\E[\Pi^{(\tau,g)}\mid X=x]\;=\; b\,a - t|b| - g\,\1\{b\neq 0\}.
+\]
+If $a\ge 0$, then for $b\ge 0$ the objective equals $b(a-t)-g$ (for $b>0$) and is maximized by $b=B$ when $a-t>g/B$, otherwise by $b=0$; for $b\le 0$ the objective is at most $0$.
+If $a<0$, the symmetric argument shows the maximizer is $b=-B$ when $|a|-t>g/B$, otherwise $b=0$.
+In either case the optimal value is
+\[
+B\big(|a|-t-\tfrac{g}{B}\big)_+ \;=\; B\big(|f(x)-q(x)|-\tau(q(x))-\tfrac{g}{B}\big)_+.
+\]
+Randomization does not improve the optimum because the objective is concave piecewise-linear in $b$ and the feasible set is an interval.
+Taking expectation over $X$ and multiplying by $T$ yields \eqref{eq:fee-arb-exact}.
+\end{proof}
+
+\subsection{Proof of \cref{thm:parity-sep}}
+\begin{proof}
+Let $f(z)=\tfrac{1}{2}+\tfrac{\alpha}{2}\chi_S(z)$ with $|S|=k$.
+Then $\widehat f(\emptyset)=1/2$, $\widehat f(S)=\alpha/2$, and $\widehat f(T)=0$ for all other $T\neq \emptyset,S$.
+
+Fix any forecaster $q$.
+By Parseval,
+\[
+\mathrm{SCE}(q;f)\ =\ \E[(q(Z)-f(Z))^2]\ =\ \sum_{T\subseteq[d]}(\widehat q(T)-\widehat f(T))^2
+\ \ge\ (\widehat q(S)-\widehat f(S))^2.
+\]
+In particular, if $\widehat q(S)=0$ then $\mathrm{SCE}(q;f)\ge (\alpha/2)^2=\alpha^2/4$.
+
+For the $L^1$ lower bound, note that
+\[
+\E[(f(Z)-q(Z))\chi_S(Z)]\ =\ \widehat f(S)-\widehat q(S).
+\]
+Since $|\chi_S(Z)|\equiv 1$, Hölder gives
+\[
+\big|\widehat f(S)-\widehat q(S)\big|
+\ =\ \big|\E[(f(Z)-q(Z))\chi_S(Z)]\big|
+\ \le\ \E[|f(Z)-q(Z)|].
+\]
+If $\widehat q(S)=0$ this yields $\E|f-q|\ge \alpha/2$.
+Applying \cref{thm:arb-L1} gives the stated per-round arbitrage lower bound.
+
+For diffusion, $T_\rho \chi_S = \rho^k \chi_S$, hence
+$q_{\mathrm{diff},\rho}=T_\rho f = \tfrac{1}{2}+(\alpha/2)\rho^k \chi_S$.
+Therefore $f-q_{\mathrm{diff},\rho}=(\alpha/2)(1-\rho^k)\chi_S$, so
+\[
+\mathrm{SCE}(q_{\mathrm{diff},\rho};f)=\frac{\alpha^2}{4}(1-\rho^k)^2,
+\qquad
+\E\big[|f-q_{\mathrm{diff},\rho}|\big]=\frac{\alpha}{2}(1-\rho^k),
+\]
+and another application of \cref{thm:arb-L1} yields the diffusion arbitrage formula.
+\end{proof}
+
+\subsection{Proof of \cref{thm:diff-group}}
+\begin{proof}
+Recall the parity Truth function $f(z) = \frac{1}{2} + \frac{\alpha}{2}\chi_S(z)$ with $|S|=k$, and the diffusion forecaster $q_{\mathrm{diff},\rho} = T_\rho f = \frac{1}{2} + \frac{\alpha}{2}\rho^k \chi_S(z)$.
+The residual is
+\[
+f(z) - q_{\mathrm{diff},\rho}(z) = \frac{\alpha}{2}(1-\rho^k)\chi_S(z).
+\]
+Let $G \in \cG_k$. By definition of $\cG_k$, $G=G_{J,a}$ for some $J\subseteq[d]$ with $|J|=k$ and $a\in\{-1,1\}^J$.
+Using \cref{lem:subcube-fourier},
+\[
+\E[f(Z)-q_{\mathrm{diff},\rho}(Z)\mid Z\in G_{J,a}]
+\;=\; \frac{\alpha}{2}(1-\rho^k) \E[\chi_S(Z)\mid Z\in G_{J,a}]
+\;=\; \frac{\alpha}{2}(1-\rho^k) \sum_{T\subseteq J, T=S} \chi_T(a).
+\]
+The sum is non-zero only if $S \subseteq J$. Since $|S|=|J|=k$, this requires $S=J$.
+\begin{itemize}
+    \item Case 1: $J \ne S$. The expectation is 0.
+    \item Case 2: $J = S$. The expectation is $\frac{\alpha}{2}(1-\rho^k)\chi_S(a) \in \{ \pm \frac{\alpha}{2}(1-\rho^k) \}$.
+\end{itemize}
+Thus,
+\[
+\mathrm{GCal}_{\cG_k}(q_{\mathrm{diff},\rho}) = \sup_{G\in\cG_k} \left| \E[f-q_{\mathrm{diff},\rho}\mid G] \right| = \frac{\alpha}{2}(1-\rho^k).
+\]
+Setting this to $\le \varepsilon$ and solving for $\rho$ yields the bound.
+\end{proof}
+
+\subsection{Proof of \cref{thm:ar-group-lb}}
+\begin{proof}
+Let $f(z) = \frac{1}{2} + \frac{\alpha}{2}\chi_S(z)$ be the parity Truth function on a set $S$ with $|S|=k=L+1$.
+Consider the group class $\cG_{L+1}$ of all subcubes of codimension $L+1$.
+This class contains the groups $\{G_{S,a} : a\in\{-1,1\}^S\}$ that fix exactly the coordinates in $S$.
+Let $q$ be any $L$-junta forecaster. By \cref{prop:junta-degree}, its Fourier support is confined to sets of size at most $L$. Thus $\widehat q(S)=0$.
+
+\paragraph{Arbitrage lower bound.}
+We evaluate the expected $L^1$ error, which controls arbitrage profit over $\cB_\infty$ by \cref{thm:arb-L1}.
+Consider the correlation with the parity character $\chi_S$:
+\[
+\inner{f-q}{\chi_S} \;=\; \E[(f(Z)-q(Z))\chi_S(Z)] \;=\; \widehat f(S) - \widehat q(S) \;=\; \frac{\alpha}{2} - 0 \;=\; \frac{\alpha}{2}.
+\]
+Using Hölder's inequality (or simple bounding),
+\[
+\frac{\alpha}{2} = |\E[(f(Z)-q(Z))\chi_S(Z)]| \le \E[|f(Z)-q(Z)| \cdot |\chi_S(Z)|] = \E[|f(Z)-q(Z)|].
+\]
+By \cref{thm:arb-L1}, the best static arbitrage profit is $B\,\E[|f-q|] \ge B\alpha/2$.
+
+\paragraph{Group calibration lower bound.}
+Consider the specific subcubes $G_{S,a}$ defined by the active variables of $f$.
+The conditional bias on such a group is
+\[
+\mu(a) := \E[f(Z)-q(Z)\mid Z\in G_{S,a}].
+\]
+Using \cref{lem:subcube-fourier} with conditioning set $S$:
+\[
+\E[f(Z)\mid Z\in G_{S,a}] = \frac{1}{2} + \frac{\alpha}{2}\chi_S(a).
+\]
+For $q$, since $\widehat q(S)=0$, the expansion on the subcube is
+\[
+\E[q(Z)\mid Z\in G_{S,a}] = \sum_{T\subsetneq S} \widehat q(T)\chi_T(a).
+\]
+Thus $\mu(a) = \frac{\alpha}{2}\chi_S(a) - h(a) - c$, where $h(a)$ involves characters $\chi_T$ with $T\subsetneq S$.
+These characters are orthogonal to $\chi_S$ on the hypercube $\{-1,1\}^S$.
+Computing the $L^2$ norm of the bias over random $a$:
+\[
+\E_{a}[\mu(a)^2] = \left(\frac{\alpha}{2}\right)^2 + \E_a[(h(a)+c)^2] \ge \frac{\alpha^2}{4}.
+\]
+Since the mean squared bias is at least $\alpha^2/4$, the maximum absolute bias must be at least $\alpha/2$.
+Thus $\mathrm{GCal}_{\cG_{L+1}}(q) \ge \sup_a |\mu(a)| \ge \alpha/2$.
+\end{proof}
+
+\subsection{Proof of \cref{prop:group-sample}}
+\begin{proof}
+Condition on the event $N_G\ge 1$.
+Given the indices $i$ with $X_i\in G$, the random variables $(Y_i-q(X_i))$ lie in $[-1,1]$ and have conditional mean $\E[Y-q(X)\mid X\in G]$.
+By Hoeffding's inequality applied to the average of $N_G$ bounded variables,
+\[
+\Prob\!\left(\left|\widehat\mu_G-\E[Y-q(X)\mid X\in G]\right|>\varepsilon\ \middle|\ N_G\right)
+\le 2\exp(-2N_G\varepsilon^2).
+\]
+Setting the right-hand side to $\delta$ and solving yields the displayed bound.
+For the final statement, note that $\E[N_G]=mp_G$, and a standard Chernoff bound implies $N_G\ge \tfrac{1}{2}mp_G$ with probability at least $1-\delta/2$ when $m\gtrsim \frac{1}{p_G}\ln(1/\delta)$; combining with the first inequality and a union bound yields the stated scaling.
+\end{proof}
+
+
+\subsection{Proof of \cref{thm:ext-not-gcal}}
+\begin{proof}
+Because the forecaster always predicts $A_t\equiv 1/2$, its cumulative Brier loss is
+\[
+\sum_{t=1}^T (A_t-Y_t)^2 \;=\; \sum_{t=1}^T (1/2-Y_t)^2 \;=\; \frac{T}{4}.
+\]
+Since $\Prob(Y=1)=1/2$ under the stated environment, the best constant predictor in hindsight is also $a^\star=1/2$, yielding the same loss $T/4$.
+Hence $\mathrm{Reg}^{\mathrm{ext}}_T=0$.
+
+For group calibration, on $G_0$ we have $Y\equiv 0$ but the prediction is $1/2$, so
+$\E[Y-A\mid X\in G_0]=-1/2$.
+On $G_1$ we have $Y\equiv 1$ so $\E[Y-A\mid X\in G_1]=+1/2$.
+Therefore $\mathrm{GCal}_{\{G_0,G_1\}}(A)=1/2$.
+\end{proof}
+
+\subsection{Proof of \cref{thm:swap-implies-gcal}}
+\begin{proof}
+Fix a group $G$ and an action $a\in\cA_m$ with $N:=N_{G,a}>0$.
+Let $\bar Y:=\frac{1}{N}\sum_{t:\,X_t\in G,\,A_t=a} Y_t$ denote the empirical mean outcome on these rounds, so that $\widehat\mu_{G,a}=\bar Y-a$.
+
+Let $\tilde a$ be the closest grid point in $\cA_m$ to $\bar Y$ (breaking ties arbitrarily), so $|\tilde a-\bar Y|\le 1/m$.
+Consider the swap mapping $\sigma$ that sends $a\mapsto \tilde a$ and leaves all other actions fixed.
+By definition of group-restricted swap regret,
+\[
+\mathrm{Reg}^{\mathrm{swap}}_T(G)
+\ \ge\
+\sum_{t:\,X_t\in G,\,A_t=a} \Big(\ell(a,Y_t)-\ell(\tilde a,Y_t)\Big).
+\]
+Using the identity (valid for any fixed $\bar Y$)
+\[
+\frac{1}{N}\sum_{t:\,X_t\in G,\,A_t=a} (u-Y_t)^2
+\ =\ (u-\bar Y)^2 + \bar Y(1-\bar Y),
+\]
+we obtain
+\[
+\sum_{t:\,X_t\in G,\,A_t=a}\!\!\Big((a-Y_t)^2-(\tilde a-Y_t)^2\Big)
+\ =\ N\Big((a-\bar Y)^2-(\tilde a-\bar Y)^2\Big)
+\ \ge\ N(a-\bar Y)^2 - \frac{N}{m^2}.
+\]
+Rearranging gives $(a-\bar Y)^2 \le \mathrm{Reg}^{\mathrm{swap}}_T(G)/N + 1/m^2$.
+Taking square roots and using $\sqrt{u+v}\le \sqrt{u}+\sqrt{v}$ yields
+\[
+|\widehat\mu_{G,a}|
+\ =\ |\bar Y-a|
+\ \le\ \sqrt{\frac{\mathrm{Reg}^{\mathrm{swap}}_T(G)}{N_{G,a}}}\ +\ \frac{1}{m}.
+\]
+\end{proof}
+
+\subsection{Proof of \cref{thm:repair-swap}}
+\begin{proof}
+Let $M:=|\cA_m|=m+1$.
+For each pair of actions $(i,j)\in\cA_m^2$, define the \emph{pairwise internal regret}
+\[
+R_{i\to j}\ :=\ \sum_{t:\,A_t=i}\Big(\ell(i,Y_t)-\ell(j,Y_t)\Big).
+\]
+The (max) internal regret is $\mathrm{Reg}^{\mathrm{int}}_T:=\max_{i,j} R_{i\to j}$.
+It is classical that there exist online algorithms (e.g.\ regret-matching or the reduction of \cite{blum2007externalinternal}) guaranteeing
+\[
+\mathrm{Reg}^{\mathrm{int}}_T\ =\ O\!\left(\sqrt{T\log M}\right)
+\]
+for any bounded loss sequence.
+
+To bound swap regret, observe that for any mapping $\sigma:\cA_m\to\cA_m$,
+\[
+\sum_{t=1}^T \ell(A_t,Y_t)-\ell(\sigma(A_t),Y_t)
+\ =\ \sum_{i\in\cA_m} R_{i\to \sigma(i)}
+\ \le\ \sum_{i\in\cA_m}\max_{j\in\cA_m} R_{i\to j}
+\ \le\ M\cdot \mathrm{Reg}^{\mathrm{int}}_T.
+\]
+Taking the supremum over $\sigma$ gives $\mathrm{Reg}^{\mathrm{swap}}_T \le M\,\mathrm{Reg}^{\mathrm{int}}_T$, hence
+$\mathrm{Reg}^{\mathrm{swap}}_T = O\!\left(M\sqrt{T\log M}\right)$.
+
+Finally, regret-matching and related internal-regret algorithms maintain (implicitly or explicitly) a nonnegative ``regret matrix'' whose $i$-th row specifies how strongly one should replace action $i$ by alternative actions $j$.
+Normalizing each row yields a row-stochastic matrix $R_t\in\Delta(\cA_m)^{\cA_m}$, which can be viewed as a \emph{repair map} updated from past losses; see \cite{blum2007externalinternal,perchet2013approachability} for explicit constructions.
+\end{proof}
+
+\subsection{Proof of Corollary~\ref{cor:learned-fog}}
+\begin{proof}
+Let $q^\star := T_{\rho(T)}f$.
+By Assumption~\ref{ass:learned-diff}, $\norm{\widetilde q_T-q^\star}_{L^2}\le \epsilon_{\mathrm{learn}}(T)$.
+Hence, by the triangle inequality and $(a+b)^2\le 2a^2+2b^2$,
+\[
+\mathrm{SCE}(\widetilde q_T;f)
+=\norm{\widetilde q_T-f}_{L^2}^2
+\le 2\norm{\widetilde q_T-q^\star}_{L^2}^2 + 2\norm{q^\star-f}_{L^2}^2
+\le 2\epsilon_{\mathrm{learn}}(T)^2 + 2\,\mathrm{SCE}(T_{\rho(T)}f;f).
+\]
+Apply \cref{thm:diffusion-fog,eq:diff-sce} to expand $\mathrm{SCE}(T_{\rho(T)}f;f)$ in Fourier coordinates.
+\end{proof}
+
+\subsection{Proof of Lemma~\ref{lem:bregman-profit}}
+\begin{proof}
+For Bregman scoring rules (equivalently, proper scoring rules induced by a strictly convex potential $\Phi$), a standard representation states that for each fixed $p\in\Delta_m$,
+\[
+\E_{Y\sim p}\big[S_\Phi(q,Y)\big] \;=\; \Phi(p)\;-\;D_\Phi(p,q),
+\]
+up to an additive constant independent of $q$; see, e.g., \cite{gneiting2007strictly,ovcharov2018bregman}.
+Therefore,
+\[
+\E_{Y\sim p}\big[S_\Phi(q',Y)-S_\Phi(q,Y)\big]
+=
+\Big(\Phi(p)-D_\Phi(p,q')\Big)-\Big(\Phi(p)-D_\Phi(p,q)\Big)
+=
+D_\Phi(p,q)-D_\Phi(p,q'),
+\]
+as claimed.
+\end{proof}
+
+\subsection{Proof of Proposition~\ref{prop:swap-ext-decomp}}
+\begin{proof}
+Fix $a\in\cA_m$ with $N_a\ge 1$.
+Let $\mathcal{I}_a:=\{t\le T: A_t=a\}$.
+For any $b\in[0,1]$,
+\[
+\sum_{t\in \mathcal{I}_a} (a-Y_t)^2 - (b-Y_t)^2
+=
+N_a(a^2-b^2) - 2(a-b)\sum_{t\in \mathcal{I}_a} Y_t
+=
+N_a\Big((a-\overline{Y}_a)^2-(b-\overline{Y}_a)^2\Big).
+\]
+Thus, for swap mappings that may send $a$ to any $b\in[0,1]$, the optimal choice is $b=\overline{Y}_a$ and the resulting improvement is $N_a(a-\overline{Y}_a)^2$.
+Summing over $a$ yields the first claim.
+
+For constants, the loss of a constant $b\in[0,1]$ is $\sum_{t=1}^T(b-Y_t)^2$, minimized at $b=\overline{Y}$; substituting the within-bin decomposition as above yields the stated formula for $\mathrm{Reg}^{\mathrm{ext}}_{T,[0,1]}$ and the identity for the swap--external gap.
+
+For discretization, for any $\mu\in[0,1]$ there exists a grid point $\Pi(\mu)\in\cA_m$ with $|\Pi(\mu)-\mu|\le \tfrac{1}{2m}$, hence $(\Pi(\mu)-\mu)^2\le \tfrac{1}{4m^2}$.
+Replacing the optimal real-valued remapping $\overline{Y}_a$ by $\Pi(\overline{Y}_a)$ increases the post-remap loss for bin $a$ by at most $N_a/(4m^2)$, and summing gives the bound $\mathrm{Reg}^{\mathrm{swap}}_{T,[0,1]}-\mathrm{Reg}^{\mathrm{swap}}_T\le T/(4m^2)$.
+The external-regret discretization bound follows by the same projection argument applied to the optimal constant $\overline{Y}$.
+\end{proof}
+
+\subsection{Proof of Proposition~\ref{prop:swap-not-ext}}
+\begin{proof}
+Fix an even $m\ge 4$ and let $a_-:=\tfrac{1}{2}-\tfrac{1}{m}$ and $a_+:=\tfrac{1}{2}+\tfrac{1}{m}$, both in $\cA_m$.
+Assume $T$ is even and define a sequence by
+\[
+(A_t,Y_t)=
+\begin{cases}
+(a_-,0), & t\le T/2,\\
+(a_+,1), & t> T/2.
+\end{cases}
+\]
+The loss of the forecaster is
+\[
+\sum_{t=1}^T (A_t-Y_t)^2
+=
+\frac{T}{2}\,a_-^2 + \frac{T}{2}\,(1-a_+)^2
+=
+T\left(\frac{1}{2}-\frac{1}{m}\right)^2
+=
+T\left(\frac{1}{4}-\frac{1}{m}+\frac{1}{m^2}\right).
+\]
+The empirical mean outcome is $\overline{Y}=1/2$, which is in $\cA_m$ since $m$ is even, so the best constant action has loss at most $\sum_{t}(1/2-Y_t)^2 = T/4$.
+Therefore $\mathrm{Reg}^{\mathrm{ext}}_T\le T(\tfrac{1}{4}-\tfrac{1}{m}+\tfrac{1}{m^2})-T/4\le 0$.
+
+For swap regret, consider the remapping $\sigma$ that sends $a_-\mapsto 0$ and $a_+\mapsto 1$.
+Then $\ell(\sigma(A_t),Y_t)=0$ for all $t$, so
+\[
+\mathrm{Reg}^{\mathrm{swap}}_T
+\ge
+\sum_{t=1}^T \ell(A_t,Y_t) - \ell(\sigma(A_t),Y_t)
+=
+T\left(\frac{1}{4}-\frac{1}{m}+\frac{1}{m^2}\right)
+=
+\Omega(T).
+\]
+This establishes that external regret alone does not control swap regret.
+\end{proof}
+
+\section{Fourier and Noise-Operator Preliminaries}\label{app:fourier}
+
+We use standard facts about Fourier analysis on the Boolean cube and the noise operator.
+A comprehensive reference is \cite{odonnell2014analysis}.
+
+\subsection{Proof of \cref{lem:subcube-fourier}}
+\begin{proof}
+Conditioning on $Z\in G_{S,a}$ fixes $Z_i=a_i$ for $i\in S$ and leaves $Z_{[d]\setminus S}$ uniform and independent.
+For a character $\chi_T$, $\E[\chi_T(Z)\mid Z\in G_{S,a}]$ equals $\chi_T(a)$ if $T\subseteq S$ and equals $0$ otherwise (because any unfixed coordinate averages to $0$).
+By linearity of expectation,
+\[
+\E[h(Z)\mid Z\in G_{S,a}] = \sum_T \widehat h(T)\E[\chi_T(Z)\mid Z\in G_{S,a}] = \sum_{T\subseteq S}\widehat h(T)\chi_T(a).
+\]
+\end{proof}
+
+\section{Diffusion with Finite Steps: An Explicit Discretization Model}\label{app:diffusion-discretization}
+
+This appendix makes the ``step budget $T$'' dependence explicit in a simple, analyzable approximation model.
+
+\begin{assumption}[Per-step denoising approximation]\label{ass:perstep}
+Fix a schedule $0\le \rho_0<\rho_1<\cdots<\rho_T\le 1$.
+Suppose an implemented diffusion forecaster produces $\widetilde q_T$ satisfying
+\[
+\norm{\widetilde q_t - T_{\rho_t} f}_{L^2} \le \epsilon_t,\qquad t=1,\dots,T,
+\]
+where $\epsilon_t$ captures model error and discretization.
+\end{assumption}
+
+\begin{proposition}[End-to-end diffusion error bound]\label{prop:disc-bound}
+Under \cref{ass:perstep},
+\[
+\norm{\widetilde q_T - f}_{L^2}
+\le \norm{T_{\rho_T}f - f}_{L^2} + \epsilon_T,
+\]
+and hence
+\[
+\mathrm{SCE}(\widetilde q_T;f)\le 2\,\mathrm{SCE}(T_{\rho_T}f;f) + 2\epsilon_T^2.
+\]
+\end{proposition}
+
+\begin{proof}
+Triangle inequality gives $\norm{\widetilde q_T-f}_2\le \norm{\widetilde q_T-T_{\rho_T}f}_2+\norm{T_{\rho_T}f-f}_2\le \epsilon_T+\norm{T_{\rho_T}f-f}_2$.
+Square and use $(a+b)^2\le 2a^2+2b^2$.
+\end{proof}
+
+\section{Additional Discussion: Market Frictions}\label{app:frictions}
+
+Transaction costs were incorporated in \cref{thm:cal-noarb,thm:arb-L1}.
+Additional frictions (e.g.\ position limits, inventory penalties, liquidity curves) can be analyzed by replacing the linear profit $b(Y-q)$ with the appropriate concave utility or convex cost and re-running the duality: calibration defects create linear functionals of the residual $(Y-q)$ that are exploitable to the extent permitted by the friction.
+
+\section{Multi-market Extension}\label{app:multi}
+
+All results extend to $n$ markets either by summing coordinatewise or by using vector-valued proper scoring rules.
+For example, under additive scoring and linear trading with portfolios $b_t\in[-B,B]^n$,
+\[
+\Pi_t = \inner{b_t}{Y_t-q_t},
+\]
+and the analogues of \cref{thm:cal-noarb,thm:arb-L1} follow by applying the scalar results to each coordinate and using $\ell_2/\ell_1$ inequalities.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

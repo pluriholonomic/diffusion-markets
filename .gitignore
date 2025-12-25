@@ -1,0 +1,56 @@
+# --- Python / build ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.ruff_cache/
+
+# Virtualenvs
+.venv/
+venv/
+ENV/
+env/
+
+# --- Large artifacts / model checkpoints ---
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+*.pkl
+
+# --- Data files (keep out of git) ---
+*.parquet
+*.arrow
+*.feather
+*.jsonl.gz
+
+# Polymarket/Gamma derived + backups + logs
+experiments/data/
+experiments/polymarket_backups/
+experiments/remote_logs/
+experiments/remote_runs/
+experiments/runs/
+experiments/tmp_*.parquet
+
+# Generic logs / pids
+*.log
+*.pid
+
+# --- LaTeX build artifacts ---
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+main.pdf
+
+# --- OS/editor noise ---
+.DS_Store
+.idea/
+.vscode/
+

@@ -208,14 +208,19 @@ def fetch_exa_headlines(
     max_articles: int = 10,
     api_key: Optional[str] = None,
     cache_dir: Optional[Path] = None,
+    timeout_s: float = 30.0,
+    delay_s: float = 0.5,
 ) -> List[Dict[str, Any]]:
     """
     Fetch headlines from Exa.ai API (Turtel's approach).
     
     Requires Exa API key. Higher quality than GDELT but paid.
-    Now with caching for resume support.
+    Now with caching for resume support, timeouts, and delays.
     """
+    import concurrent.futures
+    
     # Check cache first
+    cache_file = None
     if cache_dir:
         cache_dir = Path(cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
@@ -243,13 +248,22 @@ def fetch_exa_headlines(
     end_date = before_date - timedelta(days=1)
     start_date = end_date - timedelta(days=window_days)
     
-    try:
-        response = exa.search(
+    # Add delay to avoid rate limiting
+    time.sleep(delay_s)
+    
+    def _do_search():
+        return exa.search(
             query,
             num_results=max_articles,
             start_published_date=start_date.strftime("%Y-%m-%d"),
             end_published_date=end_date.strftime("%Y-%m-%d"),
         )
+    
+    try:
+        # Use ThreadPoolExecutor for timeout
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_do_search)
+            response = future.result(timeout=timeout_s)
         
         results = []
         for result in response.results:
@@ -262,11 +276,15 @@ def fetch_exa_headlines(
             })
         
         # Save to cache
-        if cache_dir and results:
+        if cache_file and results:
             with open(cache_file, "w") as f:
                 json.dump(results, f)
         
         return results
+    
+    except concurrent.futures.TimeoutError:
+        print(f"[exa] Timeout after {timeout_s}s for query: {query[:50]}...")
+        return []
         
     except Exception as e:
         print(f"[exa] Error fetching headlines: {e}")

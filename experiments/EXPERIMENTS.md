@@ -72,7 +72,31 @@ These experiments use synthetic data where the true $C_t$ is known analytically.
 | **Group robustness** | `forecastbench group_robustness` | `src/forecastbench/benchmarks/group_robustness.py` | Propositions 8-9 on small subgroups |
 | **Swap regret** | `forecastbench swap_regret` | `src/forecastbench/metrics/swap_regret.py` | External vs swap regret comparison |
 
-### 3.2 Training Experiments
+### 3.2 Turtel-Compatible Headlines Pipeline
+
+For an exact apples-to-apples comparison with Turtel et al. (2025), we implement their headline enrichment approach:
+
+| Feature | Turtel Approach | Our Implementation |
+|---------|-----------------|-------------------|
+| **News Source** | Exa.ai | `--news-source exa` (same API) |
+| **Prediction Date** | Sampled uniformly between open/close | `--sample-prediction-date` |
+| **Temporal Control** | Headlines strictly before prediction date | Built-in (no future leakage) |
+| **Leakage Verification** | LLM check for leaked future info | `--verify-no-leakage` (optional) |
+
+**CLI Command:**
+```bash
+forecastbench pm_turtel_headlines \
+    --input data/polymarket/raw.parquet \
+    --out data/polymarket/turtel_enriched.parquet \
+    --news-source exa \
+    --sample-prediction-date \
+    --window-days 7 \
+    --max-articles 10
+```
+
+**Code Location:** `src/forecastbench/data/turtel_headlines.py`
+
+### 3.3 Training Experiments
 
 | Experiment | Command | Code Location | Purpose |
 |------------|---------|---------------|---------|

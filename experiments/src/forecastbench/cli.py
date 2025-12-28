@@ -3204,6 +3204,64 @@ def cmd_synth_market(args: argparse.Namespace) -> None:
     print(f"\nArtifacts: {arts.run_dir}")
 
 
+def cmd_pm_turtel_headlines(args: argparse.Namespace) -> None:
+    """
+    Enrich Polymarket data with Turtel-style headlines.
+    
+    Implements the headline enrichment approach from:
+    Turtel et al. (2025) "Outcome-based RL to Predict the Future"
+    
+    Features:
+    - Random prediction date sampling between market open/close
+    - Headlines fetched BEFORE prediction date (no temporal leakage)
+    - Optional LLM verification for leaked future information
+    - Formatted prompts matching Turtel's structure
+    """
+    import json
+    from pathlib import Path
+    
+    import pandas as pd
+    
+    from forecastbench.data.turtel_headlines import (
+        TurtelHeadlineSpec,
+        enrich_with_turtel_headlines,
+    )
+    
+    df = pd.read_parquet(args.input)
+    print(f"[turtel_headlines] Loaded {len(df)} rows from {args.input}")
+    
+    spec = TurtelHeadlineSpec(
+        news_source=args.news_source,
+        sample_prediction_date=args.sample_prediction_date,
+        window_days=args.window_days,
+        max_articles=args.max_articles,
+        verify_no_leakage=args.verify_no_leakage,
+        leakage_model=args.leakage_model,
+        open_date_col=args.open_date_col,
+        close_date_col=args.close_date_col,
+        resolution_date_col=args.resolution_date_col,
+        cache_dir=args.cache_dir,
+        seed=args.seed,
+    )
+    
+    df_enriched, meta = enrich_with_turtel_headlines(
+        df=df,
+        spec=spec,
+        question_col=args.question_col,
+        max_rows=args.max_rows,
+        verbose=True,
+    )
+    
+    # Save output
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df_enriched.to_parquet(out_path, index=False)
+    
+    print(f"[turtel_headlines] Saved to {out_path}")
+    print(f"[turtel_headlines] Headlines coverage: {meta['headlines_coverage']:.1%}")
+    print(json.dumps(meta["stats"], indent=2))
+
+
 def cmd_grpo_train(args: argparse.Namespace) -> None:
     """
     GRPO/ReMax/RLCR training for AR forecasting models.
@@ -4407,6 +4465,32 @@ def build_parser() -> argparse.ArgumentParser:
     p_synth_headlines.add_argument("--seed", type=int, default=0)
     p_synth_headlines.add_argument("--run-name", type=str, default="synth_headlines")
     p_synth_headlines.set_defaults(func=cmd_synth_headlines)
+
+    # ====== TURTEL-COMPATIBLE HEADLINES ======
+    
+    p_turtel_headlines = sub.add_parser(
+        "pm_turtel_headlines",
+        help="Enrich Polymarket data with Turtel-style headlines (temporal controls, no leakage).",
+    )
+    p_turtel_headlines.add_argument("--input", type=str, required=True, help="Input parquet file")
+    p_turtel_headlines.add_argument("--out", type=str, required=True, help="Output parquet file")
+    p_turtel_headlines.add_argument("--question-col", type=str, default="question", help="Question column")
+    p_turtel_headlines.add_argument("--news-source", type=str, default="gdelt", choices=["gdelt", "exa"],
+                                    help="News source: gdelt (free) or exa (paid, higher quality)")
+    p_turtel_headlines.add_argument("--sample-prediction-date", action="store_true", default=True,
+                                    help="Sample prediction date between open/close (Turtel-style)")
+    p_turtel_headlines.add_argument("--window-days", type=int, default=7, help="Days of news before prediction")
+    p_turtel_headlines.add_argument("--max-articles", type=int, default=10, help="Max headlines per question")
+    p_turtel_headlines.add_argument("--verify-no-leakage", action="store_true",
+                                    help="Use LLM to check for temporal leakage (expensive)")
+    p_turtel_headlines.add_argument("--leakage-model", type=str, default="gpt-4o-mini")
+    p_turtel_headlines.add_argument("--open-date-col", type=str, default="createdAt")
+    p_turtel_headlines.add_argument("--close-date-col", type=str, default="endDate")
+    p_turtel_headlines.add_argument("--resolution-date-col", type=str, default="resolutionTime")
+    p_turtel_headlines.add_argument("--cache-dir", type=str, default=None, help="Cache directory for headlines")
+    p_turtel_headlines.add_argument("--max-rows", type=int, default=None, help="Max rows to process")
+    p_turtel_headlines.add_argument("--seed", type=int, default=0)
+    p_turtel_headlines.set_defaults(func=cmd_pm_turtel_headlines)
 
     # ====== GRPO TRAINING ======
     

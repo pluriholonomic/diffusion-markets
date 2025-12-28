@@ -714,3 +714,262 @@ def run_time_dependent_blackwell_comparison(
     
     return results
 
+
+# ==============================================================================
+# Statistical Arbitrage Detection via C_t Distance
+# ==============================================================================
+
+def compute_arbitrage_bound(
+    q_market: np.ndarray,
+    p_model: np.ndarray,
+    y: np.ndarray,
+    *,
+    constraint_type: str = "calibration",
+    n_bins: int = 10,
+) -> Dict:
+    """
+    Compute statistical arbitrage bounds using distance to C_t.
+    
+    KEY INSIGHT: The time-dependent Blackwell set C_t encodes the correlation
+    structure of the market. The distance d(q, C_t) from market prices q to
+    the constraint set C_t provides an upper bound on extractable statistical
+    arbitrage.
+    
+    The model's predictions p define C_t implicitly:
+    - C_t = {q : |E[(Y - q) | bin(q)]| ≤ ε for all bins}
+    - d(q, C_t) ≈ max_bin |E[(Y - q_market) | bin(q_market)]|
+    
+    We measure:
+    1. Distance to constraints (arbitrage upper bound)
+    2. Realized PnL from betting against the market toward C_t
+    3. Correlation between distance and realized profit
+    
+    This directly tests: Does diffusion learn C_t better, enabling
+    better arbitrage detection and profit extraction?
+    
+    Args:
+        q_market: Market prices (N,)
+        p_model: Model predictions (N,) - defines the target C_t
+        y: Realized outcomes (N,)
+        constraint_type: "calibration" or "fréchet"
+        n_bins: Number of calibration bins
+        
+    Returns:
+        Dict with arbitrage bounds and correlations
+    """
+    q_market = np.asarray(q_market, dtype=np.float64)
+    p_model = np.asarray(p_model, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    n = len(y)
+    
+    # Compute per-sample distance to C_t
+    bin_edges = np.linspace(0, 1, n_bins + 1)
+    bin_idx_market = np.clip(np.digitize(q_market, bin_edges) - 1, 0, n_bins - 1)
+    bin_idx_model = np.clip(np.digitize(p_model, bin_edges) - 1, 0, n_bins - 1)
+    
+    # Distance to C_t for market prices (per-bin calibration error)
+    market_distance = np.zeros(n)
+    model_distance = np.zeros(n)
+    
+    for b in range(n_bins):
+        mask = bin_idx_market == b
+        if mask.sum() > 1:
+            residual = y[mask] - q_market[mask]
+            market_distance[mask] = np.abs(np.mean(residual))
+            
+        mask = bin_idx_model == b
+        if mask.sum() > 1:
+            residual = y[mask] - p_model[mask]
+            model_distance[mask] = np.abs(np.mean(residual))
+    
+    # Realized PnL from betting on model vs market
+    # Position: b = sign(p_model - q_market) * |p_model - q_market|
+    # This bets that the market should move toward the model's prediction
+    position = p_model - q_market  # Long if model > market
+    pnl = position * (y - q_market)  # Profit = position * (outcome - price)
+    
+    # Correlation between distance and profit magnitude
+    finite_mask = np.isfinite(market_distance) & np.isfinite(pnl)
+    if finite_mask.sum() > 10:
+        corr_dist_pnl = float(np.corrcoef(market_distance[finite_mask], 
+                                           np.abs(pnl[finite_mask]))[0, 1])
+    else:
+        corr_dist_pnl = 0.0
+    
+    # Fraction of arbitrage captured
+    # Total arbitrage = sum of |y - q| (max possible profit if you knew y)
+    total_arbitrage = float(np.sum(np.abs(y - q_market)))
+    captured_arbitrage = float(np.sum(pnl[pnl > 0]))
+    arbitrage_capture_rate = captured_arbitrage / max(total_arbitrage, 1e-10)
+    
+    # Sharpe ratio of trading strategy
+    if np.std(pnl) > 1e-10:
+        sharpe = float(np.mean(pnl) / np.std(pnl) * np.sqrt(252))  # Annualized
+    else:
+        sharpe = 0.0
+    
+    return {
+        "n": n,
+        "market_mean_distance": float(np.mean(market_distance)),
+        "market_max_distance": float(np.max(market_distance)),
+        "model_mean_distance": float(np.mean(model_distance)),
+        "model_max_distance": float(np.max(model_distance)),
+        "distance_reduction": float(1 - np.mean(model_distance) / max(np.mean(market_distance), 1e-10)),
+        "mean_pnl": float(np.mean(pnl)),
+        "total_pnl": float(np.sum(pnl)),
+        "win_rate": float(np.mean(pnl > 0)),
+        "sharpe_ratio": sharpe,
+        "corr_distance_profit": corr_dist_pnl,
+        "arbitrage_capture_rate": arbitrage_capture_rate,
+        "interpretation": (
+            f"Market distance to C_t: {np.mean(market_distance):.4f} "
+            f"(bounds max arb). Model reduces to {np.mean(model_distance):.4f} "
+            f"({100*(1-np.mean(model_distance)/max(np.mean(market_distance),1e-10)):.1f}% reduction). "
+            f"Distance-profit correlation: {corr_dist_pnl:.2f}"
+        ),
+    }
+
+
+def compare_arbitrage_detection(
+    q_market: np.ndarray,
+    p_ar: np.ndarray,
+    p_hybrid: np.ndarray,
+    y: np.ndarray,
+    *,
+    n_bins: int = 10,
+) -> Dict:
+    """
+    Compare AR-only vs AR+Diffusion for statistical arbitrage detection.
+    
+    This directly tests H3: Does diffusion improve learning of C_t,
+    measured by arbitrage detection and profit extraction?
+    
+    Key metrics:
+    - Distance reduction: How much closer to C_t does each model get?
+    - Arbitrage capture: What fraction of exploitable arbitrage do we extract?
+    - Distance-profit correlation: Does knowing d(q, C_t) predict profit?
+    
+    Args:
+        q_market: Market prices
+        p_ar: AR-only predictions
+        p_hybrid: AR+Diffusion predictions
+        y: Realized outcomes
+        n_bins: Calibration bins
+        
+    Returns:
+        Comparative arbitrage detection results
+    """
+    ar_arb = compute_arbitrage_bound(q_market, p_ar, y, n_bins=n_bins)
+    hybrid_arb = compute_arbitrage_bound(q_market, p_hybrid, y, n_bins=n_bins)
+    
+    return {
+        "ar": ar_arb,
+        "hybrid": hybrid_arb,
+        "improvement": {
+            "distance_reduction_gain": hybrid_arb["distance_reduction"] - ar_arb["distance_reduction"],
+            "pnl_improvement": hybrid_arb["mean_pnl"] - ar_arb["mean_pnl"],
+            "pnl_improvement_pct": (hybrid_arb["mean_pnl"] - ar_arb["mean_pnl"]) / max(abs(ar_arb["mean_pnl"]), 1e-10),
+            "capture_rate_improvement": hybrid_arb["arbitrage_capture_rate"] - ar_arb["arbitrage_capture_rate"],
+            "sharpe_improvement": hybrid_arb["sharpe_ratio"] - ar_arb["sharpe_ratio"],
+            "correlation_improvement": hybrid_arb["corr_distance_profit"] - ar_arb["corr_distance_profit"],
+        },
+        "summary": (
+            f"AR captures {ar_arb['arbitrage_capture_rate']*100:.1f}% of arbitrage, "
+            f"Hybrid captures {hybrid_arb['arbitrage_capture_rate']*100:.1f}% "
+            f"(+{(hybrid_arb['arbitrage_capture_rate']-ar_arb['arbitrage_capture_rate'])*100:.1f}pp). "
+            f"Sharpe: AR={ar_arb['sharpe_ratio']:.2f}, Hybrid={hybrid_arb['sharpe_ratio']:.2f}"
+        ),
+        "hypothesis_h3_supported": (
+            hybrid_arb["arbitrage_capture_rate"] > ar_arb["arbitrage_capture_rate"] and
+            hybrid_arb["distance_reduction"] > ar_arb["distance_reduction"]
+        ),
+    }
+
+
+def constraint_ladder_analysis(
+    z: np.ndarray,
+    p_true: np.ndarray,
+    diffusion_samples: Dict[float, np.ndarray],
+    *,
+    degrees: Tuple[int, ...] = (1, 2, 4, 6, 8),
+) -> Dict:
+    """
+    Analyze the "constraint ladder" at different noise levels.
+    
+    HYPOTHESIS: At noise level σ, diffusion learns constraints up to degree
+    inversely proportional to σ. Higher noise = coarser constraints (marginals),
+    lower noise = finer constraints (higher-order moments).
+    
+    This validates the interpretation that diffusion's noise schedule
+    corresponds to a sequence C_σ₁ ⊃ C_σ₂ ⊃ ... ⊃ C_0 of nested constraint sets.
+    
+    Args:
+        z: Context vectors (N, d)
+        p_true: True probabilities (N,)
+        diffusion_samples: Dict mapping noise level σ to predictions at that σ
+        degrees: Polynomial degrees to test
+        
+    Returns:
+        Constraint satisfaction at each (σ, degree) pair
+    """
+    results = {}
+    
+    for sigma, p_sigma in diffusion_samples.items():
+        p_sigma = np.asarray(p_sigma, dtype=np.float64)
+        sigma_results = {}
+        
+        for deg in degrees:
+            # For each degree, compute constraint violation
+            # (This is a simplified version - real implementation would use
+            # the parity market framework from ParityMarket)
+            
+            # Simple proxy: higher-degree "calibration" using z features
+            if z.ndim == 1:
+                z = z.reshape(-1, 1)
+            
+            d = min(deg, z.shape[1])
+            
+            # Create degree-d polynomial features from z
+            # For simplicity, use product of first d features
+            if d > 0 and z.shape[1] >= d:
+                feature = np.prod(z[:, :d], axis=1)
+            else:
+                feature = np.ones(len(z))
+            
+            # Constraint: E[(Y - p) * feature] = 0 for calibration
+            residual = p_true - p_sigma
+            weighted_residual = residual * feature
+            constraint_violation = float(np.abs(np.mean(weighted_residual)))
+            
+            sigma_results[f"degree_{deg}"] = {
+                "violation": constraint_violation,
+                "satisfied": constraint_violation < 0.1,
+            }
+        
+        results[f"sigma_{sigma}"] = sigma_results
+    
+    # Check if constraint satisfaction follows expected pattern
+    # (higher σ should satisfy low-degree, fail high-degree)
+    pattern_check = {}
+    sigmas = sorted(diffusion_samples.keys(), reverse=True)  # High to low
+    
+    for deg in degrees:
+        violations = [
+            results[f"sigma_{s}"][f"degree_{deg}"]["violation"]
+            for s in sigmas
+        ]
+        # Should be decreasing (better at low noise)
+        monotonic = all(violations[i] >= violations[i+1] for i in range(len(violations)-1))
+        pattern_check[f"degree_{deg}_monotonic"] = monotonic
+    
+    return {
+        "per_sigma_degree": results,
+        "pattern_check": pattern_check,
+        "ladder_hypothesis_supported": all(pattern_check.values()),
+        "interpretation": (
+            "Constraint ladder hypothesis: At high noise, only low-degree constraints "
+            "are satisfied. As noise decreases, higher-degree constraints are learned. "
+            f"Pattern check: {sum(pattern_check.values())}/{len(pattern_check)} degrees show monotonic improvement."
+        ),
+    }
+

@@ -207,12 +207,25 @@ def fetch_exa_headlines(
     window_days: int = 7,
     max_articles: int = 10,
     api_key: Optional[str] = None,
+    cache_dir: Optional[Path] = None,
 ) -> List[Dict[str, Any]]:
     """
     Fetch headlines from Exa.ai API (Turtel's approach).
     
     Requires Exa API key. Higher quality than GDELT but paid.
+    Now with caching for resume support.
     """
+    # Check cache first
+    if cache_dir:
+        cache_dir = Path(cache_dir)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_key = f"exa_{query[:50]}_{before_date.strftime('%Y%m%d')}"
+        cache_key = re.sub(r'[^a-zA-Z0-9_]', '_', cache_key)
+        cache_file = cache_dir / f"{cache_key}.json"
+        if cache_file.exists():
+            with open(cache_file) as f:
+                return json.load(f)
+    
     try:
         from exa_py import Exa
     except ImportError:
@@ -236,7 +249,6 @@ def fetch_exa_headlines(
             num_results=max_articles,
             start_published_date=start_date.strftime("%Y-%m-%d"),
             end_published_date=end_date.strftime("%Y-%m-%d"),
-            use_autoprompt=True,
         )
         
         results = []
@@ -248,6 +260,11 @@ def fetch_exa_headlines(
                 "source": result.url.split("/")[2] if result.url else "",
                 "score": result.score,
             })
+        
+        # Save to cache
+        if cache_dir and results:
+            with open(cache_file, "w") as f:
+                json.dump(results, f)
         
         return results
         
@@ -451,6 +468,7 @@ def enrich_with_turtel_headlines(
                     window_days=spec.window_days,
                     max_articles=spec.max_articles,
                     api_key=spec.exa_api_key,
+                    cache_dir=cache_dir,
                 )
             else:  # gdelt
                 headlines = fetch_gdelt_headlines(

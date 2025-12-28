@@ -2,7 +2,7 @@
 
 > **Status**: 🔄 Experiments in progress  
 > **Last updated**: 2025-12-28  
-> **Queue status**: `turtel_rlcr_blackwell_suite` running on remote H200
+> **Queue status**: `idle` on remote H200
 
 ---
 
@@ -222,6 +222,25 @@ Based on completed experiments (`pm_suite` from 2025-12-24):
 
 ---
 
+
+### Auto-Updated Status (2025-12-28T02:14:50Z)
+
+**Headlines Fetch**: ⏳ Pending
+
+
+**GPU Status**:
+- GPU 0: 100% util, 58407/143771 MB
+- GPU 1: 100% util, 58387/143771 MB
+
+**Running Experiments**:
+- PID 151728: `tmux new -d -s pm_beta0p2_gpu1 cd /root/diffusion-markets/ex...`
+- PID 898501: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
+- PID 898631: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
+- PID 899497: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
+- PID 899664: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
+
+---
+
 ## 6. Monitoring & Updates
 
 ### Check experiment status
@@ -283,5 +302,5 @@ python3 scripts/remote_gpu_enqueue.py \
 
 ---
 
-*This document is auto-updated. Last modified: 2025-12-28T02:00:00Z*
+*This document is auto-updated. Last modified: 2025-12-28T02:14:50Z*
 

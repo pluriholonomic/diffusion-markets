@@ -15,24 +15,49 @@ DATA_DIR="${PROJ_ROOT}/data"
 
 cd "${PROJ_ROOT}/experiments"
 
+# Activate venv if available
+if [[ -f "${PROJ_ROOT}/experiments/.venv/bin/activate" ]]; then
+    source "${PROJ_ROOT}/experiments/.venv/bin/activate"
+fi
+
+# Use python -m forecastbench if forecastbench not in PATH
+if ! command -v forecastbench &> /dev/null; then
+    alias forecastbench=".venv/bin/python -m forecastbench"
+    FORECASTBENCH=".venv/bin/python -m forecastbench"
+else
+    FORECASTBENCH="forecastbench"
+fi
+
 echo "[fetch_exa] Starting Exa headline enrichment..."
 echo "[fetch_exa] EXA_API_KEY set: ${EXA_API_KEY:0:8}..."
 
-# Ensure we have base Polymarket data
-PM_BASE="${DATA_DIR}/polymarket/criterion_prices.parquet"
-if [[ ! -f "${PM_BASE}" ]]; then
-    echo "[fetch_exa] Building base Polymarket data first..."
+# Find existing Polymarket data
+PM_BASE=""
+for candidate in \
+    "/root/polymarket_data/derived/gamma_yesno_ready.parquet" \
+    "${DATA_DIR}/polymarket/criterion_prices.parquet" \
+    "${DATA_DIR}/polymarket/gamma_base.parquet"; do
+    if [[ -f "$candidate" ]]; then
+        PM_BASE="$candidate"
+        break
+    fi
+done
+
+if [[ -z "${PM_BASE}" ]]; then
+    echo "[fetch_exa] No existing Polymarket data found. Building..."
     
-    forecastbench pm_gamma_build \
+    $FORECASTBENCH pm_build_gamma \
         --out "${DATA_DIR}/polymarket/gamma_base.parquet" \
         --num-workers 8 \
         --min-volume 50000 || true
     
-    forecastbench pm_criterion_build \
+    $FORECASTBENCH pm_build_criterion_prices \
         --input-parquet "${DATA_DIR}/polymarket/gamma_base.parquet" \
-        --out "${PM_BASE}" \
+        --out "${DATA_DIR}/polymarket/criterion_prices.parquet" \
         --final-trade-col "lastTradePrice" \
         --volume-col "volume"
+    
+    PM_BASE="${DATA_DIR}/polymarket/criterion_prices.parquet"
 fi
 
 echo "[fetch_exa] Using base data: ${PM_BASE}"
@@ -47,7 +72,7 @@ echo "[fetch_exa] Enriching with Exa headlines..."
 echo "[fetch_exa] Output: ${OUT_FILE}"
 echo "[fetch_exa] Cache:  ${CACHE_DIR}"
 
-forecastbench pm_turtel_headlines \
+$FORECASTBENCH pm_turtel_headlines \
     --input "${PM_BASE}" \
     --out "${OUT_FILE}" \
     --news-source exa \

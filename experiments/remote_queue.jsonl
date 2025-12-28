@@ -62,5 +62,3 @@
 {"cmd": ".venv/bin/python -m forecastbench synth_headlines --n-samples 10000 --n-test 1000 --structure adversarial --n-factors 5 --noise 0.2 --seed 0 --run-name synth_headlines_adversarial_n10000", "gpu": "0", "id": "synth_headlines_adversarial_n10000"}
 {"cmd": "cd /root/diffusion-markets && git pull && cd experiments && pip install -e \".[gpu]\" --quiet", "gpu": "any", "id": "git_pull_and_install"}
 {"cmd": "cd /root/diffusion-markets/experiments && bash scripts/remote_suite_turtel_rlcr_blackwell.sh", "gpu": "any", "id": "turtel_rlcr_blackwell_suite", "log": "remote_logs/turtel_rlcr_blackwell_suite.log", "ready_if": "git_pull_and_install"}
-{"cmd": "export EXA_API_KEY=6e0dcafc-9ab0-4035-9c3e-250c22ae3715 && cd experiments && bash scripts/fetch_exa_headlines.sh 2>&1 | tee logs/fetch_exa_headlines.log", "gpu": "none", "id": "fetch_exa_headlines", "log": "logs/fetch_exa_headlines.log"}
-{"cmd": "cd experiments && bash scripts/run_turtel_exa_comparison.sh 2>&1 | tee logs/turtel_exa_train.log", "gpu": "any", "id": "turtel_exa_train", "log": "logs/turtel_exa_train.log", "ready_if": "fetch_exa_headlines"}

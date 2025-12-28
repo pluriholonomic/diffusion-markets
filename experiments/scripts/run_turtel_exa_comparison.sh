@@ -1,12 +1,9 @@
 #!/bin/bash
 # =============================================================================
-# Exact Turtel Comparison with Exa Headlines
+# Exact Turtel Comparison Training (Headlines Pre-Fetched)
 # =============================================================================
-# Uses Exa.ai (same as Turtel et al.) for headline enrichment with full
-# temporal controls: prediction dates sampled between open/close, headlines
-# strictly before prediction date.
-#
-# This enables an apples-to-apples comparison with Turtel et al. 2025.
+# Assumes headlines have already been fetched via fetch_exa_headlines.sh
+# This script runs the training experiments using pre-enriched data.
 # =============================================================================
 
 set -euo pipefail
@@ -22,61 +19,28 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Configuration
-export EXA_API_KEY="${EXA_API_KEY:-6e0dcafc-9ab0-4035-9c3e-250c22ae3715}"
 PROJ_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 DATA_DIR="${PROJ_ROOT}/data"
 RUNS_DIR="${PROJ_ROOT}/runs/turtel_exa_comparison"
 
 mkdir -p "${RUNS_DIR}"
-mkdir -p "${DATA_DIR}/headlines_cache"
 
 cd "${PROJ_ROOT}/experiments"
 
 # =============================================================================
-# Step 1: Ensure we have Polymarket data
+# Step 1: Check that headlines have been fetched
 # =============================================================================
-log_info "Step 1: Checking Polymarket data..."
-
-PM_DATA="${DATA_DIR}/polymarket/criterion_prices.parquet"
-if [[ ! -f "${PM_DATA}" ]]; then
-    log_warn "Polymarket data not found. Building..."
-    
-    forecastbench pm_gamma_build \
-        --out "${DATA_DIR}/polymarket/gamma_base.parquet" \
-        --num-workers 8 \
-        --min-volume 50000 || true
-    
-    forecastbench pm_criterion_build \
-        --input-parquet "${DATA_DIR}/polymarket/gamma_base.parquet" \
-        --out "${DATA_DIR}/polymarket/criterion_prices.parquet" \
-        --final-trade-col "lastTradePrice" \
-        --volume-col "volume"
-    
-    PM_DATA="${DATA_DIR}/polymarket/criterion_prices.parquet"
-fi
-
-log_info "Using Polymarket data: ${PM_DATA}"
-
-# =============================================================================
-# Step 2: Enrich with Exa Headlines (Turtel-style)
-# =============================================================================
-log_info "Step 2: Enriching with Exa headlines (Turtel-style temporal controls)..."
+log_info "Step 1: Checking for pre-enriched headlines data..."
 
 HEADLINES_OUT="${DATA_DIR}/polymarket/turtel_exa_enriched.parquet"
 
-if [[ ! -f "${HEADLINES_OUT}" ]] || [[ "${FORCE_REBUILD:-0}" == "1" ]]; then
-    forecastbench pm_turtel_headlines \
-        --input "${PM_DATA}" \
-        --out "${HEADLINES_OUT}" \
-        --news-source exa \
-        --sample-prediction-date \
-        --window-days 7 \
-        --max-articles 10 \
-        --cache-dir "${DATA_DIR}/headlines_cache" \
-        --seed 42
-else
-    log_info "Using cached enriched data: ${HEADLINES_OUT}"
+if [[ ! -f "${HEADLINES_OUT}" ]]; then
+    log_error "Headlines not found at: ${HEADLINES_OUT}"
+    log_error "Run fetch_exa_headlines.sh first!"
+    exit 1
 fi
+
+log_info "Using pre-enriched data: ${HEADLINES_OUT}"
 
 # =============================================================================
 # Step 3: Train AR model with ReMax + Brier (Turtel baseline)

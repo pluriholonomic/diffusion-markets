@@ -21,3 +21,4 @@ def best_bounded_trader_profit(
     return float(B * np.mean(gap))
 
 
+

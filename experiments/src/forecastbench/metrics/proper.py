@@ -25,3 +25,4 @@ def squared_calibration_error(q: np.ndarray, p_true: np.ndarray) -> float:
     return float(np.mean((q - p_true) ** 2))
 
 
+

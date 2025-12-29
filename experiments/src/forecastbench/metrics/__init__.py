@@ -10,6 +10,20 @@ from .approachability import (
 from .calibration import expected_calibration_error
 from .multiclass import multiclass_brier_loss, multiclass_log_loss, multiclass_sce, top_label_ece
 from .proper import brier_loss, log_loss, squared_calibration_error
+from .swap_regret import compute_swap_regret, compute_external_regret, swap_external_decomposition
+from .multiscale_approachability import (
+    multiscale_constraint_evaluation,
+    approachability_dynamics,
+    ApproachabilityDynamicsSpec,
+)
+from .hallucination import (
+    HallucinationMetrics,
+    compute_hallucination_rate,
+    compute_abstention_aware_metrics,
+    validate_kalai_bound,
+    HallucinationTracker,
+    compute_calibration_by_distance,
+)
 
 __all__ = [
     "AppErrCurve",
@@ -27,6 +41,18 @@ __all__ = [
     "multiclass_log_loss",
     "multiclass_sce",
     "top_label_ece",
+    "compute_swap_regret",
+    "compute_external_regret",
+    "swap_external_decomposition",
+    "multiscale_constraint_evaluation",
+    "approachability_dynamics",
+    "ApproachabilityDynamicsSpec",
+    "HallucinationMetrics",
+    "compute_hallucination_rate",
+    "compute_abstention_aware_metrics",
+    "validate_kalai_bound",
+    "HallucinationTracker",
+    "compute_calibration_by_distance",
 ]
 
 

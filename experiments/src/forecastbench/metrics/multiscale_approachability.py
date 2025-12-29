@@ -509,11 +509,138 @@ class BlackwellConstraintTracker:
         # Linear fit: log_v = -α * log_t + c
         slope, _ = np.polyfit(log_t, log_v, 1)
         return -float(slope)
+    
+    def compute_approachability_rate_with_ci(
+        self,
+        *,
+        n_bootstrap: int = 1000,
+        confidence: float = 0.95,
+        seed: int = 0,
+    ) -> Dict:
+        """
+        Estimate approachability rate with bootstrap confidence intervals.
+        
+        Theory predicts α = 0.5 (1/sqrt(T) decay) for approachable games.
+        This method provides rigorous statistical testing of that hypothesis.
+        
+        Args:
+            n_bootstrap: Number of bootstrap resamples
+            confidence: Confidence level (default 0.95 for 95% CI)
+            seed: Random seed for reproducibility
+            
+        Returns:
+            Dict with:
+            - rate: Point estimate of decay exponent α
+            - rate_ci_lo: Lower bound of CI
+            - rate_ci_hi: Upper bound of CI
+            - rate_se: Standard error
+            - p_value_half: p-value for H0: α = 0.5 (Blackwell rate)
+            - consistent_with_theory: True if 0.5 is within CI
+        """
+        if len(self._history) < 10:
+            return {
+                "rate": np.nan,
+                "rate_ci_lo": np.nan,
+                "rate_ci_hi": np.nan,
+                "rate_se": np.nan,
+                "p_value_half": np.nan,
+                "consistent_with_theory": False,
+                "error": "Not enough history (need >= 10 points)",
+            }
+        
+        ts = np.array([h["step"] for h in self._history])
+        violations = np.array([h["max_violation"] for h in self._history])
+        
+        # Filter positive violations
+        mask = violations > 0
+        if mask.sum() < 5:
+            return {
+                "rate": np.nan,
+                "rate_ci_lo": np.nan,
+                "rate_ci_hi": np.nan,
+                "rate_se": np.nan,
+                "p_value_half": np.nan,
+                "consistent_with_theory": False,
+                "error": "Not enough positive violations (need >= 5)",
+            }
+        
+        log_t = np.log(ts[mask])
+        log_v = np.log(violations[mask])
+        n = len(log_t)
+        
+        # Point estimate
+        slope, intercept = np.polyfit(log_t, log_v, 1)
+        point_estimate = -float(slope)
+        
+        # Bootstrap for CI
+        rng = np.random.default_rng(seed)
+        bootstrap_rates = []
+        
+        for _ in range(n_bootstrap):
+            # Resample with replacement
+            idx = rng.choice(n, size=n, replace=True)
+            boot_log_t = log_t[idx]
+            boot_log_v = log_v[idx]
+            
+            try:
+                boot_slope, _ = np.polyfit(boot_log_t, boot_log_v, 1)
+                bootstrap_rates.append(-float(boot_slope))
+            except (np.linalg.LinAlgError, ValueError):
+                continue
+        
+        if len(bootstrap_rates) < n_bootstrap * 0.5:
+            return {
+                "rate": point_estimate,
+                "rate_ci_lo": np.nan,
+                "rate_ci_hi": np.nan,
+                "rate_se": np.nan,
+                "p_value_half": np.nan,
+                "consistent_with_theory": False,
+                "error": "Bootstrap failed for >50% of samples",
+            }
+        
+        bootstrap_rates = np.array(bootstrap_rates)
+        
+        # Compute confidence interval
+        alpha = 1 - confidence
+        ci_lo = float(np.percentile(bootstrap_rates, 100 * alpha / 2))
+        ci_hi = float(np.percentile(bootstrap_rates, 100 * (1 - alpha / 2)))
+        se = float(np.std(bootstrap_rates))
+        
+        # P-value for H0: α = 0.5 (Blackwell rate)
+        # Two-sided test using bootstrap distribution
+        h0_rate = 0.5
+        centered_rates = bootstrap_rates - np.mean(bootstrap_rates) + h0_rate
+        p_value = float(np.mean(np.abs(centered_rates - h0_rate) >= np.abs(point_estimate - h0_rate)))
+        
+        # Is 0.5 within the CI?
+        consistent_with_theory = ci_lo <= 0.5 <= ci_hi
+        
+        return {
+            "rate": point_estimate,
+            "rate_ci_lo": ci_lo,
+            "rate_ci_hi": ci_hi,
+            "rate_se": se,
+            "p_value_half": p_value,
+            "consistent_with_theory": consistent_with_theory,
+            "n_bootstrap": len(bootstrap_rates),
+            "n_history_points": n,
+            "interpretation": (
+                f"Decay rate α = {point_estimate:.3f} "
+                f"(95% CI: [{ci_lo:.3f}, {ci_hi:.3f}]). "
+                f"Theory predicts α = 0.5. "
+                f"{'Consistent' if consistent_with_theory else 'Inconsistent'} with Blackwell rate."
+            ),
+        }
 
 
 def compare_constraint_convergence(
     ar_tracker: BlackwellConstraintTracker,
     diff_tracker: BlackwellConstraintTracker,
+    *,
+    with_bootstrap: bool = True,
+    n_bootstrap: int = 1000,
+    seed: int = 0,
 ) -> Dict:
     """
     Compare Blackwell constraint convergence between AR-only and AR+Diffusion.
@@ -521,7 +648,15 @@ def compare_constraint_convergence(
     This tests Hypothesis H3: Diffusion improving performance implies
     better learning of Blackwell constraints.
     
-    Returns statistical comparison of convergence rates and final violations.
+    Args:
+        ar_tracker: Constraint tracker for AR-only predictions
+        diff_tracker: Constraint tracker for AR+Diffusion predictions
+        with_bootstrap: Whether to compute bootstrap CIs for rates
+        n_bootstrap: Number of bootstrap resamples
+        seed: Random seed
+    
+    Returns:
+        Statistical comparison of convergence rates and final violations.
     """
     ar_hist = ar_tracker.get_history()
     diff_hist = diff_tracker.get_history()
@@ -533,9 +668,20 @@ def compare_constraint_convergence(
     ar_final = ar_hist[-1]["max_violation"]
     diff_final = diff_hist[-1]["max_violation"]
     
-    # Convergence rates
+    # Convergence rates (point estimates)
     ar_rate = ar_tracker.compute_approachability_rate()
     diff_rate = diff_tracker.compute_approachability_rate()
+    
+    # Bootstrap CIs if requested
+    ar_rate_info = {}
+    diff_rate_info = {}
+    if with_bootstrap:
+        ar_rate_info = ar_tracker.compute_approachability_rate_with_ci(
+            n_bootstrap=n_bootstrap, seed=seed
+        )
+        diff_rate_info = diff_tracker.compute_approachability_rate_with_ci(
+            n_bootstrap=n_bootstrap, seed=seed + 1
+        )
     
     # Area under violation curve (lower = faster convergence)
     ar_auc = np.trapz(
@@ -551,7 +697,7 @@ def compare_constraint_convergence(
     ar_worst = ar_hist[-1].get("worst_group_violation", ar_final)
     diff_worst = diff_hist[-1].get("worst_group_violation", diff_final)
     
-    return {
+    result = {
         "ar_final_violation": ar_final,
         "diff_final_violation": diff_final,
         "violation_reduction": (ar_final - diff_final) / max(ar_final, 1e-6),
@@ -567,6 +713,29 @@ def compare_constraint_convergence(
         "diffusion_helps": diff_final < ar_final,
         "faster_convergence": diff_rate > ar_rate if not (np.isnan(ar_rate) or np.isnan(diff_rate)) else None,
     }
+    
+    # Add bootstrap rate info if computed
+    if with_bootstrap:
+        result["ar_rate_ci"] = {
+            "rate": ar_rate_info.get("rate"),
+            "ci_lo": ar_rate_info.get("rate_ci_lo"),
+            "ci_hi": ar_rate_info.get("rate_ci_hi"),
+            "se": ar_rate_info.get("rate_se"),
+            "consistent_with_theory": ar_rate_info.get("consistent_with_theory"),
+        }
+        result["diff_rate_ci"] = {
+            "rate": diff_rate_info.get("rate"),
+            "ci_lo": diff_rate_info.get("rate_ci_lo"),
+            "ci_hi": diff_rate_info.get("rate_ci_hi"),
+            "se": diff_rate_info.get("rate_se"),
+            "consistent_with_theory": diff_rate_info.get("consistent_with_theory"),
+        }
+        result["both_consistent_with_blackwell"] = (
+            ar_rate_info.get("consistent_with_theory", False) and
+            diff_rate_info.get("consistent_with_theory", False)
+        )
+    
+    return result
 
 
 def plot_constraint_convergence_comparison(

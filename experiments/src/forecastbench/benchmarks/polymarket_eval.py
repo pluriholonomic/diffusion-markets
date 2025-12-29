@@ -14,6 +14,7 @@ from forecastbench.metrics import (
     log_loss,
     summarize_top_box_violations,
 )
+from forecastbench.metrics.trading_sim import KellySimConfig, simulate_kelly_roi
 from forecastbench.metrics.approachability import distance_to_box_linf
 from forecastbench.utils.logits import clip_probs
 
@@ -84,7 +85,7 @@ def evaluate_polymarket_dataset(
     trading_mode: str = "sign",
     group_cols: Optional[List[str]] = None,
 ) -> Dict:
-    y = df[y_col].to_numpy().astype(np.int8)
+    y = df[y_col].to_numpy().astype(np.float64)
     pred = df[pred_col].to_numpy().astype(np.float32)
 
     out = {
@@ -102,6 +103,18 @@ def evaluate_polymarket_dataset(
             "transaction_cost": float(transaction_cost),
             "pnl_per_event": realized_trading_pnl(
                 y=y, market_prob=mkt, pred_prob=pred, B=B, transaction_cost=transaction_cost, mode=trading_mode
+            ),
+            "kelly": simulate_kelly_roi(
+                p=pred,
+                q=mkt,
+                y=y,
+                cfg=KellySimConfig(
+                    initial_bankroll=1.0,
+                    scale=1.0,
+                    frac_cap=0.25,
+                    fee=float(transaction_cost),
+                ),
+                return_curve=False,
             ),
         }
 
@@ -198,17 +211,16 @@ class _OnlineGroupBinCalibrator:
             b = 0
         return b
 
-    def update(self, *, group: str, q: float, y: int) -> None:
+    def update(self, *, group: str, q: float, y: float) -> None:
         b = self._bin(q)
-        yi = int(y)
         self.global_count[b] += 1
-        self.global_sum[b] += float(yi)
+        self.global_sum[b] += float(y)
 
         if group not in self.group_count:
             self.group_count[group] = np.zeros((self.n_bins,), dtype=np.int64)
             self.group_sum[group] = np.zeros((self.n_bins,), dtype=np.float64)
         self.group_count[group][b] += 1
-        self.group_sum[group][b] += float(yi)
+        self.group_sum[group][b] += float(y)
 
     def predict(self, *, group: str, q: float) -> float:
         q = float(np.clip(q, float(self.clip_eps), 1.0 - float(self.clip_eps)))
@@ -268,7 +280,7 @@ def repair_group_bin_at_resolution(
 
     n = int(len(df))
     q_raw = clip_probs(df[pred_col].to_numpy().astype(np.float64), eps=float(clip_eps))
-    y = df[y_col].to_numpy().astype(np.int8)
+    y = df[y_col].to_numpy().astype(np.float64)
 
     if group_cols:
         cols = [c.strip() for c in group_cols if c.strip()]
@@ -320,7 +332,7 @@ def repair_group_bin_at_resolution(
                 continue
             if not np.isfinite(float(et_sort[idx_r])):
                 continue
-            cal.update(group=str(group_key[idx_r]), q=float(q_raw[idx_r]), y=int(y[idx_r]))
+            cal.update(group=str(group_key[idx_r]), q=float(q_raw[idx_r]), y=float(y[idx_r]))
             updated[idx_r] = True
             n_updates += 1
 
@@ -376,7 +388,7 @@ def evaluate_group_bin_approachability(
     if curve_every <= 0:
         raise ValueError("curve_every must be >= 1")
 
-    y = df[y_col].to_numpy().astype(np.int8)
+    y = df[y_col].to_numpy().astype(np.float64)
     q = clip_probs(df[pred_col].to_numpy().astype(np.float64), eps=float(clip_eps))
 
     # Time ordering (optional)
@@ -476,5 +488,3 @@ def evaluate_group_bin_approachability(
         "curve_time_ts": curve_times,  # may be None
         "final": {"app_err": float(app_final), "top_violations": top_named},
     }
-
-

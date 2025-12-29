@@ -53,5 +53,23 @@ main.pdf
 .DS_Store
 .idea/
 .vscode/
+.cursor/
 
+# --- External/reference sources (not part of project) ---
+damani-source/
+turtel-source/
+external/
+data/
 
+# --- Build artifacts ---
+experiments/build/
+experiments/src/forecastbench.egg-info/
+*.synctex.gz
+*.synctex(busy)
+
+# --- Backup files ---
+*.bak
+*.bak_*
+
+# --- Generated plots (can be reproduced) ---
+experiments/plots/

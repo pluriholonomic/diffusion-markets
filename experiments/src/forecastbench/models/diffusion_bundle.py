@@ -201,7 +201,7 @@ class BundleLogitDiffusionForecaster:
         try:
             payload = torch.load(path, map_location="cpu", weights_only=False)
         except TypeError:
-            payload = torch.load(path, map_location="cpu")
+            payload = torch.load(path, map_location="cpu", weights_only=False)
         spec = payload.get("spec")
         if spec is None:
             raise ValueError("Missing spec in checkpoint.")
@@ -321,10 +321,16 @@ class BundleLogitDiffusionForecaster:
         c_t = torch.from_numpy(cond.astype(np.float32)).to(self.device)
         m_t = torch.from_numpy(mask.astype(bool)).to(self.device)
 
-        # Use a simple uniform stride if n_steps < T_train.
-        t_idx = np.linspace(T_train - 1, 0, T, dtype=np.int64)
-
+        # If n_steps < T_train, subsample a monotone timestep schedule and jump from t -> t_prev
+        # (DDIM supports arbitrary timesteps; using t-1 here would be incorrect when skipping).
+        t_idx = [int(t) for t in np.linspace(T_train - 1, 0, T, dtype=np.int64)]
+        # Drop adjacent duplicates (can occur due to int rounding) while preserving order.
+        t_seq: list[int] = []
         for t in t_idx:
+            if not t_seq or t != t_seq[-1]:
+                t_seq.append(t)
+
+        for i, t in enumerate(t_seq):
             t_arr = np.full((bsz,), int(t), dtype=np.int64)
             t_emb = sinusoidal_time_embedding(t_arr, int(self.spec.time_dim))
             t_t = torch.from_numpy(t_emb).to(self.device)
@@ -335,11 +341,13 @@ class BundleLogitDiffusionForecaster:
             ab_t = float(self.alpha_bar[t])
             x0 = (x_t - (1.0 - ab_t) ** 0.5 * eps) / (ab_t**0.5)
 
-            if t == 0:
+            # If we've reached the end of the schedule (or t==0), output x0.
+            if t == 0 or i == len(t_seq) - 1:
                 x_t = x0
                 continue
 
-            ab_prev = float(self.alpha_bar[t - 1])
+            t_prev = int(t_seq[i + 1])
+            ab_prev = float(self.alpha_bar[t_prev])
             sigma = float(eta) * (((1 - ab_prev) / (1 - ab_t)) * (1 - ab_t / ab_prev)) ** 0.5
             noise = torch.randn_like(x_t) if sigma > 0 else 0.0
             x_t = (

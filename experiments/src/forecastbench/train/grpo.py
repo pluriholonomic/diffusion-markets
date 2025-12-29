@@ -984,10 +984,13 @@ class GRPOTrainer:
         if algorithm == "remax":
             metrics["remax_baseline"] = float(self._remax_baseline)
         
-        # Add constraint info for blackwell_aware mode
+        # Add constraint info for blackwell_aware or rlcr mode
         if constraint_info is not None:
-            metrics["max_constraint_violation"] = constraint_info["max_violation"]
-            metrics["mean_constraint_violation"] = constraint_info["mean_violation"]
+            # Handle different key names from different reward functions
+            max_key = "max_violation" if "max_violation" in constraint_info else "max_group_violation"
+            mean_key = "mean_violation" if "mean_violation" in constraint_info else "mean_group_violation"
+            metrics["max_constraint_violation"] = constraint_info.get(max_key, 0.0)
+            metrics["mean_constraint_violation"] = constraint_info.get(mean_key, 0.0)
         
         return metrics
 

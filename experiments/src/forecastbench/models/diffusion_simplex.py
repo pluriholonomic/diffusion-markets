@@ -69,7 +69,7 @@ class SimplexALRDiffusionForecaster:
         try:
             payload = torch.load(path, map_location="cpu", weights_only=False)
         except TypeError:
-            payload = torch.load(path, map_location="cpu")
+            payload = torch.load(path, map_location="cpu", weights_only=False)
         spec = payload["spec"]
         obj = SimplexALRDiffusionForecaster(spec, device=device)
         obj.core.model.load_state_dict(payload["core_state_dict"])

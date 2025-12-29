@@ -85,10 +85,8 @@ class DiffusionRefinementHead:
         ).to(device)
         
         # Condition includes: q_AR (1-dim) + text_embedding (cond_dim)
-        # In train_loop, we concatenate [q_ar_logit, text_embed] -> full_cond of dim (1 + cond_dim)
-        # In forward: inp = [x_t (1), time_embed (hidden_dim), full_cond (1 + cond_dim)]
-        in_dim = 1 + hidden_dim + 1 + cond_dim  # x_t + time_embed + full_cond
-        self._expected_cond_dim = 1 + cond_dim  # Store for validation
+        # Input to network: x_t (1) + time_embed (hidden_dim) + q_ar_logit (1) + text_embed (cond_dim)
+        in_dim = 1 + hidden_dim + 1 + cond_dim  # x_t + time_embed + q_ar_logit + text_embed
         
         # Main network with residual connections
         self.input_proj = nn.Linear(in_dim, hidden_dim).to(device)
@@ -152,28 +150,11 @@ class DiffusionRefinementHead:
         return np.sqrt(a) * x0 + np.sqrt(1.0 - a) * noise
     
     def forward(self, x_t, t_embed, cond):
-        """Forward pass: predict noise.
-        
-        Args:
-            x_t: (batch, 1) noisy logit at timestep t
-            t_embed: (batch, time_dim) sinusoidal time embedding
-            cond: (batch, 1 + cond_dim) full condition = [q_ar_logit, text_embed]
-        """
+        """Forward pass: predict noise."""
         import torch
         
         h_t = self.time_embed(t_embed)
         inp = torch.cat([x_t, h_t, cond], dim=-1)
-        
-        # Validate dimensions match (helps debug shape mismatches)
-        expected_in_dim = self.input_proj.in_features
-        actual_in_dim = inp.shape[-1]
-        if actual_in_dim != expected_in_dim:
-            raise ValueError(
-                f"Dimension mismatch in DiffusionRefinementHead.forward: "
-                f"input has {actual_in_dim} features but model expects {expected_in_dim}. "
-                f"Components: x_t={x_t.shape[-1]}, h_t={h_t.shape[-1]}, cond={cond.shape[-1]}. "
-                f"Expected cond_dim={self._expected_cond_dim if hasattr(self, '_expected_cond_dim') else 'N/A'}."
-            )
         
         x = self.input_proj(inp)
         x = self.input_norm(x)
@@ -214,19 +195,8 @@ class DiffusionRefinementHead:
         x0 = to_logit(p_true).reshape(-1, 1).astype(np.float32)
         
         # Condition includes q_ar (in logit space) concatenated with text embedding
-        # full_cond shape: (N, 1 + cond_dim) where cond_dim is the text embedding dimension
         q_ar_logit = to_logit(q_ar).reshape(-1, 1).astype(np.float32)
         full_cond = np.concatenate([q_ar_logit, cond.astype(np.float32)], axis=1)
-        
-        # Validate full_cond dimension matches what the model expects
-        expected_cond_dim = getattr(self, '_expected_cond_dim', 1 + self.cond_dim)
-        if full_cond.shape[1] != expected_cond_dim:
-            raise ValueError(
-                f"Condition dimension mismatch: full_cond has {full_cond.shape[1]} dims "
-                f"(1 for q_ar + {cond.shape[1]} for text_embed), "
-                f"but model expects {expected_cond_dim}. "
-                f"Check that cond_dim={self.cond_dim} matches your text embedding dimension."
-            )
         
         self.train_mode()
         opt = torch.optim.AdamW(self.parameters(), lr=lr, weight_decay=0.01)
@@ -282,14 +252,7 @@ class DiffusionRefinementHead:
         """
         Sample refined probabilities conditioned on AR predictions.
         
-        Args:
-            q_ar: (N,) AR predictions (probabilities in [0,1])
-            cond: (N, cond_dim) text embeddings
-            n_steps: Number of diffusion sampling steps
-            n_samples: Monte Carlo samples to average
-            seed: Random seed
-        
-        Returns: (N,) array of mean refined probabilities
+        Returns: (N, n_samples) array of probability samples, or mean if n_samples=1
         """
         import torch
         
@@ -303,17 +266,8 @@ class DiffusionRefinementHead:
         def from_logit(x):
             return 1 / (1 + np.exp(-x))
         
-        # Build full condition: [q_ar_logit, text_embedding]
         q_ar_logit = to_logit(q_ar).reshape(-1, 1).astype(np.float32)
         full_cond = np.concatenate([q_ar_logit, cond.astype(np.float32)], axis=1)
-        
-        # Validate dimension
-        expected_cond_dim = getattr(self, '_expected_cond_dim', 1 + self.cond_dim)
-        if full_cond.shape[1] != expected_cond_dim:
-            raise ValueError(
-                f"Condition dimension mismatch in sample: full_cond has {full_cond.shape[1]} dims, "
-                f"expected {expected_cond_dim}. cond.shape={cond.shape}, cond_dim={self.cond_dim}"
-            )
         
         all_samples = []
         for _ in range(n_samples):

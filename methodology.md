@@ -367,3 +367,4 @@ When we say **evaluation-only**, we mean:
 If you want to include an HF LLM for AR+CoT evaluation, that is still “evaluation-only” (inference), but it requires model weights and potentially GPU resources.
 
 
+

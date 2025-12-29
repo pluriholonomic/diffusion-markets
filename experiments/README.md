@@ -70,7 +70,10 @@ The CLI expects an **offline dataset** (Parquet/JSONL) for evaluation; ingestion
 - `forecastbench pm_build_subgraph`: run a user-supplied GraphQL query against a Polymarket subgraph and coerce to the minimal schema.
 - `forecastbench pm_download_gamma`: download Polymarket market metadata via the public Gamma API into an append-only JSONL (good for long runs + checkpointing).
 - `forecastbench pm_build_gamma`: build a Parquet yes/no dataset (with labels + CLOB token IDs) from a Gamma dump.
-- `forecastbench pm_enrich_clob`: add a **forecast-time market probability** from the Polymarket CLOB (enables trading simulation).
+- `forecastbench pm_enrich_clob`: add a **first-available post-open market probability** from the Polymarket CLOB (useful for a quick market baseline, but not aligned to brier.fyi criteria).
+- `forecastbench pm_download_clob_history`: download full CLOB price histories (per token) for later criterion/horizon sampling.
+- `forecastbench pm_build_horizon_prices`: build a dataset where `market_prob` is sampled at a fixed horizon before close (e.g. 7d before close).
+- `forecastbench pm_build_criterion_prices`: build a dataset where `market_prob` is computed using a **Themis/brier.fyi-style criterion** (e.g. `midpoint`, `time-average`, `before-close-days-30`).
 - `forecastbench pm_difftrain`: diffusion-side baseline on Polymarket dataset (text→prob), evaluated on a held-out split.
 - `forecastbench pm_eval`: evaluate a dataset (optionally run an HF LLM to produce `pred_prob` first; evaluation-only).
 
@@ -90,5 +93,11 @@ bash scripts/pull_gamma_backup_loop.sh \
   /root/polymarket_data/gamma \
   polymarket_backups/gamma
 ```
+
+### Remote queue (2×GPU) workflow
+
+This repo includes a simple SSH-based queue to keep a multi-GPU box saturated using one job per GPU.
+
+See: [`REMOTE_QUEUE_RECIPES.md`](REMOTE_QUEUE_RECIPES.md).
 
 

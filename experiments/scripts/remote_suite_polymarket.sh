@@ -7,7 +7,7 @@ set -euo pipefail
 #
 # This suite is evaluation-only (no RL training loop). It produces:
 # - a labeled dataset from Gamma dump (pm_build_gamma)
-# - a forecast-time market price via CLOB history (pm_enrich_clob)
+# - a criterion-based market price via full CLOB history (pm_download_clob_history + pm_build_criterion_prices)
 # - diffusion baseline (pm_difftrain)
 # - AR baseline via HF LLM (pm_eval with --llm-model and median-of-K)
 
@@ -23,11 +23,24 @@ CREATED_AFTER="${CREATED_AFTER:-2024-01-01T00:00:00Z}"
 
 # Sizes (keep modest by default; you can scale later)
 SAMPLE_ROWS="${SAMPLE_ROWS:-20000}"
-ENRICH_MAX_ROWS="${ENRICH_MAX_ROWS:-5000}"
+ENRICH_MAX_ROWS="${ENRICH_MAX_ROWS:-5000}"  # used as max rows for CLOB history download
 EVAL_MAX_EXAMPLES="${EVAL_MAX_EXAMPLES:-512}"
 
 LLM_MODEL="${LLM_MODEL:-Qwen/Qwen3-14B}"
 LLM_K="${LLM_K:-5}"
+
+# Themis/brier.fyi-style market probability criterion:
+#   midpoint | time-average | before-close-hours-24 | before-close-days-7 | before-close-days-30 | ...
+CRITERION="${CRITERION:-midpoint}"
+
+# Diffusion-side text embedder (keep lightweight; does not need to match the AR LLM).
+DIFF_EMBED_MODEL="${DIFF_EMBED_MODEL:-sentence-transformers/all-MiniLM-L6-v2}"
+DIFF_EMBED_DTYPE="${DIFF_EMBED_DTYPE:-float16}"
+DIFF_EMBED_BATCH_SIZE="${DIFF_EMBED_BATCH_SIZE:-128}"
+
+# CLOB history download fidelity (passed through to /prices-history).
+# Larger values are coarser but faster (e.g. 60, 1440).
+CLOB_FIDELITY="${CLOB_FIDELITY:-60}"
 
 echo "[pm_suite] start: $(date -u)"
 echo "[pm_suite] raw_gz=$RAW_GZ"
@@ -35,11 +48,13 @@ echo "[pm_suite] derived_dir=$DERIVED_DIR"
 echo "[pm_suite] min_volume=$MIN_VOLUME created_after=$CREATED_AFTER"
 echo "[pm_suite] sample_rows=$SAMPLE_ROWS enrich_max_rows=$ENRICH_MAX_ROWS eval_max_examples=$EVAL_MAX_EXAMPLES"
 echo "[pm_suite] llm_model=$LLM_MODEL llm_K=$LLM_K"
+echo "[pm_suite] diff_embed_model=$DIFF_EMBED_MODEL diff_embed_dtype=$DIFF_EMBED_DTYPE diff_embed_batch_size=$DIFF_EMBED_BATCH_SIZE"
+echo "[pm_suite] criterion=$CRITERION clob_fidelity=$CLOB_FIDELITY"
 
 OUT_ALL="$DERIVED_DIR/gamma_yesno_resolved.parquet"
 OUT_SAMPLE="$DERIVED_DIR/gamma_yesno_sample.parquet"
-OUT_ENRICH="$DERIVED_DIR/gamma_yesno_sample_clob.parquet"
 OUT_READY="$DERIVED_DIR/gamma_yesno_ready.parquet"
+CLOB_HISTORY_DIR="$DERIVED_DIR/clob_history_yes_f${CLOB_FIDELITY}"
 
 echo "[pm_suite] (1) build dataset from Gamma dump -> $OUT_ALL"
 .venv/bin/python -m forecastbench pm_build_gamma \
@@ -74,30 +89,22 @@ df.to_parquet(out, index=False)
 print({"kept": int(len(df)), "out": str(out)})
 PY
 
-echo "[pm_suite] (3) enrich with forecast-time market_prob via CLOB history -> $OUT_ENRICH (max_rows=$ENRICH_MAX_ROWS)"
-.venv/bin/python -m forecastbench pm_enrich_clob \
+echo "[pm_suite] (3) download full CLOB history for YES tokens -> $CLOB_HISTORY_DIR (max_rows=$ENRICH_MAX_ROWS)"
+.venv/bin/python -m forecastbench pm_download_clob_history \
   --input "$OUT_SAMPLE" \
-  --out "$OUT_ENRICH" \
-  --fidelity 60 \
+  --out-dir "$CLOB_HISTORY_DIR" \
+  --fidelity "$CLOB_FIDELITY" \
   --earliest-timestamp 1704096000 \
   --sleep-s 0.05 \
   --max-rows "$ENRICH_MAX_ROWS"
 
-echo "[pm_suite] (4) filter to rows with market_prob present -> $OUT_READY"
-.venv/bin/python - <<PY
-import pandas as pd
-from pathlib import Path
-
-inp = Path("$OUT_ENRICH")
-out = Path("$OUT_READY")
-df = pd.read_parquet(inp)
-before = len(df)
-df = df[df["market_prob"].notna()].copy()
-after = len(df)
-out.parent.mkdir(parents=True, exist_ok=True)
-df.to_parquet(out, index=False)
-print({"before": int(before), "after": int(after), "out": str(out)})
-PY
+echo "[pm_suite] (4) build criterion-based market_prob ($CRITERION) -> $OUT_READY"
+.venv/bin/python -m forecastbench pm_build_criterion_prices \
+  --input "$OUT_SAMPLE" \
+  --clob-history-dir "$CLOB_HISTORY_DIR" \
+  --out "$OUT_READY" \
+  --criterion "$CRITERION" \
+  --max-rows "$ENRICH_MAX_ROWS"
 
 echo "[pm_suite] (5) diffusion baseline: pm_difftrain on $OUT_READY"
 RUN_DIFF="pm_suite_difftrain"
@@ -108,19 +115,16 @@ RUN_DIFF="pm_suite_difftrain"
   --text-cols "question,description" \
   --train-frac 0.8 \
   --seed 0 \
-  --bundle-col "topic" \
-  --bundle-size 8 \
-  --embed-model "$LLM_MODEL" \
+  --embed-model "$DIFF_EMBED_MODEL" \
   --embed-device "cuda" \
-  --embed-dtype "bfloat16" \
-  --embed-device-map "auto" \
-  --embed-batch-size 4 \
+  --embed-dtype "$DIFF_EMBED_DTYPE" \
+  --embed-batch-size "$DIFF_EMBED_BATCH_SIZE" \
   --device "cuda" \
   --train-steps 2000 \
   --batch-size 512 \
   --sample-steps 32 \
   --mc 16 \
-  --agg "median"
+  --agg "mean"
 
 # Locate latest run dir for pm_difftrain to get predictions.parquet
 RUN_DIR_DIFF=$(ls -1td runs/*_"$RUN_DIFF" | head -n 1 || true)
@@ -134,7 +138,7 @@ echo "[pm_suite] (6) evaluate diffusion on same held-out test set"
   --pred-col "pred_prob" \
   --text-cols "question,description" \
   --run-name "pm_suite_eval_diff" \
-  --group-cols "topic" \
+  --group-cols "volume_q5,ttc_q5" \
   --approachability \
   --trading-mode "sign"
 
@@ -145,7 +149,7 @@ echo "[pm_suite] (7) evaluate AR baseline (median-of-K) on same test set (max_ex
   --pred-col "pred_prob" \
   --text-cols "question,description" \
   --run-name "pm_suite_eval_ar" \
-  --group-cols "topic" \
+  --group-cols "volume_q5,ttc_q5" \
   --approachability \
   --trading-mode "sign" \
   --llm-model "$LLM_MODEL" \
@@ -163,7 +167,7 @@ echo "[pm_suite] (8) market baseline (use market_prob as predictor on same test 
   --pred-col "market_prob" \
   --text-cols "question,description" \
   --run-name "pm_suite_eval_market" \
-  --group-cols "topic" \
+  --group-cols "volume_q5,ttc_q5" \
   --approachability \
   --trading-mode "sign"
 

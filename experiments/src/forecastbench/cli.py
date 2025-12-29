@@ -842,6 +842,249 @@ def cmd_pm_eval(args: argparse.Namespace) -> None:
     print(f"Artifacts: {arts.run_dir}")
 
 
+def cmd_pm_eval_v2(args: argparse.Namespace) -> None:
+    """
+    Evaluate Polymarket dataset with hierarchical constraints (v2).
+    
+    This version includes:
+    - Multicalibration: E[Y-p | group, bin(p)] = 0 for (topic, volume) groups
+    - Frechet constraints: Cross-market bounds via category bundling
+    - Bootstrap CIs on approachability rate
+    - Per-sample hybrid correction analysis
+    """
+    from forecastbench.benchmarks.polymarket_eval import evaluate_polymarket_dataset
+    from forecastbench.data import load_dataset
+    from forecastbench.data.derived_groups import add_derived_group_cols
+    from forecastbench.metrics.hierarchical_constraints import (
+        HierarchicalConstraintSet,
+        compute_arbitrage_bound_hierarchical,
+    )
+    from forecastbench.benchmarks.hybrid_analysis import run_hybrid_analysis
+    from forecastbench.runner import RunArtifacts
+    
+    df = load_dataset(args.dataset_path)
+    if args.max_examples is not None:
+        df = df.head(int(args.max_examples)).copy()
+    
+    # Add derived group columns
+    multicalib_cols = [c.strip() for c in args.multicalib_groups.split(",") if c.strip()]
+    df, created_cols = add_derived_group_cols(df, multicalib_cols)
+    print(f"[pm_eval_v2] Created derived columns: {created_cols}")
+    
+    # Extract predictions and outcomes
+    pred_col = args.pred_col
+    y_col = args.y_col
+    market_prob_col = args.market_prob_col
+    
+    if pred_col not in df.columns:
+        raise SystemExit(f"Missing pred_col {pred_col!r} in dataset")
+    if y_col not in df.columns:
+        raise SystemExit(f"Missing y_col {y_col!r} in dataset")
+    
+    p_model = df[pred_col].values.astype(np.float64)
+    y = df[y_col].values.astype(np.float64)
+    
+    # Market prices (if available)
+    q_market = None
+    if market_prob_col and market_prob_col in df.columns:
+        q_market = df[market_prob_col].values.astype(np.float64)
+    
+    # Standard metrics
+    metrics = {
+        "n": len(df),
+        "brier": float(brier_loss(p_model, y)),
+        "ece": float(expected_calibration_error(p_model, y, n_bins=args.bins)),
+    }
+    
+    # Hierarchical constraint analysis
+    if args.hierarchical_constraints:
+        print(f"[pm_eval_v2] Running hierarchical constraint analysis...")
+        
+        constraint_set = HierarchicalConstraintSet.create(
+            group_cols=multicalib_cols,
+            n_bins=args.bins,
+            bundle_col=args.frechet_bundle_col,
+            bundle_size=args.bundle_size,
+        )
+        
+        constraint_metrics = constraint_set.update(
+            p=p_model, y=y, df=df, seed=args.seed
+        )
+        metrics["hierarchical_constraints"] = constraint_metrics
+        
+        # Arbitrage bound (if market prices available)
+        if q_market is not None:
+            arb_bound = compute_arbitrage_bound_hierarchical(
+                q_market=q_market,
+                p_model=p_model,
+                y=y,
+                df=df,
+                group_cols=multicalib_cols,
+                n_bins=args.bins,
+                bundle_col=args.frechet_bundle_col,
+                bundle_size=args.bundle_size,
+                seed=args.seed,
+            )
+            metrics["arbitrage_bound"] = arb_bound
+    
+    # Approachability rate with bootstrap CI
+    if args.approachability_rate:
+        print(f"[pm_eval_v2] Computing approachability rate with bootstrap CI...")
+        
+        from forecastbench.metrics.multiscale_approachability import BlackwellConstraintTracker
+        
+        tracker = BlackwellConstraintTracker(n_groups=len(set(multicalib_cols)), n_bins=args.bins)
+        
+        # Process in streaming fashion
+        groups = np.zeros(len(df), dtype=np.int64)
+        for i, col in enumerate(multicalib_cols):
+            if col in df.columns:
+                groups += (df[col].factorize()[0] * (i + 1))
+        
+        tracker.update(p_model, y, groups, log_every=100)
+        
+        rate_info = tracker.compute_approachability_rate_with_ci(
+            n_bootstrap=args.bootstrap_n, seed=args.seed
+        )
+        metrics["approachability_rate"] = rate_info
+    
+    # Hybrid correction analysis (if AR predictions available)
+    ar_pred_col = args.ar_pred_col
+    if ar_pred_col and ar_pred_col in df.columns:
+        print(f"[pm_eval_v2] Running hybrid correction analysis...")
+        
+        p_ar = df[ar_pred_col].values.astype(np.float64)
+        hybrid_analysis = run_hybrid_analysis(
+            p_ar=p_ar,
+            p_hybrid=p_model,
+            y=y,
+        )
+        metrics["hybrid_analysis"] = hybrid_analysis
+    
+    # Save results
+    arts = RunArtifacts.create(
+        run_name=args.run_name,
+        spec={"cmd": "pm_eval_v2", "args": vars(args)},
+    )
+    arts.write_json("metrics.json", metrics)
+    df.to_parquet(arts.run_dir / "predictions.parquet", index=False)
+    
+    # Print summary
+    print(f"\n[pm_eval_v2] Results:")
+    print(f"  Brier: {metrics['brier']:.4f}")
+    print(f"  ECE: {metrics['ece']:.4f}")
+    if "hierarchical_constraints" in metrics:
+        hc = metrics["hierarchical_constraints"]
+        print(f"  Distance to C_t: {hc['distance_to_C']:.4f}")
+        print(f"    - Multicalib: {hc['d_multicalib']:.4f}")
+        print(f"    - Frechet: {hc['d_frechet']:.4f}")
+    if "approachability_rate" in metrics:
+        ar = metrics["approachability_rate"]
+        print(f"  Approachability rate: {ar.get('rate', 'N/A'):.3f} (95% CI: [{ar.get('rate_ci_lo', 'N/A'):.3f}, {ar.get('rate_ci_hi', 'N/A'):.3f}])")
+        print(f"    Consistent with Blackwell 1/sqrt(T): {ar.get('consistent_with_theory', False)}")
+    if "arbitrage_bound" in metrics:
+        ab = metrics["arbitrage_bound"]
+        print(f"  Arbitrage capture rate: {ab['arbitrage_capture_rate']*100:.1f}%")
+        print(f"  Sharpe ratio: {ab['sharpe_ratio']:.2f}")
+    
+    print(f"\nArtifacts: {arts.run_dir}")
+
+
+def cmd_multimarket_arb(args: argparse.Namespace) -> None:
+    """
+    Run multi-market arbitrage analysis with Frechet constraints.
+    
+    This command:
+    1. Groups markets by category into bundles
+    2. Computes Frechet constraint violations within bundles
+    3. Measures distance to constraint set and correlation with profit
+    """
+    from forecastbench.data import load_dataset
+    from forecastbench.data.bundles import make_group_bundles
+    from forecastbench.metrics.hierarchical_constraints import (
+        FrechetConstraintTracker,
+        compute_arbitrage_bound_hierarchical,
+    )
+    from forecastbench.runner import RunArtifacts
+    
+    df = load_dataset(args.dataset_path)
+    if args.max_rows is not None:
+        df = df.head(int(args.max_rows)).copy()
+    
+    df = df.reset_index(drop=True)
+    
+    # Check required columns
+    if args.bundle_col not in df.columns:
+        raise SystemExit(f"Missing bundle column {args.bundle_col!r}")
+    if args.pred_col not in df.columns:
+        raise SystemExit(f"Missing pred column {args.pred_col!r}")
+    if args.y_col not in df.columns:
+        raise SystemExit(f"Missing y column {args.y_col!r}")
+    
+    p = df[args.pred_col].values.astype(np.float64)
+    y = df[args.y_col].values.astype(np.float64)
+    
+    # Create bundles
+    bundle_idx, mask = make_group_bundles(
+        df,
+        group_col=args.bundle_col,
+        bundle_size=args.bundle_size,
+        seed=args.seed,
+        drop_last=True,
+    )
+    
+    print(f"[multimarket_arb] Created {len(bundle_idx)} bundles of size {args.bundle_size}")
+    print(f"[multimarket_arb] Using constraint type: {args.constraint_type}")
+    
+    # Track Frechet constraints
+    tracker = FrechetConstraintTracker(
+        bundle_col=args.bundle_col,
+        bundle_size=args.bundle_size,
+        constraint_type=args.constraint_type,
+    )
+    
+    tracker.update_from_bundles(bundle_idx, mask, p, log_every=10)
+    
+    metrics = tracker._compute_metrics()
+    
+    # Market prices for arbitrage analysis
+    q_market = None
+    if args.market_prob_col and args.market_prob_col in df.columns:
+        q_market = df[args.market_prob_col].values.astype(np.float64)
+        
+        arb_bound = compute_arbitrage_bound_hierarchical(
+            q_market=q_market,
+            p_model=p,
+            y=y,
+            df=df,
+            group_cols=[],
+            bundle_col=args.bundle_col,
+            bundle_size=args.bundle_size,
+            seed=args.seed,
+        )
+        metrics["arbitrage_bound"] = arb_bound
+    
+    # Save results
+    arts = RunArtifacts.create(
+        run_name=args.run_name,
+        spec={"cmd": "multimarket_arb", "args": vars(args)},
+    )
+    arts.write_json("metrics.json", metrics)
+    
+    print(f"\n[multimarket_arb] Results:")
+    print(f"  Bundles analyzed: {metrics['n_bundles']}")
+    print(f"  Max Frechet violation: {metrics['max_violation']:.4f}")
+    print(f"  Mean Frechet violation: {metrics['mean_violation']:.4f}")
+    print(f"  Fraction violated: {metrics['frac_violated']*100:.1f}%")
+    
+    if "arbitrage_bound" in metrics:
+        ab = metrics["arbitrage_bound"]
+        print(f"  Arbitrage capture rate: {ab['arbitrage_capture_rate']*100:.1f}%")
+        print(f"  Sharpe ratio: {ab['sharpe_ratio']:.2f}")
+    
+    print(f"\nArtifacts: {arts.run_dir}")
+
+
 def cmd_pm_build_polydata(args: argparse.Namespace) -> None:
     """
     Convert a PolyData Explorer JSON download into the minimal forecastbench schema.
@@ -3241,6 +3484,7 @@ def cmd_pm_turtel_headlines(args: argparse.Namespace) -> None:
         close_date_col=args.close_date_col,
         resolution_date_col=args.resolution_date_col,
         cache_dir=args.cache_dir,
+        fuzzy_cache=getattr(args, 'fuzzy_cache', False),
         seed=args.seed,
     )
     
@@ -3314,11 +3558,16 @@ def cmd_grpo_train(args: argparse.Namespace) -> None:
     if "outcome" not in df.columns:
         if "resolved" in df.columns:
             df["outcome"] = df["resolved"].astype(int)
+        elif "y" in df.columns:
+            df["outcome"] = df["y"].astype(int)
         else:
-            raise ValueError("Data must have 'outcome' column")
+            raise ValueError("Data must have 'outcome', 'resolved', or 'y' column")
     
     if "market_price" not in df.columns:
-        df["market_price"] = 0.5  # Default to uninformative market
+        if "market_prob" in df.columns:
+            df["market_price"] = df["market_prob"]
+        else:
+            df["market_price"] = 0.5  # Default to uninformative market
     
     infos = df["info"].tolist()
     y = df["outcome"].values.astype(np.float64)
@@ -3808,6 +4057,80 @@ def build_parser() -> argparse.ArgumentParser:
     p_pm_eval.add_argument("--llm-no-cot", action="store_true")
     p_pm_eval.add_argument("--llm-agg", type=str, default="mean", help="mean|median aggregation over K samples")
     p_pm_eval.set_defaults(func=cmd_pm_eval)
+
+    # ====== PM_EVAL_V2: Hierarchical Constraints ======
+    p_pm_eval_v2 = sub.add_parser(
+        "pm_eval_v2",
+        help="Evaluate Polymarket dataset with hierarchical constraints (multicalibration + Frechet).",
+    )
+    p_pm_eval_v2.add_argument("--dataset-path", type=str, required=True)
+    p_pm_eval_v2.add_argument("--run-name", type=str, default="pm_eval_v2")
+    p_pm_eval_v2.add_argument("--max-examples", type=int, default=None)
+    p_pm_eval_v2.add_argument("--pred-col", type=str, default="pred_prob", help="Prediction column")
+    p_pm_eval_v2.add_argument("--y-col", type=str, default="y", help="Outcome column")
+    p_pm_eval_v2.add_argument("--market-prob-col", type=str, default="market_prob", help="Market price column")
+    p_pm_eval_v2.add_argument("--bins", type=int, default=10, help="Number of calibration bins")
+    p_pm_eval_v2.add_argument("--seed", type=int, default=0)
+    
+    # Hierarchical constraints
+    p_pm_eval_v2.add_argument(
+        "--hierarchical-constraints",
+        action="store_true",
+        help="Compute hierarchical constraint violations (multicalib + Frechet)",
+    )
+    p_pm_eval_v2.add_argument(
+        "--multicalib-groups",
+        type=str,
+        default="topic,volume_q5",
+        help="Comma-separated columns for multicalibration groups",
+    )
+    p_pm_eval_v2.add_argument(
+        "--frechet-bundle-col",
+        type=str,
+        default="category",
+        help="Column for Frechet bundling (cross-market constraints)",
+    )
+    p_pm_eval_v2.add_argument("--bundle-size", type=int, default=3, help="Markets per Frechet bundle")
+    
+    # Approachability rate
+    p_pm_eval_v2.add_argument(
+        "--approachability-rate",
+        action="store_true",
+        help="Compute approachability rate with bootstrap CIs",
+    )
+    p_pm_eval_v2.add_argument("--bootstrap-n", type=int, default=1000, help="Bootstrap resamples for rate CI")
+    
+    # Hybrid analysis
+    p_pm_eval_v2.add_argument(
+        "--ar-pred-col",
+        type=str,
+        default=None,
+        help="AR-only prediction column for hybrid correction analysis",
+    )
+    p_pm_eval_v2.set_defaults(func=cmd_pm_eval_v2)
+
+    # ====== MULTIMARKET_ARB: Frechet Arbitrage ======
+    p_mm_arb = sub.add_parser(
+        "multimarket_arb",
+        help="Multi-market arbitrage analysis with Frechet constraints.",
+    )
+    p_mm_arb.add_argument("--dataset-path", type=str, required=True)
+    p_mm_arb.add_argument("--run-name", type=str, default="multimarket_arb")
+    p_mm_arb.add_argument("--max-rows", type=int, default=None)
+    p_mm_arb.add_argument("--pred-col", type=str, default="pred_prob", help="Prediction column")
+    p_mm_arb.add_argument("--y-col", type=str, default="y", help="Outcome column")
+    p_mm_arb.add_argument("--market-prob-col", type=str, default="market_prob", help="Market price column")
+    p_mm_arb.add_argument("--bundle-col", type=str, default="category", help="Column for bundling markets")
+    p_mm_arb.add_argument("--bundle-size", type=int, default=3, help="Markets per bundle")
+    p_mm_arb.add_argument(
+        "--constraint-type",
+        type=str,
+        default="frechet",
+        choices=["frechet", "implication", "mutual_exclusion"],
+        help="Type of cross-market constraint",
+    )
+    p_mm_arb.add_argument("--seed", type=int, default=0)
+    p_mm_arb.set_defaults(func=cmd_multimarket_arb)
 
     p_pm_bd = sub.add_parser("pm_build_polydata", help="Build dataset from a PolyData Explorer JSON download.")
     p_pm_bd.add_argument("--json-path", type=str, required=True)
@@ -4488,6 +4811,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_turtel_headlines.add_argument("--close-date-col", type=str, default="endDate")
     p_turtel_headlines.add_argument("--resolution-date-col", type=str, default="resolutionTime")
     p_turtel_headlines.add_argument("--cache-dir", type=str, default=None, help="Cache directory for headlines")
+    p_turtel_headlines.add_argument("--fuzzy-cache", action="store_true",
+                                    help="Match cache by question only (reuse cached headlines across datasets)")
     p_turtel_headlines.add_argument("--max-rows", type=int, default=None, help="Max rows to process")
     p_turtel_headlines.add_argument("--seed", type=int, default=0)
     p_turtel_headlines.set_defaults(func=cmd_pm_turtel_headlines)
@@ -4554,6 +4879,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_ltx.add_argument("--run-dir", type=str, required=True)
     p_ltx.add_argument("--out", type=str, default=None)
     p_ltx.set_defaults(func=cmd_latex)
+
+    # ====== BACKTESTING ======
+    # Import and add backtest subparser
+    try:
+        from backtest.cli import add_backtest_parser
+        add_backtest_parser(sub)
+    except ImportError:
+        # Backtest module not available; skip
+        pass
 
     return p
 

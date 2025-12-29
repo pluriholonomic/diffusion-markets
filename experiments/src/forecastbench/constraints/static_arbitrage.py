@@ -66,6 +66,40 @@ def implication_violations(*, p_a: float, p_b: float, include_box: bool = True) 
     return np.asarray(vals, dtype=np.float64)
 
 
+def equality_violations_3(
+    *,
+    p_a: float,
+    p_b: float,
+    p_c: float,
+    include_box: bool = True,
+) -> np.ndarray:
+    """
+    Two-sided equality constraints for three prices that should be identical:
+      p_a == p_b == p_c
+
+    Encoded as 6 inequalities:
+      p_a - p_b <= 0,  p_b - p_a <= 0
+      p_a - p_c <= 0,  p_c - p_a <= 0
+      p_b - p_c <= 0,  p_c - p_b <= 0
+
+    If include_box=True, also include 0<=p<=1 box constraints for each coordinate.
+    """
+    p_a = float(p_a)
+    p_b = float(p_b)
+    p_c = float(p_c)
+    vals = [
+        p_a - p_b,
+        p_b - p_a,
+        p_a - p_c,
+        p_c - p_a,
+        p_b - p_c,
+        p_c - p_b,
+    ]
+    if include_box:
+        vals += [-p_a, p_a - 1.0, -p_b, p_b - 1.0, -p_c, p_c - 1.0]
+    return np.asarray(vals, dtype=np.float64)
+
+
 def mutual_exclusion_violation(*, p: np.ndarray) -> np.ndarray:
     """
     Mutual-exclusion inequality for a set of events:

@@ -54,6 +54,7 @@ class TurtelHeadlineSpec:
     
     # Cache
     cache_dir: Optional[str] = None
+    fuzzy_cache: bool = False  # If True, match cache by question only (reuse across datasets)
     
     # Seed for reproducibility
     seed: int = 0
@@ -210,26 +211,50 @@ def fetch_exa_headlines(
     cache_dir: Optional[Path] = None,
     timeout_s: float = 30.0,
     delay_s: float = 0.5,
+    max_retries: int = 5,
+    fuzzy_cache: bool = False,
 ) -> List[Dict[str, Any]]:
     """
     Fetch headlines from Exa.ai API (Turtel's approach).
     
     Requires Exa API key. Higher quality than GDELT but paid.
-    Now with caching for resume support, timeouts, and delays.
+    Now with caching for resume support, timeouts, delays, and retry logic.
+    
+    Args:
+        fuzzy_cache: If True, match cache by question only (ignoring date).
+                     Useful for reusing expensive cached results across datasets.
     """
     import concurrent.futures
+    
+    # Normalize query for cache key
+    query_key = re.sub(r'[^a-zA-Z0-9_]', '_', query[:50])
     
     # Check cache first
     cache_file = None
     if cache_dir:
         cache_dir = Path(cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
-        cache_key = f"exa_{query[:50]}_{before_date.strftime('%Y%m%d')}"
-        cache_key = re.sub(r'[^a-zA-Z0-9_]', '_', cache_key)
-        cache_file = cache_dir / f"{cache_key}.json"
-        if cache_file.exists():
-            with open(cache_file) as f:
-                return json.load(f)
+        
+        if fuzzy_cache:
+            # Fuzzy lookup: find ANY cache file matching this question prefix
+            import glob
+            pattern = str(cache_dir / f"exa_{query_key}_*.json")
+            matches = glob.glob(pattern)
+            if matches:
+                # Use first match (any date is fine)
+                cache_file = Path(matches[0])
+                with open(cache_file) as f:
+                    return json.load(f)
+            # No match - will fetch fresh and save with exact key
+            cache_key = f"exa_{query_key}_{before_date.strftime('%Y%m%d')}"
+            cache_file = cache_dir / f"{cache_key}.json"
+        else:
+            # Exact cache lookup (original behavior)
+            cache_key = f"exa_{query_key}_{before_date.strftime('%Y%m%d')}"
+            cache_file = cache_dir / f"{cache_key}.json"
+            if cache_file.exists():
+                with open(cache_file) as f:
+                    return json.load(f)
     
     try:
         from exa_py import Exa
@@ -248,9 +273,6 @@ def fetch_exa_headlines(
     end_date = before_date - timedelta(days=1)
     start_date = end_date - timedelta(days=window_days)
     
-    # Add delay to avoid rate limiting
-    time.sleep(delay_s)
-    
     def _do_search():
         return exa.search(
             query,
@@ -259,36 +281,53 @@ def fetch_exa_headlines(
             end_published_date=end_date.strftime("%Y-%m-%d"),
         )
     
-    try:
-        # Use ThreadPoolExecutor for timeout
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(_do_search)
-            response = future.result(timeout=timeout_s)
+    # Retry loop with exponential backoff
+    for attempt in range(max_retries):
+        # Add delay to avoid rate limiting (exponential backoff on retries)
+        current_delay = delay_s * (2 ** attempt)
+        time.sleep(current_delay)
         
-        results = []
-        for result in response.results:
-            results.append({
-                "title": result.title,
-                "url": result.url,
-                "date": result.published_date or "",
-                "source": result.url.split("/")[2] if result.url else "",
-                "score": result.score,
-            })
+        try:
+            # Use ThreadPoolExecutor for timeout
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_do_search)
+                response = future.result(timeout=timeout_s)
+            
+            results = []
+            for result in response.results:
+                results.append({
+                    "title": result.title,
+                    "url": result.url,
+                    "date": result.published_date or "",
+                    "source": result.url.split("/")[2] if result.url else "",
+                    "score": result.score,
+                })
+            
+            # Save to cache (cache even empty results to avoid retrying)
+            if cache_file:
+                with open(cache_file, "w") as f:
+                    json.dump(results, f)
+            
+            return results
         
-        # Save to cache
-        if cache_file and results:
-            with open(cache_file, "w") as f:
-                json.dump(results, f)
-        
-        return results
+        except concurrent.futures.TimeoutError:
+            print(f"[exa] Timeout after {timeout_s}s for query: {query[:50]}... (attempt {attempt+1}/{max_retries})")
+            continue
+            
+        except Exception as e:
+            error_str = str(e)
+            # Retry on 502/503 errors (server issues)
+            if "502" in error_str or "503" in error_str or "Bad gateway" in error_str:
+                print(f"[exa] Server error (attempt {attempt+1}/{max_retries}): {error_str[:100]}")
+                continue
+            else:
+                # Other errors: don't retry
+                print(f"[exa] Error fetching headlines: {e}")
+                return []
     
-    except concurrent.futures.TimeoutError:
-        print(f"[exa] Timeout after {timeout_s}s for query: {query[:50]}...")
-        return []
-        
-    except Exception as e:
-        print(f"[exa] Error fetching headlines: {e}")
-        return []
+    # All retries exhausted
+    print(f"[exa] All {max_retries} retries failed for: {query[:50]}...")
+    return []
 
 
 def check_temporal_leakage(
@@ -487,6 +526,7 @@ def enrich_with_turtel_headlines(
                     max_articles=spec.max_articles,
                     api_key=spec.exa_api_key,
                     cache_dir=cache_dir,
+                    fuzzy_cache=spec.fuzzy_cache,
                 )
             else:  # gdelt
                 headlines = fetch_gdelt_headlines(
@@ -658,4 +698,6 @@ def add_turtel_headlines_args(parser) -> None:
     parser.add_argument("--resolution-date-col", type=str, default="resolutionTime")
     parser.add_argument("--headlines-cache-dir", type=str, default=None,
                         help="Cache directory for headlines")
+    parser.add_argument("--fuzzy-cache", action="store_true",
+                        help="Match cache by question only (reuse across datasets)")
 

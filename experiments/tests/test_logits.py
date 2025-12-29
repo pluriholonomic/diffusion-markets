@@ -19,3 +19,4 @@ def test_simplex_alr_roundtrip():
     assert np.max(np.abs(p - p2)) < 1e-10
 
 
+

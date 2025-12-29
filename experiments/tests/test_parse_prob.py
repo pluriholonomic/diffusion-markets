@@ -18,3 +18,4 @@ def test_extract_prob_percent_phrase():
     assert _extract_prob("P(YES)=0.9") == 0.9
 
 
+

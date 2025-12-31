@@ -357,6 +357,7 @@ def _rlcr_reward(
     p: np.ndarray,
     y: np.ndarray,
     *,
+    q: Optional[np.ndarray] = None,  # Market probability - CRITICAL for forecasting
     alpha: float = 1.0,
     beta: float = 1.0,
     gamma: float = 0.1,
@@ -364,6 +365,7 @@ def _rlcr_reward(
     n_groups: int = 10,
     use_group_calibration: bool = True,
     groups: Optional[np.ndarray] = None,
+    use_market_relative: bool = True,  # NEW: use market-relative rewards
 ) -> Tuple[np.ndarray, Dict]:
     """
     RLCR reward: Reinforcement Learning with Calibration Rewards.
@@ -371,45 +373,32 @@ def _rlcr_reward(
     From Damani et al. (2025) "Beyond Binary Rewards: Training LMs to 
     Reason About Their Uncertainty" (arXiv:2507.16806).
     
-    **Theorem 1 (Damani et al.)**: The RLCR reward satisfies:
-    1. Calibration incentive: For any y, expected reward is maximized when q = p_y
-    2. Correctness incentive: Among calibrated predictions (y, p_y), 
-       expected reward is maximized by the prediction whose p_y is greatest.
+    **IMPORTANT FIX**: The original RLCR was designed for classification where
+    p is P(correct). For FORECASTING, we need market-relative rewards to avoid
+    the model collapsing to predict p=0 or p=1 based on class imbalance.
     
-    Key insight: Binary rewards alone degrade calibration. RLCR augments
-    correctness with a BOUNDED proper scoring rule (Brier) to jointly optimize
-    accuracy AND calibration.
+    **Problem with original RLCR for forecasting**:
+    - Brier reward = -(p - y)² is maximized at p=y
+    - With 73% y=0, model learns to predict low p for everything
+    - This is the OPPOSITE of calibration!
     
-    **Critical**: Unbounded scoring rules (like log loss) do NOT have the
-    correctness incentive property! Only bounded proper scoring rules work.
-    
-    Original RLCR (Eq. 2 from paper):
-        R_RLCR = 1_{y≡y*} - (q - 1_{y≡y*})²
-               = correctness + Brier_reward
-    
-    Our extended version for forecasting:
-        R = α * correctness(p, y) + β * (-Brier(p, y)) - γ * group_violation
-    
-    Where:
-    - correctness = 1 if |p - y| < threshold (prediction in correct half)
-    - Brier = (p - y)² (bounded proper scoring rule, range [0,1])
-    - group_violation = |E[(Y - p) | group]| (Blackwell constraint)
-    
-    Connection to Blackwell Approachability:
-    - Calibration = constraint E[(Y - q) | bin(q)] = 0
-    - Group calibration = constraint E[(Y - q) | group, bin(q)] = 0
-    - RLCR directly incentivizes satisfying these constraints!
+    **Fix: Market-relative RLCR**:
+    - Correctness = sign(p - q) == sign(y - q)  [directional edge vs market]
+    - Brier improvement = (q - y)² - (p - y)²  [reward beating the market]
+    - Calibration = penalize |E[y - p | bin(p)]|  [standard calibration]
     
     Args:
         p: Model predictions (forecasted probabilities)
         y: Binary outcomes (0 or 1)
-        alpha: Weight on binary correctness (default 1.0, as in paper)
-        beta: Weight on Brier score (default 1.0, as in paper)
-        gamma: Weight on group calibration (default 0.1, our extension)
-        correctness_threshold: p in correct half if |p - y| < threshold
+        q: Market probabilities (REQUIRED for market-relative mode)
+        alpha: Weight on directional correctness (default 1.0)
+        beta: Weight on Brier improvement over market (default 1.0)
+        gamma: Weight on group calibration (default 0.1)
+        correctness_threshold: Not used in market-relative mode
         n_groups: Number of groups for group-conditional calibration
         use_group_calibration: Whether to add Blackwell constraint term
         groups: Optional group assignments (if None, use bins of p)
+        use_market_relative: If True, use market-relative rewards (recommended)
         
     Returns:
         (rewards, info_dict) where rewards has shape (n,)
@@ -418,19 +407,50 @@ def _rlcr_reward(
     y = np.asarray(y, dtype=np.float64)
     n = len(p)
     
-    # Component 1: Binary Correctness (Damani et al. Eq. 2, first term)
-    # 1_{y≡y*} = 1 if prediction is in the correct half
-    # For forecasting: correct if p > 0.5 when y=1, or p < 0.5 when y=0
-    correct = np.abs(p - y) < correctness_threshold
-    correctness_reward = correct.astype(np.float64)
+    # Clip to avoid edge cases
+    p = np.clip(p, 0.001, 0.999)
     
-    # Component 2: Brier Score (Damani et al. Eq. 2, second term)
-    # -(q - 1_{y≡y*})² = -(p - y)² since we're directly predicting probability
-    # This is a BOUNDED proper scoring rule with range [-1, 0]
-    brier = (p - y) ** 2
-    brier_reward = -brier  # Negative because lower Brier is better
+    if use_market_relative and q is not None:
+        # ============================================================
+        # MARKET-RELATIVE RLCR (recommended for forecasting)
+        # ============================================================
+        q = np.asarray(q, dtype=np.float64)
+        q = np.clip(q, 0.001, 0.999)
+        
+        # Component 1: Directional Correctness vs Market
+        # correct = 1 if we bet in the right direction relative to market
+        # i.e., if (p > q and y > q) or (p < q and y < q)
+        edge_pred = p - q  # Our predicted edge over market
+        edge_realized = y - q  # Actual edge (y is 0 or 1)
+        correct = (np.sign(edge_pred) == np.sign(edge_realized))
+        correctness_reward = correct.astype(np.float64)
+        
+        # Component 2: Brier Improvement over Market
+        # Reward = Brier(market) - Brier(model)
+        # Positive if we're better than market, negative if worse
+        brier_market = (q - y) ** 2
+        brier_model = (p - y) ** 2
+        brier_improvement = brier_market - brier_model  # Higher = better
+        # Normalize to similar scale as correctness (range roughly [-1, 1])
+        brier_reward = brier_improvement  # Already bounded in [-1, 1]
+        
+        # Also track absolute Brier for logging
+        brier = brier_model
+        
+    else:
+        # ============================================================
+        # ORIGINAL RLCR (problematic for imbalanced forecasting)
+        # ============================================================
+        # Component 1: Binary Correctness (Damani et al. Eq. 2, first term)
+        correct = np.abs(p - y) < correctness_threshold
+        correctness_reward = correct.astype(np.float64)
+        
+        # Component 2: Brier Score (Damani et al. Eq. 2, second term)
+        brier = (p - y) ** 2
+        brier_reward = -brier  # Negative because lower Brier is better
+        brier_improvement = -brier  # For consistency in logging
     
-    # Component 3: Group-conditional Calibration (Our Blackwell extension)
+    # Component 3: Group-conditional Calibration (Blackwell extension)
     # Penalty for violating the constraint E[(Y - p) | group] = 0
     group_penalty = np.zeros(n)
     group_violations = {}
@@ -447,14 +467,14 @@ def _rlcr_reward(
         for g in range(n_groups):
             mask = groups == g
             if mask.sum() > 1:
+                # Calibration error = |mean(y) - mean(p)| in this bin
                 residual = y[mask] - p[mask]
                 group_error = np.abs(np.mean(residual))
                 group_violations[g] = float(group_error)
                 group_penalty[mask] = group_error
     
-    # Combined RLCR reward (extended with Blackwell term)
-    # Original paper: R = 1_{correct} - (p - y)²
-    # Our extension:  R = α*1_{correct} + β*(-Brier) - γ*group_violation
+    # Combined RLCR reward
+    # Market-relative: R = α*directional_correct + β*brier_improvement - γ*calibration_error
     reward = (
         alpha * correctness_reward +
         beta * brier_reward -
@@ -466,9 +486,11 @@ def _rlcr_reward(
         "correctness_rate": float(correct.mean()),
         "brier_mean": float(brier.mean()),
         "brier_reward_mean": float(brier_reward.mean()),
+        "brier_improvement_mean": float(np.mean(brier_improvement)),
         "group_violations": group_violations,
         "max_group_violation": float(max(group_violations.values())) if group_violations else 0.0,
         "mean_group_violation": float(np.mean(list(group_violations.values()))) if group_violations else 0.0,
+        "market_relative": use_market_relative and q is not None,
     }
     
     return reward, info
@@ -852,16 +874,19 @@ class GRPOTrainer:
             
         elif reward_mode == "rlcr":
             # RLCR: Damani et al. 2025 (arXiv:2507.16806)
-            # R = α * correctness + β * (-Brier) - γ * group_violation
+            # FIXED: Now uses market-relative rewards to avoid collapse to p=0
+            # R = α * directional_correct + β * brier_improvement - γ * calibration_error
             R, constraint_info = _rlcr_reward(
                 p_arr.flatten(),
                 y_arr.flatten(),
+                q=q_arr.flatten(),  # CRITICAL: pass market price for market-relative rewards
                 alpha=float(spec.reward.rlcr_alpha),
                 beta=float(spec.reward.rlcr_beta),
                 gamma=float(spec.reward.rlcr_gamma),
                 correctness_threshold=float(spec.reward.rlcr_correctness_threshold),
                 n_groups=int(spec.reward.rlcr_n_groups),
                 use_group_calibration=bool(spec.reward.rlcr_use_group_calibration),
+                use_market_relative=True,  # Use market-relative rewards
             )
             
         else:  # "hybrid" mode (original)

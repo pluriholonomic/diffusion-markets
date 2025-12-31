@@ -30,6 +30,10 @@ from backtest.strategies import (
 from backtest.strategies.conditional_graph import ConditionalGraphConfig
 from backtest.strategies.online_max_arb import OnlineMaxArbConfig
 from backtest.strategies.stat_arb import StatArbConfig
+from backtest.strategies.blackwell_calibration import (
+    BlackwellCalibrationStrategy,
+    BlackwellCalibrationConfig,
+)
 
 
 @dataclass
@@ -276,6 +280,22 @@ class BacktestEngine:
                     max_position=params.get("max_position", 1.0),
                 )
                 self.strategies[name] = ConditionalGraphStrategy(cfg)
+
+            elif name == "blackwell_calibration":
+                cfg = BlackwellCalibrationConfig(
+                    n_bins=params.get("n_bins", self.cfg.blackwell_n_bins),
+                    g_bar_threshold=params.get("g_threshold", self.cfg.blackwell_g_threshold),
+                    t_stat_threshold=params.get("t_stat_threshold", self.cfg.blackwell_t_stat_threshold),
+                    lookback_trades=params.get("lookback", self.cfg.blackwell_lookback),
+                    recalibrate_freq=params.get("recalibrate_freq", self.cfg.blackwell_recalibrate_freq),
+                    use_risk_parity=params.get("use_risk_parity", self.cfg.blackwell_use_risk_parity),
+                    target_max_loss=params.get("target_max_loss", self.cfg.blackwell_target_max_loss),
+                    leverage=params.get("leverage", self.cfg.blackwell_leverage),
+                    max_position=params.get("max_position", 1.0),
+                    price_min=params.get("price_min", 0.0),
+                    price_max=params.get("price_max", 1.0),
+                )
+                self.strategies[name] = BlackwellCalibrationStrategy(cfg)
 
             else:
                 if self.cfg.verbose:

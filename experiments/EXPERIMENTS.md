@@ -598,19 +598,18 @@ forecastbench pm_difftrain \
 ---
 
 
-### Auto-Updated Status (2025-12-29T07:59:39Z)
+### Auto-Updated Status (2025-12-31T00:09:58Z)
 
 **Headlines Fetch**: ⏳ Pending
 
 
 **GPU Status**:
-- GPU 0: 100% util, 58463/143771 MB
-- GPU 1: 51% util, 29267/143771 MB
+- GPU 0: 51% util, 29205/143771 MB
+- GPU 1: 51% util, 29237/143771 MB
 
 **Running Experiments**:
-- PID 1492303: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
-- PID 1506853: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
-- PID 1508956: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
+- PID 2007048: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
+- PID 2133050: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
 
 ---
 
@@ -684,5 +683,5 @@ python3 scripts/remote_gpu_enqueue.py \
 
 ---
 
-*This document is auto-updated. Last modified: 2025-12-29T07:59:39Z*
+*This document is auto-updated. Last modified: 2025-12-31T00:09:58Z*
 

@@ -100,7 +100,7 @@ class GRPORewardSpec:
     # R = rlcr_alpha * correctness + rlcr_beta * (-Brier) + rlcr_gamma * group_calibration
     rlcr_alpha: float = 1.0  # Weight on binary correctness: 1 if |p - y| < 0.5 else 0
     rlcr_beta: float = 1.0  # Weight on Brier calibration score
-    rlcr_gamma: float = 0.1  # Weight on group-conditional calibration (optional)
+    rlcr_gamma: float = 0.5  # Weight on group-conditional calibration (CRITICAL for calibration)
     rlcr_correctness_threshold: float = 0.5  # p in correct half -> correct
     rlcr_n_groups: int = 10  # For group-conditional calibration
     rlcr_use_group_calibration: bool = True  # Add group calibration term

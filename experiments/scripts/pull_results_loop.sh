@@ -1,5 +1,6 @@
 #!/bin/bash
 # Pull completed results from remote GPU server
+# Usage: ./pull_results_loop.sh [interval_seconds]
 
 REMOTE_HOST="root@95.133.252.72"
 REMOTE_DIR="/root/diffusion-markets/experiments/runs"
@@ -8,17 +9,24 @@ INTERVAL=${1:-60}
 
 mkdir -p "$LOCAL_DIR"
 
-echo "[pull_results] Starting loop: remote=$REMOTE_HOST:$REMOTE_DIR local=$LOCAL_DIR interval=${INTERVAL}s"
+echo "[pull_results] Starting sync loop (interval=${INTERVAL}s)"
+echo "[pull_results] Remote: $REMOTE_HOST:$REMOTE_DIR"
+echo "[pull_results] Local: $LOCAL_DIR"
 
 while true; do
     echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Syncing results..."
     
-    # Sync all run directories
+    # Sync only completed runs (those with predictions.parquet or model.pt)
     rsync -avz --progress \
-        --exclude='*.pt' \
-        --exclude='checkpoint-*' \
-        "$REMOTE_HOST:$REMOTE_DIR/" "$LOCAL_DIR/" 2>&1 | tail -5
+        --include='*/' \
+        --include='*.parquet' \
+        --include='*.pt' \
+        --include='*.json' \
+        --include='*.txt' \
+        --include='*.log' \
+        --exclude='*' \
+        "$REMOTE_HOST:$REMOTE_DIR/" "$LOCAL_DIR/"
     
-    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Sync complete. Waiting ${INTERVAL}s..."
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Sync complete. Sleeping ${INTERVAL}s..."
     sleep "$INTERVAL"
 done

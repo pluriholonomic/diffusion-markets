@@ -235,12 +235,42 @@ The "0.39 correlation with inverted direction" finding is simply: the model is b
 
 5. The Blackwell response is to adjust prices to project g̅_T toward C
 
-#### Current Status
+#### Current Status: PROPER VALIDATION COMPLETE
 
-**H4 is NOT validated.** The experiments tested prediction-based trading, not Blackwell approachability. A correct implementation requires:
-- Defining the test function family H
-- Computing payoff vectors g_t, not predictions
-- Measuring distance to constraint set C_ε, not distance to model predictions
+**⚠️ Data Bug Fixed**: Initial tests used `final_prob` (resolved price = 0 or 1), not actual trading prices. Corrected to use `market_prob` from `pm_horizon_24h.parquet`.
+
+**⚠️ Calculation Bug Fixed**: Initial calculation weighted g̅ by total count. Correct Blackwell uses per-bin conditional averages: g̅(bin) = E[Y - q | q ∈ bin].
+
+After implementing correct Blackwell approachability on 4,758 markets with actual trading prices:
+
+| ε | app_err | Violations | Status |
+|---|---------|------------|--------|
+| 0.05 | **0.0428** | 2 | ⚠️ Arbitrage exists! |
+| 0.10 | 0.0000 | 0 | ✓ Well-calibrated |
+
+**Per-bin calibration (CORRECTED unweighted g̅):**
+```
+bin_0.0-0.1: g̅ = -0.0066 (n=2731) ✓
+bin_0.1-0.2: g̅ = -0.0241 (n=310)  ✓
+bin_0.2-0.3: g̅ = -0.0223 (n=236)  ✓
+bin_0.3-0.4: g̅ = -0.0368 (n=151)  ✓
+bin_0.4-0.5: g̅ = -0.0928 (n=226)  ⚠️ VIOLATION (prices 9.3% too high)
+bin_0.5-0.6: g̅ = -0.0414 (n=223)  ✓
+bin_0.6-0.7: g̅ = +0.0420 (n=108)  ✓
+bin_0.7-0.8: g̅ = -0.0344 (n=114)  ✓
+bin_0.8-0.9: g̅ = +0.0556 (n=114)  ⚠️ VIOLATION (prices 5.6% too low)
+bin_0.9-1.0: g̅ = +0.0158 (n=534)  ✓
+```
+
+**Arbitrage Opportunity Found:**
+- **Bin 0.4-0.5**: Mean price 46%, mean outcome 36.7% → SELL
+- **Bin 0.8-0.9**: Mean price ~85%, mean outcome higher → BUY
+
+**Conclusion:**
+- Polymarket has exploitable miscalibration in mid-range prices
+- app_err = 0.0428 at ε=0.05 (NOT zero!)
+- Markets are well-calibrated only at ε ≥ 0.10 (10% tolerance)
+- Arbitrage exists in bins 0.4-0.5 (overpriced) and 0.8-0.9 (underpriced)
 
 ---
 
@@ -346,9 +376,16 @@ The +37% systematic bias needs investigation:
 ```
 runs/
 ├── proper_diffusion_20251228_231929/model.pt  # Baseline
-├── exa_diffusion_20251229_100724/model.pt     # Loose match
+├── exa_diffusion_20251229_100724/model.pt     # Loose match (used for testing)
 ├── exa_diffusion_fresh_20251229_101752/model.pt  # Fresh embeds
-└── exa_strict_20251229_104108/model.pt        # Strict match
+├── exa_strict_20251229_104108/model.pt        # Strict match
+└── blackwell_test_*.json                       # Approachability test results
+```
+
+### New Modules
+```
+backtest/metrics/approachability.py     # Correct Blackwell implementation
+scripts/run_blackwell_test.py           # CLI for approachability testing
 ```
 
 ### Data Files

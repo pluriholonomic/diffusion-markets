@@ -3567,7 +3567,7 @@ def cmd_grpo_train(args: argparse.Namespace) -> None:
         if "market_prob" in df.columns:
             df["market_price"] = df["market_prob"]
         else:
-            df["market_price"] = 0.5  # Default to uninformative market
+        df["market_price"] = 0.5  # Default to uninformative market
     
     infos = df["info"].tolist()
     y = df["outcome"].values.astype(np.float64)
@@ -3786,28 +3786,66 @@ def cmd_pm_hybrid_train(args: argparse.Namespace) -> None:
     else:
         market_brier = market_ece = market_logloss = None
     
+    # Trading metrics (PNL, ROI, Sharpe)
+    from forecastbench.benchmarks.polymarket_eval import realized_trading_pnl
+    from forecastbench.metrics.trading_sim import simulate_kelly_roi, KellySimConfig
+    
+    tc = args.transaction_cost
+    B = args.B
+    
+    def compute_trading_metrics(pred_prob, market_prob, y, name="model"):
+        """Compute PNL, ROI, Sharpe for a model's predictions."""
+        # Simple PNL (sign-based trading)
+        pnl = realized_trading_pnl(
+            y=y, market_prob=market_prob, pred_prob=pred_prob,
+            B=B, transaction_cost=tc, mode="sign"
+        )
+        # Kelly ROI
+        kelly_cfg = KellySimConfig(initial_bankroll=1.0, fee=tc, scale=0.25, frac_cap=0.1)
+        kelly_result = simulate_kelly_roi(p=pred_prob, q=market_prob, y=y, cfg=kelly_cfg, return_curve=True)
+        roi = kelly_result["roi"]
+        
+        # Sharpe ratio from per-trade returns
+        positions = B * np.sign(pred_prob - market_prob)
+        returns = positions * (y - market_prob) - tc * np.abs(positions)
+        sharpe = float(np.mean(returns) / (np.std(returns) + 1e-8) * np.sqrt(len(returns)))
+        
+        return {"pnl": float(pnl), "roi": float(roi), "sharpe": float(sharpe)}
+    
+    if market_test is not None:
+        ar_trading = compute_trading_metrics(q_ar_test, market_test, y_test, "AR")
+        hybrid_trading = compute_trading_metrics(q_refined_test, market_test, y_test, "Hybrid")
+    else:
+        ar_trading = {"pnl": 0.0, "roi": 0.0, "sharpe": 0.0}
+        hybrid_trading = {"pnl": 0.0, "roi": 0.0, "sharpe": 0.0}
+    
     print("\n=== Results ===")
-    print(f"{'Model':<20} {'Brier':>10} {'ECE':>10} {'LogLoss':>10}")
-    print("-" * 52)
-    print(f"{'AR (Qwen)':<20} {ar_brier:>10.4f} {ar_ece:>10.4f} {ar_logloss:>10.4f}")
-    print(f"{'Hybrid (AR+Diff)':<20} {hybrid_brier:>10.4f} {hybrid_ece:>10.4f} {hybrid_logloss:>10.4f}")
+    print(f"{'Model':<20} {'Brier':>10} {'ECE':>10} {'LogLoss':>10} {'PNL':>10} {'ROI%':>10} {'Sharpe':>10}")
+    print("-" * 82)
+    print(f"{'AR (Qwen)':<20} {ar_brier:>10.4f} {ar_ece:>10.4f} {ar_logloss:>10.4f} {ar_trading['pnl']:>10.4f} {ar_trading['roi']*100:>10.2f} {ar_trading['sharpe']:>10.2f}")
+    print(f"{'Hybrid (AR+Diff)':<20} {hybrid_brier:>10.4f} {hybrid_ece:>10.4f} {hybrid_logloss:>10.4f} {hybrid_trading['pnl']:>10.4f} {hybrid_trading['roi']*100:>10.2f} {hybrid_trading['sharpe']:>10.2f}")
     if market_brier is not None:
-        print(f"{'Market':<20} {market_brier:>10.4f} {market_ece:>10.4f} {market_logloss:>10.4f}")
+        print(f"{'Market':<20} {market_brier:>10.4f} {market_ece:>10.4f} {market_logloss:>10.4f} {'N/A':>10} {'N/A':>10} {'N/A':>10}")
     
     # Improvement
     print(f"\nDiffusion improves AR Brier by: {(ar_brier - hybrid_brier) / ar_brier * 100:.1f}%")
     print(f"Diffusion improves AR ECE by: {(ar_ece - hybrid_ece) / ar_ece * 100:.1f}%")
+    if ar_trading['pnl'] != 0:
+        print(f"Diffusion improves AR PNL by: {(hybrid_trading['pnl'] - ar_trading['pnl']) / abs(ar_trading['pnl']) * 100:.1f}%")
+        print(f"Diffusion improves AR ROI by: {(hybrid_trading['roi'] - ar_trading['roi']) * 100:.2f} pp")
     
     # Save results
     results = {
         "n_train": len(df_train),
         "n_test": len(df_test),
-        "ar": {"brier": float(ar_brier), "ece": float(ar_ece), "logloss": float(ar_logloss)},
-        "hybrid": {"brier": float(hybrid_brier), "ece": float(hybrid_ece), "logloss": float(hybrid_logloss)},
+        "ar": {"brier": float(ar_brier), "ece": float(ar_ece), "logloss": float(ar_logloss), **ar_trading},
+        "hybrid": {"brier": float(hybrid_brier), "ece": float(hybrid_ece), "logloss": float(hybrid_logloss), **hybrid_trading},
         "train_meta": train_meta,
         "improvement": {
             "brier_pct": float((ar_brier - hybrid_brier) / ar_brier * 100),
             "ece_pct": float((ar_ece - hybrid_ece) / ar_ece * 100),
+            "pnl_diff": float(hybrid_trading['pnl'] - ar_trading['pnl']),
+            "roi_diff_pp": float((hybrid_trading['roi'] - ar_trading['roi']) * 100),
         },
     }
     if market_brier is not None:

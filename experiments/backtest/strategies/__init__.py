@@ -23,6 +23,12 @@ def __getattr__(name: str):
     if name == "ConfidenceGatedConfig":
         from backtest.strategies.confidence_gated import ConfidenceGatedConfig
         return ConfidenceGatedConfig
+    if name == "BlackwellCalibrationStrategy":
+        from backtest.strategies.blackwell_calibration import BlackwellCalibrationStrategy
+        return BlackwellCalibrationStrategy
+    if name == "BlackwellCalibrationConfig":
+        from backtest.strategies.blackwell_calibration import BlackwellCalibrationConfig
+        return BlackwellCalibrationConfig
     raise AttributeError(f"module 'backtest.strategies' has no attribute {name!r}")
 
 __all__ = [
@@ -33,5 +39,7 @@ __all__ = [
     "ConditionalGraphStrategy",
     "ConfidenceGatedStrategy",
     "ConfidenceGatedConfig",
+    "BlackwellCalibrationStrategy",
+    "BlackwellCalibrationConfig",
 ]
 

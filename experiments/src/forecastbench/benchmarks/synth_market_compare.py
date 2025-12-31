@@ -391,3 +391,4 @@ def create_comparison_table(results: Dict) -> str:
     return "\n".join(lines)
 
 
+

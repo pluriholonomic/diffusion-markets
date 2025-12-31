@@ -215,3 +215,4 @@ class LegacyDiffusionForecaster:
         return np.array(samples)
 
 
+

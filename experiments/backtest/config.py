@@ -62,6 +62,16 @@ class BacktestConfig:
     strategies: Tuple[str, ...] = ("online_max_arb", "stat_arb", "conditional_graph")
     strategy_configs: dict = field(default_factory=dict)  # name -> StrategyConfig.params
 
+    # Blackwell calibration strategy settings (validated parameters)
+    blackwell_n_bins: int = 10  # Number of price bins
+    blackwell_g_threshold: float = 0.05  # Minimum |g̅| to trade
+    blackwell_t_stat_threshold: float = 0.0  # t-stat filter (0=disabled, use g̅ only)
+    blackwell_lookback: int = 2000  # Rolling window size (larger = more stable)
+    blackwell_recalibrate_freq: int = 100  # Recalibrate every N resolutions
+    blackwell_use_risk_parity: bool = True  # Size by inverse max loss
+    blackwell_target_max_loss: float = 0.2  # Target max loss per trade
+    blackwell_leverage: float = 1.5  # Position multiplier
+
     # Group robustness
     enforce_group_boundaries: bool = True
     allowed_topics: Optional[List[str]] = None  # None = all topics

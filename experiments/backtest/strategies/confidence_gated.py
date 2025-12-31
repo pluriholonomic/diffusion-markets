@@ -193,3 +193,4 @@ def compute_hallucination_bound(
     return min(abstention_rate, base_error_rate)
 
 
+

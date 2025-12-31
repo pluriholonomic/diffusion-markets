@@ -26,6 +26,24 @@ def __getattr__(name: str):
     if name == "quick_validate_ct":
         from backtest.metrics.ct_validation import quick_validate_ct
         return quick_validate_ct
+    if name == "BlackwellApproachabilityTracker":
+        from backtest.metrics.approachability import BlackwellApproachabilityTracker
+        return BlackwellApproachabilityTracker
+    if name == "TestFunctionFamily":
+        from backtest.metrics.approachability import TestFunctionFamily
+        return TestFunctionFamily
+    if name == "run_approachability_test":
+        from backtest.metrics.approachability import run_approachability_test
+        return run_approachability_test
+    if name == "CtApproximationAnalyzer":
+        from backtest.metrics.ct_approximation_error import CtApproximationAnalyzer
+        return CtApproximationAnalyzer
+    if name == "CtApproximationMetrics":
+        from backtest.metrics.ct_approximation_error import CtApproximationMetrics
+        return CtApproximationMetrics
+    if name == "compute_ct_error_from_samples":
+        from backtest.metrics.ct_approximation_error import compute_ct_error_from_samples
+        return compute_ct_error_from_samples
     raise AttributeError(f"module 'backtest.metrics' has no attribute {name!r}")
 
 __all__ = [
@@ -37,5 +55,11 @@ __all__ = [
     "CtValidator",
     "CtValidationConfig",
     "quick_validate_ct",
+    "BlackwellApproachabilityTracker",
+    "TestFunctionFamily",
+    "run_approachability_test",
+    "CtApproximationAnalyzer",
+    "CtApproximationMetrics",
+    "compute_ct_error_from_samples",
 ]
 

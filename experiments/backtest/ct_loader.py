@@ -320,3 +320,4 @@ class CtCheckpointLoader:
         return self.model is not None
 
 
+

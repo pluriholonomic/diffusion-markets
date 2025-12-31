@@ -814,3 +814,242 @@ def compare_trading_strategies(
     return results
 
 
+# =============================================================================
+# Group Mean-Reversion Trading (integration with strategies module)
+# =============================================================================
+
+@dataclass(frozen=True)
+class GroupMeanReversionTradingConfig:
+    """
+    Configuration for group mean-reversion trading simulation.
+    
+    This extends the calibration-aware trading with regime-based position sizing
+    and multi-method basket construction.
+    """
+    
+    # Regime detection parameters
+    calibration_window: int = 50      # Events for rolling calibration
+    mean_revert_threshold: float = 0.05  # |E[Y-q|g]| < threshold → mean-reverting
+    momentum_threshold: float = 0.15     # |E[Y-q|g]| > threshold → momentum
+    
+    # Position sizing
+    kelly_fraction: float = 0.25
+    max_position_size: float = 0.10   # Max 10% per position
+    max_group_exposure: float = 0.30  # Max 30% per group
+    
+    # Edge thresholds
+    min_edge: float = 0.02            # Minimum |p - q| to trade
+    
+    # Regime-based scaling
+    mean_revert_scale: float = 1.0    # Full size in mean-reverting regime
+    momentum_scale: float = 0.5       # Reduced size in momentum regime
+    neutral_scale: float = 0.25       # Minimal size when unclear
+    
+    # Transaction costs
+    fee: float = 0.01
+    
+    # Risk management
+    stop_loss_pct: float = 0.20       # Exit if drawdown > 20%
+    
+    eps: float = 1e-9
+
+
+def simulate_group_mean_reversion(
+    *,
+    p: np.ndarray,
+    q: np.ndarray,
+    y: np.ndarray,
+    groups: np.ndarray,
+    cfg: GroupMeanReversionTradingConfig = GroupMeanReversionTradingConfig(),
+    return_details: bool = False,
+) -> Dict:
+    """
+    Simulate group mean-reversion strategy.
+    
+    This implements the core insight that calibration errors reveal regime:
+    - High calibration (bias ≈ 0) → mean-revert → trade toward group mean
+    - Low calibration (persistent bias) → momentum → reduce size or trade with trend
+    
+    Args:
+        p: Model predictions (N,)
+        q: Market prices (N,)
+        y: Realized outcomes (N,)
+        groups: Group assignments (N,)
+        cfg: Configuration
+        return_details: Include per-trade details
+        
+    Returns:
+        Trading metrics with regime attribution
+    """
+    p = np.asarray(p, dtype=np.float64).reshape(-1)
+    q = np.asarray(q, dtype=np.float64).reshape(-1)
+    y = np.asarray(y, dtype=np.float64).reshape(-1)
+    groups = np.asarray(groups).reshape(-1)
+    n = len(y)
+    
+    eps = float(cfg.eps)
+    
+    # Track group calibration with rolling window
+    group_residuals: Dict[str, List[float]] = {}
+    group_regimes: Dict[str, str] = {}
+    
+    def get_regime(g: str) -> str:
+        """Classify regime based on rolling calibration error."""
+        if g not in group_residuals or len(group_residuals[g]) < 5:
+            return "neutral"
+        
+        recent = group_residuals[g][-cfg.calibration_window:]
+        mean_residual = np.mean(recent)
+        abs_mean = abs(mean_residual)
+        
+        if abs_mean < cfg.mean_revert_threshold:
+            return "mean_revert"
+        elif abs_mean > cfg.momentum_threshold:
+            # Check persistence
+            signs = [1 if r > 0 else -1 for r in recent]
+            if abs(sum(signs)) > 0.7 * len(signs):
+                return "momentum"
+        return "neutral"
+    
+    def get_regime_scale(regime: str) -> float:
+        """Get position scale for regime."""
+        if regime == "mean_revert":
+            return cfg.mean_revert_scale
+        elif regime == "momentum":
+            return cfg.momentum_scale
+        return cfg.neutral_scale
+    
+    # Initialize tracking
+    br = 1.0
+    curve = [br]
+    trades = []
+    
+    pnl_by_group: Dict[str, float] = {}
+    pnl_by_regime: Dict[str, float] = {}
+    regime_counts: Dict[str, int] = {"mean_revert": 0, "momentum": 0, "neutral": 0}
+    
+    group_exposure: Dict[str, float] = {}
+    
+    for i in range(n):
+        g = str(groups[i])
+        pi = float(np.clip(p[i], eps, 1.0 - eps))
+        qi = float(np.clip(q[i], eps, 1.0 - eps))
+        yi = float(y[i])
+        
+        # Get current regime (no lookahead)
+        regime = get_regime(g)
+        regime_counts[regime] += 1
+        
+        # Compute edge
+        edge = pi - qi
+        
+        if abs(edge) < cfg.min_edge:
+            # Update calibration tracking
+            residual = yi - qi
+            if g not in group_residuals:
+                group_residuals[g] = []
+            group_residuals[g].append(residual)
+            continue
+        
+        # Direction based on edge
+        direction = 1 if edge > 0 else -1
+        
+        # Position size with regime scaling
+        if direction > 0:
+            kelly = (pi - qi) / max(1.0 - qi, eps)
+        else:
+            kelly = (qi - pi) / max(qi, eps)
+        
+        size = kelly * cfg.kelly_fraction * get_regime_scale(regime)
+        size = float(np.clip(size, 0.0, cfg.max_position_size))
+        
+        # Check group exposure
+        current_exposure = group_exposure.get(g, 0.0)
+        if current_exposure + size > cfg.max_group_exposure:
+            size = max(0.0, cfg.max_group_exposure - current_exposure)
+        
+        if size < eps:
+            # Update calibration tracking
+            residual = yi - qi
+            if g not in group_residuals:
+                group_residuals[g] = []
+            group_residuals[g].append(residual)
+            continue
+        
+        # Execute trade
+        stake = size * br
+        
+        # PnL calculation
+        if direction > 0:
+            pnl = stake * (yi / qi - 1) if yi > 0.5 else -stake
+        else:
+            pnl = stake * ((1 - yi) / (1 - qi) - 1) if yi < 0.5 else -stake
+        pnl -= cfg.fee * stake
+        
+        # Update state
+        br = max(br + pnl, eps)
+        curve.append(br)
+        
+        group_exposure[g] = current_exposure + size
+        pnl_by_group[g] = pnl_by_group.get(g, 0.0) + pnl
+        pnl_by_regime[regime] = pnl_by_regime.get(regime, 0.0) + pnl
+        
+        if return_details:
+            trades.append({
+                "idx": i,
+                "group": g,
+                "regime": regime,
+                "direction": direction,
+                "size": size,
+                "edge": abs(edge),
+                "pnl": pnl,
+            })
+        
+        # Update calibration tracking
+        residual = yi - qi
+        if g not in group_residuals:
+            group_residuals[g] = []
+        group_residuals[g].append(residual)
+        
+        # Check stop loss
+        peak = max(curve)
+        drawdown = (peak - br) / max(peak, eps)
+        if drawdown > cfg.stop_loss_pct:
+            break
+    
+    # Compute summary statistics
+    total_pnl = br - 1.0
+    roi = total_pnl
+    
+    if trades:
+        trade_pnls = np.array([t["pnl"] for t in trades])
+        if np.std(trade_pnls) > eps:
+            sharpe = float(np.mean(trade_pnls) / np.std(trade_pnls) * np.sqrt(252))
+        else:
+            sharpe = 0.0
+        win_rate = float(np.mean([t["pnl"] > 0 for t in trades]))
+    else:
+        sharpe = 0.0
+        win_rate = 0.0
+    
+    out = {
+        "n": n,
+        "n_trades": len(trades) if trades else 0,
+        "initial_bankroll": 1.0,
+        "final_bankroll": br,
+        "total_pnl": total_pnl,
+        "roi": roi,
+        "sharpe": sharpe,
+        "win_rate": win_rate,
+        "pnl_by_group": pnl_by_group,
+        "pnl_by_regime": pnl_by_regime,
+        "regime_counts": regime_counts,
+    }
+    
+    if return_details:
+        out["trades"] = trades
+        out["curve"] = curve
+    
+    return out
+
+

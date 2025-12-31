@@ -3567,7 +3567,7 @@ def cmd_grpo_train(args: argparse.Namespace) -> None:
         if "market_prob" in df.columns:
             df["market_price"] = df["market_prob"]
         else:
-        df["market_price"] = 0.5  # Default to uninformative market
+            df["market_price"] = 0.5  # Default to uninformative market
     
     infos = df["info"].tolist()
     y = df["outcome"].values.astype(np.float64)
@@ -3653,6 +3653,263 @@ def cmd_grpo_train(args: argparse.Namespace) -> None:
     print(f"[grpo_train] Training complete!")
     print(f"[grpo_train] Best Brier: {results['best_brier']:.4f} at step {results['best_step']}")
     print(f"[grpo_train] Saved to: {out_dir}")
+
+
+# =============================================================================
+# MEAN-REVERSION STAT ARB COMMANDS
+# =============================================================================
+
+
+def cmd_analyze_group_calibration(args: argparse.Namespace) -> None:
+    """
+    Analyze group-wise calibration regimes (mean-reversion vs momentum).
+    
+    For each group, computes rolling calibration statistics and classifies
+    the regime as mean-reverting (low |E[Y-q|g]|) or momentum (persistent bias).
+    """
+    import pandas as pd
+    from forecastbench.strategies.regime_detector import (
+        GroupCalibrationTracker,
+        RegimeDetectorConfig,
+        compute_group_calibration_summary,
+        detect_regime_changes,
+    )
+    from forecastbench.runner import RunArtifacts
+    
+    arts = RunArtifacts.create(run_name=str(args.run_name))
+    arts.maybe_write_env()
+    
+    # Load data
+    df = pd.read_parquet(args.dataset_path)
+    print(f"[analyze_group_calibration] Loaded {len(df)} rows")
+    
+    # Extract arrays (handle categorical columns)
+    groups = df[args.group_col].astype(str).fillna("unknown").values
+    prices = df[args.price_col].fillna(0.5).astype(float).values
+    outcomes = df[args.outcome_col].fillna(0).astype(float).values
+    
+    # Configure regime detector
+    cfg = RegimeDetectorConfig(
+        ema_alpha=2.0 / (args.window + 1),  # Approximate EMA for window
+        mean_revert_threshold=args.mean_revert_threshold,
+        momentum_threshold=args.momentum_threshold,
+        min_observations=10,
+    )
+    
+    # Compute summary
+    summary = compute_group_calibration_summary(groups, prices, outcomes, cfg=cfg)
+    
+    # Detect regime changes
+    changes = detect_regime_changes(groups, prices, outcomes, cfg=cfg)
+    
+    # Compute aggregate stats
+    regime_counts = {"mean_revert": 0, "momentum": 0, "neutral": 0}
+    for g, stats in summary.items():
+        regime = stats.get("regime", "neutral")
+        regime_counts[regime] = regime_counts.get(regime, 0) + 1
+    
+    # Report
+    print(f"\n[analyze_group_calibration] Regime distribution:")
+    for regime, count in regime_counts.items():
+        print(f"  {regime}: {count} groups")
+    
+    print(f"\n[analyze_group_calibration] Top groups by |calibration error|:")
+    sorted_groups = sorted(summary.items(), key=lambda x: abs(x[1].get("bias", 0)), reverse=True)
+    for g, stats in sorted_groups[:10]:
+        print(f"  {g}: bias={stats['bias']:.4f}, regime={stats['regime']}, n={stats['n_observations']}")
+    
+    print(f"\n[analyze_group_calibration] {len(changes)} regime changes detected")
+    
+    # Save results
+    arts.write_json("group_calibration_summary.json", summary)
+    arts.write_json("regime_changes.json", changes[:100])  # First 100 changes
+    arts.write_json("regime_distribution.json", regime_counts)
+    
+    print(f"\n[analyze_group_calibration] Saved to: {arts.run_dir}")
+
+
+def cmd_mean_reversion_backtest(args: argparse.Namespace) -> None:
+    """
+    Run walk-forward backtest for group mean-reversion strategy.
+    
+    This implements:
+    1. Rolling calibration estimation (no lookahead)
+    2. Regime detection per group
+    3. Position construction per rebalance period
+    4. PnL tracking with full attribution
+    """
+    import pandas as pd
+    from forecastbench.strategies import (
+        GroupMeanReversionConfig,
+        RegimeDetectorConfig,
+        BasketBuilderConfig,
+        run_group_mean_reversion_backtest,
+        run_walk_forward_backtest,
+    )
+    from forecastbench.runner import RunArtifacts
+    
+    arts = RunArtifacts.create(run_name=str(args.run_name))
+    arts.maybe_write_env()
+    
+    # Load data
+    df = pd.read_parquet(args.dataset_path)
+    print(f"[mean_reversion_backtest] Loaded {len(df)} rows")
+    
+    # Parse position methods
+    if args.position_method == "all":
+        methods = ("calibration", "dollar_neutral", "frechet")
+    else:
+        methods = tuple(m.strip() for m in args.position_method.split(","))
+    
+    # Configure
+    regime_cfg = RegimeDetectorConfig(
+        mean_revert_threshold=0.05,
+        momentum_threshold=0.15,
+        min_observations=10,
+    )
+    
+    basket_cfg = BasketBuilderConfig(
+        kelly_fraction=args.kelly_fraction,
+        max_position_size=args.max_position,
+        min_edge=args.min_edge,
+    )
+    
+    cfg = GroupMeanReversionConfig(
+        regime_cfg=regime_cfg,
+        basket_cfg=basket_cfg,
+        position_methods=methods,
+        transaction_cost=args.transaction_cost,
+        bootstrap_samples=args.bootstrap_n,
+    )
+    
+    # Run backtest
+    if args.train_frac > 0 and args.n_folds > 1:
+        print(f"[mean_reversion_backtest] Running walk-forward with {args.n_folds} folds...")
+        result = run_walk_forward_backtest(
+            df,
+            model_forecast_col=args.model_col,
+            market_price_col=args.market_col,
+            group_col=args.group_col,
+            outcome_col=args.outcome_col,
+            market_id_col=args.market_id_col,
+            time_col=args.time_col,
+            cfg=cfg,
+            train_frac=args.train_frac,
+            n_folds=args.n_folds,
+            verbose=args.verbose,
+        )
+    else:
+        print(f"[mean_reversion_backtest] Running single-pass backtest...")
+        result = run_group_mean_reversion_backtest(
+            df,
+            model_forecast_col=args.model_col,
+            market_price_col=args.market_col,
+            group_col=args.group_col,
+            outcome_col=args.outcome_col,
+            market_id_col=args.market_id_col,
+            time_col=args.time_col,
+            cfg=cfg,
+            verbose=args.verbose,
+        )
+    
+    # Report
+    print(f"\n[mean_reversion_backtest] Results:")
+    print(f"  Total PnL: {result.total_pnl:.4f}")
+    print(f"  ROI: {result.roi:.2%}")
+    print(f"  Sharpe: {result.sharpe:.2f}")
+    print(f"  Sharpe 95% CI: [{result.sharpe_ci[0]:.2f}, {result.sharpe_ci[1]:.2f}]")
+    print(f"  Max Drawdown: {result.max_drawdown:.2%}")
+    print(f"  Win Rate: {result.win_rate:.2%}")
+    print(f"  # Trades: {result.n_trades}")
+    print(f"  Profit Factor: {result.profit_factor:.2f}")
+    
+    print(f"\n[mean_reversion_backtest] PnL by group:")
+    for g, pnl in sorted(result.pnl_by_group.items(), key=lambda x: x[1], reverse=True)[:5]:
+        print(f"  {g}: {pnl:.4f}")
+    
+    print(f"\n[mean_reversion_backtest] PnL by regime:")
+    for r, pnl in result.pnl_by_regime.items():
+        print(f"  {r}: {pnl:.4f}")
+    
+    print(f"\n[mean_reversion_backtest] PnL by method:")
+    for m, pnl in result.pnl_by_method.items():
+        print(f"  {m}: {pnl:.4f}")
+    
+    # Save results
+    arts.write_json("backtest_results.json", result.to_dict())
+    
+    # Save equity curve if available
+    if len(result.equity_curve) > 0:
+        import numpy as np
+        np.save(arts.run_dir / "equity_curve.npy", result.equity_curve)
+    
+    print(f"\n[mean_reversion_backtest] Saved to: {arts.run_dir}")
+
+
+def cmd_compare_arb_strategies(args: argparse.Namespace) -> None:
+    """
+    Compare multiple stat arb strategies on the same dataset.
+    
+    Runs each strategy independently and computes bootstrap CIs for comparison.
+    """
+    import pandas as pd
+    from forecastbench.strategies import (
+        GroupMeanReversionConfig,
+        RegimeDetectorConfig,
+        BasketBuilderConfig,
+        run_group_mean_reversion_backtest,
+        compare_strategies,
+    )
+    from forecastbench.runner import RunArtifacts
+    
+    arts = RunArtifacts.create(run_name=str(args.run_name))
+    arts.maybe_write_env()
+    
+    # Load data
+    df = pd.read_parquet(args.dataset_path)
+    print(f"[compare_arb_strategies] Loaded {len(df)} rows")
+    
+    # Parse strategies
+    strategies = [s.strip() for s in args.strategies.split(",")]
+    print(f"[compare_arb_strategies] Comparing strategies: {strategies}")
+    
+    # Run comparison
+    results = compare_strategies(
+        df,
+        model_forecast_col=args.model_col,
+        market_price_col=args.market_col,
+        group_col=args.group_col,
+        outcome_col=args.outcome_col,
+        strategies=strategies,
+        bootstrap_n=args.bootstrap_n,
+    )
+    
+    # Report
+    print(f"\n[compare_arb_strategies] Results:")
+    print(f"{'Strategy':<20} {'ROI':>10} {'Sharpe':>10} {'Win Rate':>10} {'# Trades':>10}")
+    print("-" * 60)
+    
+    best_strategy = None
+    best_sharpe = -float("inf")
+    
+    for name, result in results.items():
+        print(f"{name:<20} {result.roi:>10.2%} {result.sharpe:>10.2f} {result.win_rate:>10.2%} {result.n_trades:>10}")
+        if result.sharpe > best_sharpe:
+            best_sharpe = result.sharpe
+            best_strategy = name
+    
+    print("-" * 60)
+    print(f"\nBest strategy: {best_strategy} (Sharpe = {best_sharpe:.2f})")
+    
+    # Save results
+    comparison = {
+        name: result.to_dict()
+        for name, result in results.items()
+    }
+    comparison["_best_strategy"] = best_strategy
+    
+    arts.write_json("strategy_comparison.json", comparison)
+    print(f"\n[compare_arb_strategies] Saved to: {arts.run_dir}")
 
 
 def cmd_pm_hybrid_train(args: argparse.Namespace) -> None:
@@ -4910,6 +5167,69 @@ def build_parser() -> argparse.ArgumentParser:
     p_grpo.add_argument("--seed", type=int, default=0)
     p_grpo.add_argument("--run-name", type=str, default="grpo_train")
     p_grpo.set_defaults(func=cmd_grpo_train)
+
+    # ====== MEAN-REVERSION STAT ARB ======
+    
+    p_analyze_calib = sub.add_parser(
+        "analyze_group_calibration",
+        help="Analyze group-wise calibration regimes (mean-reversion vs momentum).",
+    )
+    p_analyze_calib.add_argument("--dataset-path", type=str, required=True, help="Path to dataset parquet")
+    p_analyze_calib.add_argument("--group-col", type=str, default="category", help="Column for grouping")
+    p_analyze_calib.add_argument("--price-col", type=str, default="market_prob", help="Market price column")
+    p_analyze_calib.add_argument("--outcome-col", type=str, default="y", help="Outcome column")
+    p_analyze_calib.add_argument("--window", type=int, default=50, help="Rolling window for calibration")
+    p_analyze_calib.add_argument("--mean-revert-threshold", type=float, default=0.05, help="Threshold for mean-revert regime")
+    p_analyze_calib.add_argument("--momentum-threshold", type=float, default=0.15, help="Threshold for momentum regime")
+    p_analyze_calib.add_argument("--run-name", type=str, default="group_calibration_analysis")
+    p_analyze_calib.set_defaults(func=cmd_analyze_group_calibration)
+    
+    p_mr_backtest = sub.add_parser(
+        "mean_reversion_backtest",
+        help="Run walk-forward backtest for group mean-reversion strategy.",
+    )
+    p_mr_backtest.add_argument("--dataset-path", type=str, required=True, help="Path to dataset parquet")
+    p_mr_backtest.add_argument("--model-col", type=str, default="pred_prob", help="Model forecast column")
+    p_mr_backtest.add_argument("--market-col", type=str, default="market_prob", help="Market price column")
+    p_mr_backtest.add_argument("--group-col", type=str, default="category", help="Column for grouping")
+    p_mr_backtest.add_argument("--outcome-col", type=str, default="y", help="Outcome column")
+    p_mr_backtest.add_argument("--market-id-col", type=str, default="id", help="Market ID column")
+    p_mr_backtest.add_argument("--time-col", type=str, default=None, help="Time column for ordering")
+    p_mr_backtest.add_argument(
+        "--position-method",
+        type=str,
+        default="all",
+        help="Position method: calibration, dollar_neutral, frechet, or 'all'",
+    )
+    p_mr_backtest.add_argument("--kelly-fraction", type=float, default=0.25, help="Kelly fraction")
+    p_mr_backtest.add_argument("--max-position", type=float, default=0.10, help="Max position size")
+    p_mr_backtest.add_argument("--min-edge", type=float, default=0.02, help="Minimum edge to trade")
+    p_mr_backtest.add_argument("--transaction-cost", type=float, default=0.01, help="Transaction cost")
+    p_mr_backtest.add_argument("--train-frac", type=float, default=0.5, help="Training fraction for walk-forward")
+    p_mr_backtest.add_argument("--n-folds", type=int, default=5, help="Number of walk-forward folds")
+    p_mr_backtest.add_argument("--bootstrap-n", type=int, default=1000, help="Bootstrap samples for CI")
+    p_mr_backtest.add_argument("--run-name", type=str, default="mean_reversion_backtest")
+    p_mr_backtest.add_argument("--verbose", action="store_true", help="Print progress")
+    p_mr_backtest.set_defaults(func=cmd_mean_reversion_backtest)
+    
+    p_compare_arb = sub.add_parser(
+        "compare_arb_strategies",
+        help="Compare multiple stat arb strategies on the same dataset.",
+    )
+    p_compare_arb.add_argument("--dataset-path", type=str, required=True, help="Path to dataset parquet")
+    p_compare_arb.add_argument("--model-col", type=str, default="pred_prob", help="Model forecast column")
+    p_compare_arb.add_argument("--market-col", type=str, default="market_prob", help="Market price column")
+    p_compare_arb.add_argument("--group-col", type=str, default="category", help="Column for grouping")
+    p_compare_arb.add_argument("--outcome-col", type=str, default="y", help="Outcome column")
+    p_compare_arb.add_argument(
+        "--strategies",
+        type=str,
+        default="calibration,dollar_neutral,frechet",
+        help="Comma-separated list of strategies to compare",
+    )
+    p_compare_arb.add_argument("--bootstrap-n", type=int, default=1000, help="Bootstrap samples for CI")
+    p_compare_arb.add_argument("--run-name", type=str, default="compare_arb_strategies")
+    p_compare_arb.set_defaults(func=cmd_compare_arb_strategies)
 
     # ====== END NEW BENCHMARKS ======
 

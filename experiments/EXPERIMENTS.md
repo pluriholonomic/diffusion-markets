@@ -598,18 +598,20 @@ forecastbench pm_difftrain \
 ---
 
 
-### Auto-Updated Status (2025-12-31T00:09:58Z)
+### Auto-Updated Status (2025-12-31T21:46:43Z)
 
 **Headlines Fetch**: ⏳ Pending
 
 
 **GPU Status**:
-- GPU 0: 51% util, 29205/143771 MB
-- GPU 1: 51% util, 29237/143771 MB
+- GPU 0: 100% util, 58765/143771 MB
+- GPU 1: 100% util, 58577/143771 MB
 
 **Running Experiments**:
 - PID 2007048: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
-- PID 2133050: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
+- PID 2461075: `.venv/bin/python -m forecastbench pm_eval --dataset-path pol...`
+- PID 2539536: `.venv/bin/python -m forecastbench pm_eval --dataset-path pol...`
+- PID 2560999: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
 
 ---
 
@@ -683,5 +685,137 @@ python3 scripts/remote_gpu_enqueue.py \
 
 ---
 
-*This document is auto-updated. Last modified: 2025-12-31T00:09:58Z*
+## 9. Group Mean-Reversion Statistical Arbitrage
+
+A new classical statistical arbitrage module has been added to support group-wise mean-reversion trading strategies.
+
+### 9.1 Core Concept
+
+In prediction markets, "mean reversion" manifests as calibration—prices within a category should converge toward the group's true outcome rate:
+
+```
+Group Calibration Error = E[Y - q | group]
+```
+
+- **High calibration (error → 0)**: Mean-reverting regime — trade toward group mean
+- **Low calibration (persistent bias)**: Momentum regime — reduce position or trade with trend
+
+### 9.2 New CLI Commands
+
+#### Analyze Group Calibration
+
+```bash
+forecastbench analyze_group_calibration \
+  --dataset-path data/polymarket/enriched.parquet \
+  --group-col category \
+  --window 50 \
+  --mean-revert-threshold 0.05 \
+  --momentum-threshold 0.15
+```
+
+This command analyzes calibration regimes for each group and outputs:
+- Regime distribution (mean_revert, momentum, neutral)
+- Top groups by calibration error
+- Regime change detection
+
+#### Run Mean-Reversion Backtest
+
+```bash
+forecastbench mean_reversion_backtest \
+  --dataset-path data/polymarket/enriched.parquet \
+  --model-col pred_prob \
+  --market-col market_prob \
+  --group-col category \
+  --position-method all \
+  --kelly-fraction 0.25 \
+  --transaction-cost 0.01 \
+  --train-frac 0.5 \
+  --n-folds 5
+```
+
+This runs a walk-forward backtest with:
+- Rolling calibration estimation (no lookahead)
+- Regime detection per group
+- Position construction per rebalance period
+- PnL tracking with full attribution
+
+#### Compare Arbitrage Strategies
+
+```bash
+forecastbench compare_arb_strategies \
+  --dataset-path data/polymarket/enriched.parquet \
+  --strategies calibration,dollar_neutral,frechet \
+  --bootstrap-n 1000
+```
+
+Compares multiple strategy configurations and outputs Sharpe ratios with bootstrap CIs.
+
+### 9.3 Strategy Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| Regime Detection | `strategies/regime_detector.py` | Rolling calibration tracking, regime classification |
+| Basket Construction | `strategies/basket_builder.py` | Calibration-based, dollar-neutral, Frechet methods |
+| Price History | `data/price_history.py` | Flexible timeseries loading from CLOB snapshots |
+| Backtest Engine | `strategies/mean_reversion_backtest.py` | Walk-forward backtest with attribution |
+| Trading Simulation | `metrics/trading_sim.py` | Extended with group mean-reversion config |
+
+### 9.4 Basket Construction Methods
+
+| Method | Description |
+|--------|-------------|
+| **Calibration** | Long where model > market, short where model < market, sized by Kelly |
+| **Dollar-Neutral** | Equal long/short exposure within each group for market-neutral returns |
+| **Frechet** | Exploit Frechet bound violations between related markets |
+
+### 9.5 Key Metrics
+
+| Metric | Description |
+|--------|-------------|
+| **Regime Accuracy** | % of time mean-revert classification was correct |
+| **Group Sharpe** | Sharpe ratio per category |
+| **Spread Reversion Rate** | How fast do group spreads close? |
+| **Calibration Correlation** | Corr(calibration, returns) |
+| **PnL Attribution** | Returns broken down by group, regime, and method |
+
+### 9.6 Example Workflow
+
+```python
+from forecastbench.strategies import (
+    GroupCalibrationTracker,
+    RegimeDetectorConfig,
+    UnifiedBasketBuilder,
+    run_group_mean_reversion_backtest,
+)
+
+# 1. Load data
+import pandas as pd
+df = pd.read_parquet("data/polymarket/enriched.parquet")
+
+# 2. Analyze calibration
+from forecastbench.strategies import compute_group_calibration_summary
+summary = compute_group_calibration_summary(
+    df["category"].values,
+    df["market_prob"].values,
+    df["y"].values,
+)
+print(summary)
+
+# 3. Run backtest
+result = run_group_mean_reversion_backtest(
+    df,
+    model_forecast_col="pred_prob",
+    market_price_col="market_prob",
+    group_col="category",
+    outcome_col="y",
+)
+
+print(f"ROI: {result.roi:.2%}")
+print(f"Sharpe: {result.sharpe:.2f}")
+print(f"PnL by group: {result.pnl_by_group}")
+```
+
+---
+
+*This document is auto-updated. Last modified: 2025-12-31T21:46:43Z*
 

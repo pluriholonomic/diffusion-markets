@@ -18,6 +18,12 @@ import pandas as pd
 
 from backtest.config import BacktestConfig, DailyMetrics
 from backtest.ct_loader import CtCheckpointLoader, CtCheckpointSpec
+from backtest.model_loader import (
+    CtMode,
+    CtModel,
+    ModelLoaderConfig,
+    UnifiedModelLoader,
+)
 from backtest.data.clob_loader import MarketEvent, load_clob_series, load_resolutions
 from backtest.data.group_registry import GroupRegistry, build_group_registry
 from backtest.market_state import MarketStateManager
@@ -168,13 +174,41 @@ class BacktestEngine:
         # Build group registry
         self.group_registry = self._build_group_registry()
 
-        # Initialize C_t loader
-        self.ct_loader = CtCheckpointLoader(CtCheckpointSpec(
-            checkpoint_dir=cfg.checkpoint_dir,
-            model_type=cfg.model_type,
-            embed_dim=cfg.embed_dim,
-            bundle_size=cfg.bundle_size,
-        ))
+        # Initialize C_t loader(s) based on mode
+        self._use_unified_loader = cfg.ct_mode != "legacy"
+        
+        if self._use_unified_loader:
+            # New unified model loader (supports AR+Diffusion, RLCR, Bundle)
+            self.model_loader = UnifiedModelLoader(
+                ModelLoaderConfig(
+                    ct_mode=CtMode(cfg.ct_mode) if cfg.ct_mode in ("single", "union") else CtMode.SINGLE,
+                    ct_model=CtModel(cfg.ct_model) if cfg.ct_model in ("ar_diffusion", "rlcr", "bundle") else CtModel.AR_DIFFUSION,
+                    ar_diffusion_path=cfg.ar_diffusion_checkpoint,
+                    rlcr_model_path=cfg.rlcr_model,
+                    bundle_diffusion_path=cfg.bundle_checkpoint,
+                    embed_model=cfg.ct_embed_model,
+                    embed_dim=cfg.ct_embed_dim,
+                    ar_diffusion_samples=cfg.ar_diffusion_samples,
+                    rlcr_K=cfg.rlcr_K,
+                    bundle_samples=cfg.bundle_samples,
+                    enabled_models=cfg.union_models,
+                    device="cuda" if cfg.verbose else "cpu",  # Use CPU if not verbose (likely testing)
+                )
+            )
+            self.ct_loader = None  # Not used in unified mode
+            if cfg.verbose:
+                print(f"Using unified model loader: mode={cfg.ct_mode}, model={cfg.ct_model}")
+        else:
+            # Legacy mode: use existing ct_loader
+            self.ct_loader = CtCheckpointLoader(CtCheckpointSpec(
+                checkpoint_dir=cfg.checkpoint_dir,
+                model_type=cfg.model_type,
+                embed_dim=cfg.embed_dim,
+                bundle_size=cfg.bundle_size,
+            ))
+            self.model_loader = None
+            if cfg.verbose:
+                print("Using legacy C_t loader")
 
         # Initialize market state
         self.market_state = MarketStateManager(
@@ -316,6 +350,44 @@ class BacktestEngine:
 
     def _load_ct_for_date(self, date: str) -> Tuple[np.ndarray, List[str]]:
         """Load C_t checkpoint and sample for a date."""
+        if self._use_unified_loader:
+            return self._load_ct_unified(date)
+        else:
+            return self._load_ct_legacy(date)
+    
+    def _load_ct_unified(self, date: str) -> Tuple[np.ndarray, List[str]]:
+        """Load C_t using unified model loader (AR+Diffusion, RLCR, Bundle)."""
+        # Get active markets
+        active_markets = self.market_state.get_active_markets()
+
+        # Filter by group if enforcing boundaries
+        if self.cfg.enforce_group_boundaries:
+            active_markets = self.group_registry.get_tradeable_bundle(active_markets)
+
+        if not active_markets:
+            return np.array([]), []
+
+        # Get texts for each market
+        texts = self._get_market_texts(active_markets)
+        if not texts:
+            return np.array([]), []
+
+        # Sample C_t from unified loader
+        try:
+            samples, valid_ids = self.model_loader.sample_ct(
+                market_ids=active_markets,
+                texts=texts,
+                embeddings=None,  # Let the loader compute embeddings
+                seed=hash(date) % (2**31),
+            )
+            return samples, valid_ids
+        except Exception as e:
+            if self.cfg.verbose:
+                print(f"  Error sampling C_t (unified): {e}")
+            return np.array([]), []
+    
+    def _load_ct_legacy(self, date: str) -> Tuple[np.ndarray, List[str]]:
+        """Load C_t using legacy ct_loader."""
         try:
             self.ct_loader.load_for_date(date)
         except FileNotFoundError:
@@ -352,6 +424,26 @@ class BacktestEngine:
             if self.cfg.verbose:
                 print(f"  Error sampling C_t: {e}")
             return np.array([]), []
+    
+    def _get_market_texts(self, market_ids: List[str]) -> Dict[str, str]:
+        """Get question texts for markets."""
+        texts = {}
+        for market_id in market_ids:
+            # Try to get text from CLOB data
+            market_rows = self.clob_data[self.clob_data["market_id"] == market_id]
+            if market_rows.empty:
+                continue
+            
+            row = market_rows.iloc[0]
+            parts = []
+            for col in self.cfg.text_cols:
+                if col in row and pd.notna(row[col]):
+                    parts.append(str(row[col]))
+            
+            if parts:
+                texts[market_id] = " ".join(parts)
+        
+        return texts
 
     def _refresh_strategies(self, ct_samples: np.ndarray, market_ids: List[str]) -> None:
         """Refresh all strategies with new C_t."""

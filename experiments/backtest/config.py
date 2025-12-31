@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 @dataclass(frozen=True)
@@ -49,6 +49,27 @@ class BacktestConfig:
     # C_t sampling
     ct_mc_samples: int = 64  # Number of MC samples for C_t representation
     ct_refresh_freq: str = "daily"  # When to reload C_t checkpoint
+
+    # C_t generation mode (new multi-model support)
+    ct_mode: str = "legacy"  # "single", "union", or "legacy" (backward compat)
+    ct_model: str = "legacy"  # "ar_diffusion", "rlcr", "bundle", "legacy"
+    
+    # Model paths for multi-model C_t generation
+    ar_diffusion_checkpoint: Optional[Path] = None  # AR+Diffusion hybrid checkpoint
+    rlcr_model: Optional[str] = None  # RLCR model path (HF or local)
+    bundle_checkpoint: Optional[Path] = None  # Bundle diffusion checkpoint
+    
+    # Per-model sampling configuration
+    ar_diffusion_samples: int = 16  # Samples from AR+Diffusion
+    rlcr_K: int = 5  # Self-consistency samples from RLCR
+    bundle_samples: int = 16  # Samples from bundle diffusion
+    
+    # Which models to include in UNION mode
+    union_models: Tuple[str, ...] = ("ar_diffusion", "rlcr", "bundle")
+    
+    # Embedding model for multi-model loaders
+    ct_embed_model: str = "all-MiniLM-L6-v2"
+    ct_embed_dim: int = 384
 
     # C_t validation
     validate_ct: bool = True  # Run C_t sample sufficiency validation
@@ -108,6 +129,11 @@ class BacktestConfig:
             object.__setattr__(self, "output_dir", Path(self.output_dir))
         if self.resolution_data_path and isinstance(self.resolution_data_path, str):
             object.__setattr__(self, "resolution_data_path", Path(self.resolution_data_path))
+        # Multi-model paths
+        if self.ar_diffusion_checkpoint and isinstance(self.ar_diffusion_checkpoint, str):
+            object.__setattr__(self, "ar_diffusion_checkpoint", Path(self.ar_diffusion_checkpoint))
+        if self.bundle_checkpoint and isinstance(self.bundle_checkpoint, str):
+            object.__setattr__(self, "bundle_checkpoint", Path(self.bundle_checkpoint))
 
     def get_strategy_config(self, name: str) -> StrategyConfig:
         """Get configuration for a specific strategy."""

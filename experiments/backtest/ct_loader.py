@@ -153,7 +153,7 @@ class CtCheckpointLoader:
         model = BundleLogitDiffusionForecaster(spec, device=self.spec.device)
 
         # Load state dict
-        state_dict = torch.load(model_path, map_location=self.spec.device)
+        state_dict = torch.load(model_path, map_location=self.spec.device, weights_only=False)
         if "model" in state_dict:
             state_dict = state_dict["model"]
         model.model.load_state_dict(state_dict)
@@ -167,29 +167,29 @@ class CtCheckpointLoader:
 
         from forecastbench.models.diffusion_core import (
             ContinuousDiffusionForecaster,
-            ContinuousDiffusionSpec,
+            DiffusionModelSpec,
         )
 
         # Load config if available
         if config_path.exists():
             with open(config_path) as f:
                 cfg = json.load(f)
-            spec = ContinuousDiffusionSpec(
-                in_dim=cfg.get("in_dim", self.spec.embed_dim),
+            spec = DiffusionModelSpec(
+                cond_dim=cfg.get("cond_dim", self.spec.embed_dim),
                 out_dim=cfg.get("out_dim", 1),
                 hidden_dim=cfg.get("hidden_dim", 256),
                 depth=cfg.get("depth", 3),
             )
         else:
-            spec = ContinuousDiffusionSpec(
-                in_dim=self.spec.embed_dim,
+            spec = DiffusionModelSpec(
+                cond_dim=self.spec.embed_dim,
                 out_dim=1,
             )
 
         model = ContinuousDiffusionForecaster(spec, device=self.spec.device)
 
         # Load state dict
-        state_dict = torch.load(model_path, map_location=self.spec.device)
+        state_dict = torch.load(model_path, map_location=self.spec.device, weights_only=False)
         if "model" in state_dict:
             state_dict = state_dict["model"]
         model.model.load_state_dict(state_dict)

@@ -1,0 +1,74 @@
+{
+  "convergence": {
+    "cv_sharpe": 6.373351830545479,
+    "params": {
+      "spread_threshold": 0.11682273757045661,
+      "convergence_speed": 0.7061107361650723,
+      "initial_bankroll": 4551.6345765193755,
+      "kelly_fraction": 0.5575158764221954,
+      "leverage": 3.6433933448008347,
+      "max_position_pct": 0.10731640982008678,
+      "fee": 0.011229651100582851,
+      "max_drawdown_stop": 0.20990239678709105
+    },
+    "holdout": {
+      "pnl": 81299.29233564474,
+      "sharpe": 4.7744261095216665,
+      "n_trades": 9,
+      "win_rate": 0.4444444444444444,
+      "max_dd": 0.29864063449559336,
+      "final_bankroll": 85850.92691216411,
+      "return_pct": 1786.1559615318267
+    }
+  },
+  "portfolio_stat_arb": {
+    "cv_sharpe": 5.496135507101691,
+    "params": {
+      "n_clusters": 17,
+      "min_cluster_size": 11,
+      "intra_cluster_weight": 0.9793531330811935,
+      "n_bins": 14,
+      "min_edge": 0.07159355040910714,
+      "initial_bankroll": 28546.52838622719,
+      "kelly_fraction": 0.42289161407122156,
+      "leverage": 3.345232928943735,
+      "max_position_pct": 0.20785496280068388,
+      "portfolio_max_pct": 0.8116438346523198,
+      "fee": 0.00965002428087466,
+      "max_drawdown_stop": 0.21008398067551753
+    },
+    "holdout": {
+      "pnl": 218769.01572721667,
+      "sharpe": 9.728096146032055,
+      "n_trades": 2,
+      "win_rate": 0.5,
+      "max_dd": 0.21841183697286753,
+      "final_bankroll": 247315.54411344387,
+      "return_pct": 766.3594422667728
+    }
+  },
+  "risk_parity": {
+    "cv_sharpe": 3.978314513297603,
+    "params": {
+      "vol_lookback": 160,
+      "target_vol": 0.13307778278317692,
+      "rebalance_frequency": 84,
+      "min_edge": 0.13339608758547303,
+      "initial_bankroll": 1233.5715529133422,
+      "leverage": 4.704825446774058,
+      "max_position_pct": 0.24209044152061177,
+      "max_category_pct": 0.5143468532723217,
+      "fee": 0.019715779817879368,
+      "max_drawdown_stop": 0.20691729119886154
+    },
+    "holdout": {
+      "pnl": 9996.802285557278,
+      "sharpe": 5.530913682920023,
+      "n_trades": 5,
+      "win_rate": 0.6,
+      "max_dd": 0.20750653691371632,
+      "final_bankroll": 11230.37383847062,
+      "return_pct": 810.3950080518393
+    }
+  }
+}

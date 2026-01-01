@@ -139,6 +139,7 @@ class ARLoRAPredictor:
         K: int = 5,
         seed: int = 0,
         aggregate: Optional[str] = None,
+        batch_size: int = 8,  # NEW: batched inference for speedup
     ) -> Tuple[np.ndarray, dict]:
         self._lazy_load()
         import torch
@@ -151,26 +152,36 @@ class ARLoRAPredictor:
         if agg not in {"mean", "median"}:
             raise ValueError("aggregate must be mean|median")
 
-        probs: List[float] = []
+        n_total = len(infos)
+        all_probs: List[List[float]] = [[] for _ in range(n_total)]  # K samples per input
         n_fail = 0
 
-        for info in infos:
-            prompt = build_prompt(
-                info, include_cot=bool(self.spec.include_cot), cot_max_steps=int(self.spec.cot_max_steps)
-            )
-            enc = tok(
-                prompt,
-                padding=False,
-                truncation=True,
-                max_length=2048,
-                return_tensors="pt",
-            ).to(self._input_device)
+        # Build all prompts
+        prompts = [
+            build_prompt(info, include_cot=bool(self.spec.include_cot), cot_max_steps=int(self.spec.cot_max_steps))
+            for info in infos
+        ]
 
-            ps: List[float] = []
-            for _k in range(int(K)):
-                torch.manual_seed(int(rng.integers(0, 2**31 - 1)))
+        # For K > 1, we need multiple passes
+        for k in range(int(K)):
+            torch.manual_seed(int(rng.integers(0, 2**31 - 1)))
+            
+            # Process in batches
+            for batch_start in range(0, n_total, batch_size):
+                batch_end = min(batch_start + batch_size, n_total)
+                batch_prompts = prompts[batch_start:batch_end]
+                
+                # Tokenize with padding
+                enc = tok(
+                    batch_prompts,
+                    padding=True,
+                    truncation=True,
+                    max_length=2048,
+                    return_tensors="pt",
+                ).to(self._input_device)
+                
                 with torch.no_grad():
-                    out = model.generate(
+                    outputs = model.generate(
                         **enc,
                         do_sample=(int(K) > 1),
                         temperature=float(self.spec.temperature),
@@ -179,16 +190,31 @@ class ARLoRAPredictor:
                         pad_token_id=tok.pad_token_id,
                         eos_token_id=tok.eos_token_id,
                     )
-                text = tok.decode(out[0], skip_special_tokens=True)
-                tail = text.split("OUTPUT:", 1)[-1]
-                p = _extract_prob(tail)
-                if p is None:
-                    n_fail += 1
-                    p = 0.5
-                ps.append(float(np.clip(p, 0.0, 1.0)))
+                
+                # Decode each output in the batch
+                for i, output in enumerate(outputs):
+                    text = tok.decode(output, skip_special_tokens=True)
+                    tail = text.split("OUTPUT:", 1)[-1]
+                    p = _extract_prob(tail)
+                    if p is None:
+                        n_fail += 1
+                        p = 0.5
+                    all_probs[batch_start + i].append(float(np.clip(p, 0.0, 1.0)))
+                
+                # Progress logging
+                if (batch_end % 500 == 0) or (batch_end == n_total):
+                    print(f"[ARLoRA] Processed {batch_end}/{n_total} (K={k+1}/{K})")
 
+        # Aggregate K samples per input
+        probs: List[float] = []
+        for ps in all_probs:
             probs.append(float(np.median(ps) if agg == "median" else np.mean(ps)))
 
-        return np.asarray(probs, dtype=np.float32), {"n": int(len(infos)), "K": int(K), "parse_failures": int(n_fail)}
+        return np.asarray(probs, dtype=np.float32), {
+            "n": int(len(infos)), 
+            "K": int(K), 
+            "parse_failures": int(n_fail),
+            "batch_size": int(batch_size),
+        }
 
 

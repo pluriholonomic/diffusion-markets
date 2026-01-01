@@ -1,0 +1,94 @@
+{
+  "run_time": "2026-01-01T06:37:39.374944",
+  "data_path": "data/polymarket_goldsky_processed/markets_with_prices.parquet",
+  "train_size": 39590,
+  "test_size": 39590,
+  "test_start": "2025-06-23 22:41:35+00:00",
+  "test_end": "2025-10-07 14:45:40+00:00",
+  "test_days": 105,
+  "n_trades": 39590,
+  "win_rate": 0.7162414751199798,
+  "total_pnl": 9160.31809104009,
+  "weighted_pnl": 9962.677329473692,
+  "daily_pnl": 94.88264123308278,
+  "annualized_pnl": 34632.16405007521,
+  "sharpe": 43.70475861685689,
+  "calibrations": {
+    "sports": {
+      "calibration": 0.09663722527415614,
+      "y_rate": 0.5741049534085336,
+      "price_mean": 0.4774677281343775,
+      "n": 10195,
+      "direction": 1
+    },
+    "economics": {
+      "calibration": 0.09622283593809522,
+      "y_rate": 0.6235294117647059,
+      "price_mean": 0.5273065758266107,
+      "n": 340,
+      "direction": 1
+    },
+    "other": {
+      "calibration": 0.17261677428395888,
+      "y_rate": 0.66686805219913,
+      "price_mean": 0.49425127791517115,
+      "n": 16552,
+      "direction": 1
+    },
+    "politics": {
+      "calibration": 0.07442029342953438,
+      "y_rate": 0.5645600241911097,
+      "price_mean": 0.49013973076157535,
+      "n": 6614,
+      "direction": 1
+    },
+    "crypto": {
+      "calibration": 0.2251380459407636,
+      "y_rate": 0.7285755230725136,
+      "price_mean": 0.50343747713175,
+      "n": 3489,
+      "direction": 1
+    },
+    "weather": {
+      "calibration": 0.15534935665630334,
+      "y_rate": 0.63,
+      "price_mean": 0.47465064334369667,
+      "n": 2400,
+      "direction": 1
+    }
+  },
+  "by_category": {
+    "trades": {
+      "crypto": 18073,
+      "economics": 203,
+      "other": 13318,
+      "politics": 1139,
+      "sports": 5447,
+      "weather": 1410
+    },
+    "pnl": {
+      "crypto": 5288.1110565349745,
+      "economics": 58.898929850956684,
+      "other": 2953.1813937953016,
+      "politics": 152.6411144839775,
+      "sports": 305.3710092974451,
+      "weather": 402.1145870774349
+    },
+    "win_rate": {
+      "crypto": 0.7887456426713882,
+      "economics": 0.7783251231527094,
+      "other": 0.7091905691545277,
+      "politics": 0.6119402985074627,
+      "sports": 0.5037635395630622,
+      "weather": 0.749645390070922
+    },
+    "weighted_pnl": {
+      "crypto": 6481.586055583652,
+      "economics": 34.22700330498559,
+      "other": 2844.161369741283,
+      "politics": 72.06209409494153,
+      "sports": 178.08813601811266,
+      "weather": 352.5526707307164
+    }
+  }
+}

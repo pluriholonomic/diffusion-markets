@@ -1,0 +1,1685 @@
+{
+  "blackwell": {
+    "strategy": "blackwell",
+    "config": {
+      "n_bins": 10,
+      "g_bar_threshold": 0.03,
+      "t_stat_threshold": 1.5,
+      "min_samples_per_bin": 20,
+      "lookback_trades": 500,
+      "use_risk_parity": true,
+      "target_max_loss": 0.2
+    },
+    "n_trades": 19035,
+    "win_rate": 0.4962962962962963,
+    "total_pnl": 5973.109919966636,
+    "sharpe": 10.650564420466864,
+    "bin_stats": {
+      "0": {
+        "g_bar": 0.0942388414119652,
+        "t_stat": 18.215644614987994,
+        "n": 4213,
+        "significant": "True",
+        "direction": 1
+      },
+      "1": {
+        "g_bar": 0.11332720146420765,
+        "t_stat": 11.985703460022627,
+        "n": 2096,
+        "significant": "True",
+        "direction": 1
+      },
+      "2": {
+        "g_bar": 0.08213477650116047,
+        "t_stat": 7.490185603137212,
+        "n": 1840,
+        "significant": "True",
+        "direction": 1
+      },
+      "3": {
+        "g_bar": 0.018447001934500582,
+        "t_stat": 1.2781761655708104,
+        "n": 1124,
+        "significant": "False",
+        "direction": 1
+      },
+      "4": {
+        "g_bar": -0.01173247472521554,
+        "t_stat": -0.8200993448171312,
+        "n": 1211,
+        "significant": "False",
+        "direction": -1
+      },
+      "5": {
+        "g_bar": -0.12867898059121488,
+        "t_stat": -11.49036023206921,
+        "n": 1932,
+        "significant": "True",
+        "direction": -1
+      },
+      "6": {
+        "g_bar": -0.2695311870839227,
+        "t_stat": -19.30521658490155,
+        "n": 1230,
+        "significant": "True",
+        "direction": -1
+      },
+      "7": {
+        "g_bar": -0.4447074601971053,
+        "t_stat": -37.33585883779078,
+        "n": 1503,
+        "significant": "True",
+        "direction": -1
+      },
+      "8": {
+        "g_bar": -0.5754665719860437,
+        "t_stat": -57.525871638120876,
+        "n": 2006,
+        "significant": "True",
+        "direction": -1
+      },
+      "9": {
+        "g_bar": -0.8259030684454491,
+        "t_stat": -154.9143176734302,
+        "n": 4161,
+        "significant": "True",
+        "direction": -1
+      }
+    }
+  },
+  "stat_arb_sweep": [
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.05,
+        "distance_scale": 2.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 575.7162587915382,
+      "roi": 575.7162587915382,
+      "final_bankroll": 576.7162587915382,
+      "sharpe": 10.706621421873711,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.05,
+        "distance_scale": 2.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 575.7162587915382,
+      "roi": 575.7162587915382,
+      "final_bankroll": 576.7162587915382,
+      "sharpe": 10.706621421873711,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.05,
+        "distance_scale": 2.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 559.6323992885464,
+      "roi": 559.6323992885464,
+      "final_bankroll": 560.6323992885464,
+      "sharpe": 10.691326797544344,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.05,
+        "distance_scale": 2.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 559.6323992885464,
+      "roi": 559.6323992885464,
+      "final_bankroll": 560.6323992885464,
+      "sharpe": 10.691326797544344,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.1,
+        "distance_scale": 2.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1119.2647985770927,
+      "roi": 1119.2647985770927,
+      "final_bankroll": 1120.2647985770927,
+      "sharpe": 10.691326797544344,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.1,
+        "distance_scale": 2.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1119.2647985770927,
+      "roi": 1119.2647985770927,
+      "final_bankroll": 1120.2647985770927,
+      "sharpe": 10.691326797544344,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.05,
+        "distance_scale": 0.5,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 391.1335363575231,
+      "roi": 391.1335363575231,
+      "final_bankroll": 392.1335363575231,
+      "sharpe": 10.642062366312906,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.05,
+        "distance_scale": 0.5,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 391.1335363575231,
+      "roi": 391.1335363575231,
+      "final_bankroll": 392.1335363575231,
+      "sharpe": 10.642062366312906,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.1,
+        "distance_scale": 0.5,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 782.2670727150463,
+      "roi": 782.2670727150463,
+      "final_bankroll": 783.2670727150463,
+      "sharpe": 10.642062366312906,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.1,
+        "distance_scale": 0.5,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 782.2670727150463,
+      "roi": 782.2670727150463,
+      "final_bankroll": 783.2670727150463,
+      "sharpe": 10.642062366312906,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.05,
+        "distance_scale": 1.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 485.4689347267598,
+      "roi": 485.4689347267598,
+      "final_bankroll": 486.4689347267598,
+      "sharpe": 10.624378138406765,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.05,
+        "distance_scale": 1.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 485.4689347267598,
+      "roi": 485.4689347267598,
+      "final_bankroll": 486.4689347267598,
+      "sharpe": 10.624378138406765,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.1,
+        "distance_scale": 1.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 970.9378694535194,
+      "roi": 970.9378694535194,
+      "final_bankroll": 971.9378694535194,
+      "sharpe": 10.624378138406765,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.1,
+        "distance_scale": 1.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 970.9378694535194,
+      "roi": 970.9378694535194,
+      "final_bankroll": 971.9378694535194,
+      "sharpe": 10.624378138406765,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.05,
+        "distance_scale": 1.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 500.25642829027674,
+      "roi": 500.25642829027674,
+      "final_bankroll": 501.25642829027674,
+      "sharpe": 10.618068547448377,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.05,
+        "distance_scale": 1.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 500.25642829027674,
+      "roi": 500.25642829027674,
+      "final_bankroll": 501.25642829027674,
+      "sharpe": 10.618068547448377,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.1,
+        "distance_scale": 0.5,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 753.657720217822,
+      "roi": 753.657720217822,
+      "final_bankroll": 754.657720217822,
+      "sharpe": 10.595889638728837,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.1,
+        "distance_scale": 0.5,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 753.657720217822,
+      "roi": 753.657720217822,
+      "final_bankroll": 754.657720217822,
+      "sharpe": 10.595889638728837,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.2,
+        "distance_scale": 0.5,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1507.315440435644,
+      "roi": 1507.315440435644,
+      "final_bankroll": 1508.315440435644,
+      "sharpe": 10.595889638728837,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.2,
+        "distance_scale": 0.5,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1507.315440435644,
+      "roi": 1507.315440435644,
+      "final_bankroll": 1508.315440435644,
+      "sharpe": 10.595889638728837,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.1,
+        "distance_scale": 2.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1086.1413683546616,
+      "roi": 1086.1413683546616,
+      "final_bankroll": 1087.1413683546616,
+      "sharpe": 10.57593473287753,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.1,
+        "distance_scale": 2.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1086.1413683546616,
+      "roi": 1086.1413683546616,
+      "final_bankroll": 1087.1413683546616,
+      "sharpe": 10.57593473287753,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.2,
+        "distance_scale": 2.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 2172.282736709324,
+      "roi": 2172.282736709324,
+      "final_bankroll": 2173.282736709324,
+      "sharpe": 10.57593473287753,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.2,
+        "distance_scale": 2.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 2172.282736709324,
+      "roi": 2172.282736709324,
+      "final_bankroll": 2173.282736709324,
+      "sharpe": 10.57593473287753,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.05,
+        "distance_scale": 0.5,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 370.25467528894785,
+      "roi": 370.25467528894785,
+      "final_bankroll": 371.25467528894785,
+      "sharpe": 10.540086096259905,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.05,
+        "distance_scale": 0.5,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 370.25467528894785,
+      "roi": 370.25467528894785,
+      "final_bankroll": 371.25467528894785,
+      "sharpe": 10.540086096259905,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.05,
+        "distance_scale": 0.5,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 405.2728469513149,
+      "roi": 405.2728469513149,
+      "final_bankroll": 406.2728469513149,
+      "sharpe": 10.535732621536248,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.05,
+        "distance_scale": 0.5,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 405.2728469513149,
+      "roi": 405.2728469513149,
+      "final_bankroll": 406.2728469513149,
+      "sharpe": 10.535732621536248,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.1,
+        "distance_scale": 1.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 940.823824381223,
+      "roi": 940.823824381223,
+      "final_bankroll": 941.823824381223,
+      "sharpe": 10.516435113360773,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.1,
+        "distance_scale": 1.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 940.823824381223,
+      "roi": 940.823824381223,
+      "final_bankroll": 941.823824381223,
+      "sharpe": 10.516435113360773,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.2,
+        "distance_scale": 1.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1881.6476487624457,
+      "roi": 1881.6476487624457,
+      "final_bankroll": 1882.6476487624457,
+      "sharpe": 10.516435113360773,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.2,
+        "distance_scale": 1.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1881.6476487624457,
+      "roi": 1881.6476487624457,
+      "final_bankroll": 1882.6476487624457,
+      "sharpe": 10.516435113360773,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.05,
+        "distance_scale": 2.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 534.8061018082469,
+      "roi": 534.8061018082469,
+      "final_bankroll": 535.8061018082469,
+      "sharpe": 10.509459883188695,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.05,
+        "distance_scale": 2.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 534.8061018082469,
+      "roi": 534.8061018082469,
+      "final_bankroll": 535.8061018082469,
+      "sharpe": 10.509459883188695,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.05,
+        "distance_scale": 1.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 463.27426152091647,
+      "roi": 463.27426152091647,
+      "final_bankroll": 464.27426152091647,
+      "sharpe": 10.44499226776213,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.05,
+        "distance_scale": 1.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 463.27426152091647,
+      "roi": 463.27426152091647,
+      "final_bankroll": 464.27426152091647,
+      "sharpe": 10.44499226776213,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.2,
+        "distance_scale": 2.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1953.4882175024757,
+      "roi": 1953.4882175024757,
+      "final_bankroll": 1954.4882175024757,
+      "sharpe": 10.241660516914497,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.2,
+        "distance_scale": 2.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1953.4882175024757,
+      "roi": 1953.4882175024757,
+      "final_bankroll": 1954.4882175024757,
+      "sharpe": 10.241660516914497,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.2,
+        "distance_scale": 0.5,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1353.2594795978175,
+      "roi": 1353.2594795978175,
+      "final_bankroll": 1354.2594795978175,
+      "sharpe": 10.224456173512728,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.2,
+        "distance_scale": 0.5,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1353.2594795978175,
+      "roi": 1353.2594795978175,
+      "final_bankroll": 1354.2594795978175,
+      "sharpe": 10.224456173512728,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.1,
+        "distance_scale": 2.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 818.0530840715343,
+      "roi": 818.0530840715343,
+      "final_bankroll": 819.0530840715343,
+      "sharpe": 10.168939714228106,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.1,
+        "distance_scale": 2.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 818.0530840715343,
+      "roi": 818.0530840715343,
+      "final_bankroll": 819.0530840715343,
+      "sharpe": 10.168939714228106,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.2,
+        "distance_scale": 2.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 818.0530840715343,
+      "roi": 818.0530840715343,
+      "final_bankroll": 819.0530840715343,
+      "sharpe": 10.168939714228106,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.2,
+        "distance_scale": 2.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 818.0530840715343,
+      "roi": 818.0530840715343,
+      "final_bankroll": 819.0530840715343,
+      "sharpe": 10.168939714228106,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.1,
+        "distance_scale": 0.5,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 567.2016371451687,
+      "roi": 567.2016371451687,
+      "final_bankroll": 568.2016371451687,
+      "sharpe": 10.138683273536904,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.1,
+        "distance_scale": 0.5,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 567.2016371451687,
+      "roi": 567.2016371451687,
+      "final_bankroll": 568.2016371451687,
+      "sharpe": 10.138683273536904,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.2,
+        "distance_scale": 0.5,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 567.2016371451687,
+      "roi": 567.2016371451687,
+      "final_bankroll": 568.2016371451687,
+      "sharpe": 10.138683273536904,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.2,
+        "distance_scale": 0.5,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 567.2016371451687,
+      "roi": 567.2016371451687,
+      "final_bankroll": 568.2016371451687,
+      "sharpe": 10.138683273536904,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.2,
+        "distance_scale": 1.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1704.3514347367961,
+      "roi": 1704.3514347367961,
+      "final_bankroll": 1705.3514347367961,
+      "sharpe": 10.093388504921991,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.2,
+        "distance_scale": 1.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 1704.3514347367961,
+      "roi": 1704.3514347367961,
+      "final_bankroll": 1705.3514347367961,
+      "sharpe": 10.093388504921991,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.1,
+        "distance_scale": 1.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 715.2073659715154,
+      "roi": 715.2073659715154,
+      "final_bankroll": 716.2073659715154,
+      "sharpe": 10.002437140956927,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.1,
+        "distance_scale": 1.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 715.2073659715154,
+      "roi": 715.2073659715154,
+      "final_bankroll": 716.2073659715154,
+      "sharpe": 10.002437140956927,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.2,
+        "distance_scale": 1.0,
+        "min_edge": 0.02,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 715.2073659715154,
+      "roi": 715.2073659715154,
+      "final_bankroll": 716.2073659715154,
+      "sharpe": 10.002437140956927,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.2,
+        "distance_scale": 1.0,
+        "min_edge": 0.05,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 19035,
+      "win_rate": 0.4962962962962963,
+      "total_pnl": 715.2073659715154,
+      "roi": 715.2073659715154,
+      "final_bankroll": 716.2073659715154,
+      "sharpe": 10.002437140956927,
+      "mean_edge": 0.3392107299396418,
+      "mean_distance": 0.3392107299396418
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.05,
+        "distance_scale": 2.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 576.5217106661335,
+      "roi": 576.5217106661335,
+      "final_bankroll": 577.5217106661335,
+      "sharpe": 9.885136691492848,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.05,
+        "distance_scale": 2.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 560.0351252258425,
+      "roi": 560.0351252258425,
+      "final_bankroll": 561.0351252258425,
+      "sharpe": 9.872653267919258,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.1,
+        "distance_scale": 2.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 1120.0702504516848,
+      "roi": 1120.0702504516848,
+      "final_bankroll": 1121.0702504516848,
+      "sharpe": 9.872653267919258,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.05,
+        "distance_scale": 0.5,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 391.52407851457974,
+      "roi": 391.52407851457974,
+      "final_bankroll": 392.52407851457974,
+      "sharpe": 9.829564325678135,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.1,
+        "distance_scale": 0.5,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 783.0481570291595,
+      "roi": 783.0481570291595,
+      "final_bankroll": 784.0481570291595,
+      "sharpe": 9.829564325678135,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.05,
+        "distance_scale": 1.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 485.8635381438955,
+      "roi": 485.8635381438955,
+      "final_bankroll": 486.8635381438955,
+      "sharpe": 9.813891369455426,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.1,
+        "distance_scale": 1.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 971.7270762877907,
+      "roi": 971.7270762877907,
+      "final_bankroll": 972.7270762877907,
+      "sharpe": 9.813891369455426,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.05,
+        "distance_scale": 1.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 501.0456351245524,
+      "roi": 501.0456351245524,
+      "final_bankroll": 502.0456351245524,
+      "sharpe": 9.805781717544459,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.1,
+        "distance_scale": 0.5,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 754.0482623748753,
+      "roi": 754.0482623748753,
+      "final_bankroll": 755.0482623748753,
+      "sharpe": 9.787549364802786,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.2,
+        "distance_scale": 0.5,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 1508.0965247497509,
+      "roi": 1508.0965247497509,
+      "final_bankroll": 1509.0965247497509,
+      "sharpe": 9.787549364802786,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.1,
+        "distance_scale": 2.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 1086.5440942919547,
+      "roi": 1086.5440942919547,
+      "final_bankroll": 1087.5440942919547,
+      "sharpe": 9.768904932760803,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.2,
+        "distance_scale": 2.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 2173.08818858391,
+      "roi": 2173.08818858391,
+      "final_bankroll": 2174.08818858391,
+      "sharpe": 9.768904932760803,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.05,
+        "distance_scale": 0.5,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 370.41089215177163,
+      "roi": 370.41089215177163,
+      "final_bankroll": 371.41089215177163,
+      "sharpe": 9.73767061697901,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.05,
+        "distance_scale": 0.5,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 406.0539312654295,
+      "roi": 406.0539312654295,
+      "final_bankroll": 407.0539312654295,
+      "sharpe": 9.72944022310687,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.1,
+        "distance_scale": 1.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 941.2184277983587,
+      "roi": 941.2184277983587,
+      "final_bankroll": 942.2184277983587,
+      "sharpe": 9.716788045970647,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.5,
+        "kelly_cap": 0.2,
+        "distance_scale": 1.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 1882.4368555967171,
+      "roi": 1882.4368555967171,
+      "final_bankroll": 1883.4368555967171,
+      "sharpe": 9.716788045970647,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.05,
+        "distance_scale": 2.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 534.9671921831655,
+      "roi": 534.9671921831655,
+      "final_bankroll": 535.9671921831655,
+      "sharpe": 9.709646040843257,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.05,
+        "distance_scale": 1.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 463.4321028877679,
+      "roi": 463.4321028877679,
+      "final_bankroll": 464.4321028877679,
+      "sharpe": 9.653068573765593,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.2,
+        "distance_scale": 2.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 1953.8909434397817,
+      "roi": 1953.8909434397817,
+      "final_bankroll": 1954.8909434397817,
+      "sharpe": 9.471970332137586,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.2,
+        "distance_scale": 0.5,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 1353.6500217548753,
+      "roi": 1353.6500217548753,
+      "final_bankroll": 1354.6500217548753,
+      "sharpe": 9.457526025808583,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.1,
+        "distance_scale": 2.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 818.2141744464541,
+      "roi": 818.2141744464541,
+      "final_bankroll": 819.2141744464541,
+      "sharpe": 9.407453241800988,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.2,
+        "distance_scale": 2.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 818.2141744464541,
+      "roi": 818.2141744464541,
+      "final_bankroll": 819.2141744464541,
+      "sharpe": 9.407453241800988,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.1,
+        "distance_scale": 0.5,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 567.3578540079934,
+      "roi": 567.3578540079934,
+      "final_bankroll": 568.3578540079934,
+      "sharpe": 9.381391193378807,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.2,
+        "distance_scale": 0.5,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 567.3578540079934,
+      "roi": 567.3578540079934,
+      "final_bankroll": 568.3578540079934,
+      "sharpe": 9.381391193378807,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.25,
+        "kelly_cap": 0.2,
+        "distance_scale": 1.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 1704.7460381539265,
+      "roi": 1704.7460381539265,
+      "final_bankroll": 1705.7460381539265,
+      "sharpe": 9.340804389241141,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.1,
+        "distance_scale": 1.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 715.365207338369,
+      "roi": 715.365207338369,
+      "final_bankroll": 716.365207338369,
+      "sharpe": 9.25996723548564,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    },
+    {
+      "strategy": "stat_arb",
+      "config": {
+        "kelly_scale": 0.1,
+        "kelly_cap": 0.2,
+        "distance_scale": 1.0,
+        "min_edge": 0.01,
+        "n_bins": 10,
+        "fee": 0.01
+      },
+      "n_trades": 21316,
+      "win_rate": 0.4954025145430662,
+      "total_pnl": 715.365207338369,
+      "roi": 715.365207338369,
+      "final_bankroll": 716.365207338369,
+      "sharpe": 9.25996723548564,
+      "mean_edge": 0.3045210977096132,
+      "mean_distance": 0.3045210977096132
+    }
+  ],
+  "stat_arb_best": {
+    "strategy": "stat_arb",
+    "config": {
+      "kelly_scale": 0.5,
+      "kelly_cap": 0.05,
+      "distance_scale": 2.0,
+      "min_edge": 0.02,
+      "n_bins": 10,
+      "fee": 0.01
+    },
+    "n_trades": 19035,
+    "win_rate": 0.4962962962962963,
+    "total_pnl": 575.7162587915382,
+    "roi": 575.7162587915382,
+    "final_bankroll": 576.7162587915382,
+    "sharpe": 10.706621421873711,
+    "mean_edge": 0.3392107299396418,
+    "mean_distance": 0.3392107299396418
+  },
+  "mean_reversion": {
+    "strategy": "mean_reversion",
+    "config": {
+      "calibration_window": 50,
+      "mean_revert_threshold": 0.05,
+      "momentum_threshold": 0.15,
+      "kelly_fraction": 0.25,
+      "max_position_size": 0.1,
+      "min_edge": 0.02,
+      "fee": 0.01
+    },
+    "n_trades": 18553,
+    "win_rate": 0.7236026518622325,
+    "total_pnl": 84.0162286357577,
+    "final_bankroll": 85.0162286357577,
+    "sharpe": 3.3236664876279707,
+    "pnl_by_category": {
+      "sports": 33.156570861346054,
+      "crypto": 6.1821939351031325,
+      "weather": 16.790928762529205,
+      "other": 21.62348940996577,
+      "politics": 5.855115835330246,
+      "economics": 0.40792983148251855
+    },
+    "pnl_by_regime": {
+      "momentum": 87.16283683356295,
+      "neutral": -1.5742624429813654,
+      "mean_revert": -1.572345754823686
+    },
+    "regime_counts": {
+      "mean_revert": 1105,
+      "momentum": 16204,
+      "neutral": 4007
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "timestamp": "2025-12-31T22:59:04.532335",
+  "use_semantic_features": true,
+  "train_size": 12048,
+  "val_size": 4819,
+  "test_size": 7229,
+  "n_trades": 7229,
+  "n_categories": 6,
+  "win_rate": 0.7079817402130308,
+  "total_pnl": 1101.741035304821,
+  "avg_pnl": 0.15240573181696238,
+  "pnl_std": 0.4365366288107102,
+  "sharpe": 29.683815446979708,
+  "weighted_total_pnl": 1223.6232533861648,
+  "weighted_avg_pnl": 0.1692659086161523,
+  "weighted_pnl_std": 0.5786324581294293,
+  "weighted_sharpe": 24.87171987390549,
+  "avg_weight": 1.0799348955956112,
+  "by_category": {
+    "sports": {
+      "calibration": -0.14638983805278202,
+      "n_trades": 2067,
+      "win_rate": 0.7063376874697629,
+      "total_pnl": 333.30850000000004,
+      "avg_weight": 1.388644350657226,
+      "weighted_pnl": 388.2810969244518
+    },
+    "weather": {
+      "calibration": -0.2547942295820211,
+      "n_trades": 418,
+      "win_rate": 0.854066985645933,
+      "total_pnl": 110.1275,
+      "avg_weight": 1.4932431880367467,
+      "weighted_pnl": 172.17011241161543
+    },
+    "other": {
+      "calibration": -0.08738765577335142,
+      "n_trades": 3762,
+      "win_rate": 0.6935140882509303,
+      "total_pnl": 519.3655352472854,
+      "avg_weight": 0.8887372438918901,
+      "weighted_pnl": 521.0495571583604
+    },
+    "crypto": {
+      "calibration": -0.08719913802753054,
+      "n_trades": 442,
+      "win_rate": 0.7624434389140271,
+      "total_pnl": 68.30779205345002,
+      "avg_weight": 1.2487215755880663,
+      "weighted_pnl": 88.59939744414206
+    },
+    "politics": {
+      "calibration": -0.06376973482960036,
+      "n_trades": 506,
+      "win_rate": 0.6521739130434783,
+      "total_pnl": 63.106708004085704,
+      "avg_weight": 0.7403764899321984,
+      "weighted_pnl": 45.056568682635756
+    },
+    "finance": {
+      "calibration": -0.1094507015310055,
+      "n_trades": 34,
+      "win_rate": 0.7352941176470589,
+      "total_pnl": 7.5249999999999995,
+      "avg_weight": 1.2456142063505413,
+      "weighted_pnl": 8.466520764959311
+    }
+  },
+  "elapsed_seconds": 0.985048770904541,
+  "calibration_weight_correlation": 0.7809338119197796,
+  "semantic_weights": {
+    "is_binary_outcome": 1.0567052170863716,
+    "is_threshold": 0.8935671118372054,
+    "is_date_specific": 0.9667070091946337,
+    "has_person": 1.002937006250547,
+    "has_org": 1.0228076699795792,
+    "has_crypto": 0.9651638227012105,
+    "question_length": 1.065998732234175,
+    "word_count": 1.046675042155114,
+    "has_numbers": 0.9891269295045072,
+    "is_short_term": 0.9872396502233568,
+    "is_long_term": 1.0124169897961477
+  }
+}

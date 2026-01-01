@@ -1,0 +1,489 @@
+{
+  "impact_model": {
+    "name": "random_average_3100",
+    "regime": "average",
+    "base_fill_prob": 0.6014026616566688,
+    "fill_size_decay": 0.03198957622770683,
+    "fill_spread_sensitivity": 3.9792537457915196,
+    "permanent_impact": 0.001961597085335414,
+    "temporary_impact": 0.0036498296817406707,
+    "impact_power": 0.6691906599262281,
+    "adverse_selection": 0.055514334895113926,
+    "adverse_selection_decay": 0.32525984818600256,
+    "mev_extraction_rate": 0.04401901500638461,
+    "reorder_probability": 0.08043006196670628,
+    "block_delay_cost": 0.0018653760895822697,
+    "base_liquidity": 13107.649351144693,
+    "liquidity_price_factor": 2.0,
+    "exit_spread": 0.01884265579608289,
+    "exit_impact_mult": 1.9954315699905278,
+    "stress_multiplier": 1.0
+  },
+  "best_params": {
+    "spread_threshold": 0.129462646364564,
+    "n_bins": 7,
+    "kelly_fraction": 0.4951012967068355,
+    "max_position_pct": 0.02724103196263078,
+    "fee": 0.026491246879888783
+  },
+  "optimization_sharpe": 12.658098135996312,
+  "final_evaluation": {
+    "mean_sharpe": 10.715434868638313,
+    "std_sharpe": 1.189363752063104,
+    "min_sharpe": 8.273803482728276,
+    "p5_sharpe": 9.153817192060425,
+    "p25_sharpe": 9.805122540429986,
+    "median_sharpe": 10.594035382715141,
+    "mean_return": 2848.72027950482,
+    "mean_fill_rate": 0.00620651486401012,
+    "mean_drawdown": 0.012367639345573344,
+    "mean_impact_cost": 0.12830714099910118,
+    "mean_mev_cost": 3.606142072151661,
+    "mean_as_cost": 0.8698007863014804,
+    "n_simulations": 50,
+    "impact_model": "random_average_3100",
+    "regime": "average"
+  },
+  "all_trials": [
+    {
+      "number": 0,
+      "value": 7.869348477153032,
+      "params": {
+        "spread_threshold": 0.062435616638630745,
+        "n_bins": 24,
+        "kelly_fraction": 0.3793972738151323,
+        "max_position_pct": 0.15769145136531842,
+        "fee": 0.008900466011060912
+      }
+    },
+    {
+      "number": 1,
+      "value": 10.792721542319581,
+      "params": {
+        "spread_threshold": 0.03183923284706837,
+        "n_bins": 6,
+        "kelly_fraction": 0.4397792655987208,
+        "max_position_pct": 0.15825645270093802,
+        "fee": 0.022701814444901137
+      }
+    },
+    {
+      "number": 2,
+      "value": 8.882358885821501,
+      "params": {
+        "spread_threshold": 0.012881829201412343,
+        "n_bins": 25,
+        "kelly_fraction": 0.4245991883601898,
+        "max_position_pct": 0.06883799545600351,
+        "fee": 0.009545624180177514
+      }
+    },
+    {
+      "number": 3,
+      "value": 11.557207947409218,
+      "params": {
+        "spread_threshold": 0.03567663137948073,
+        "n_bins": 11,
+        "kelly_fraction": 0.28614039423450705,
+        "max_position_pct": 0.11934735428768663,
+        "fee": 0.012280728504951047
+      }
+    },
+    {
+      "number": 4,
+      "value": 12.016242509786494,
+      "params": {
+        "spread_threshold": 0.09565940526113312,
+        "n_bins": 7,
+        "kelly_fraction": 0.1814650918408482,
+        "max_position_pct": 0.1042632239575491,
+        "fee": 0.016401749605425897
+      }
+    },
+    {
+      "number": 5,
+      "value": 7.401487039356415,
+      "params": {
+        "spread_threshold": 0.11992463459502188,
+        "n_bins": 9,
+        "kelly_fraction": 0.28140549728612524,
+        "max_position_pct": 0.15625535083826977,
+        "fee": 0.006161260317999943
+      }
+    },
+    {
+      "number": 6,
+      "value": 9.325897519918376,
+      "params": {
+        "spread_threshold": 0.09505627926620136,
+        "n_bins": 8,
+        "kelly_fraction": 0.0792732168433758,
+        "max_position_pct": 0.23824367356826665,
+        "fee": 0.02914080082686398
+      }
+    },
+    {
+      "number": 7,
+      "value": 9.411743292355364,
+      "params": {
+        "spread_threshold": 0.12317562873630454,
+        "n_bins": 11,
+        "kelly_fraction": 0.09395245130287275,
+        "max_position_pct": 0.17737359609779607,
+        "fee": 0.01600381234349003
+      }
+    },
+    {
+      "number": 8,
+      "value": 7.533794428968318,
+      "params": {
+        "spread_threshold": 0.027085352878269034,
+        "n_bins": 15,
+        "kelly_fraction": 0.06547483450184828,
+        "max_position_pct": 0.2291436924781199,
+        "fee": 0.011469499540000422
+      }
+    },
+    {
+      "number": 9,
+      "value": 12.314606074964084,
+      "params": {
+        "spread_threshold": 0.10275311980955747,
+        "n_bins": 11,
+        "kelly_fraction": 0.28403060953001485,
+        "max_position_pct": 0.14574336424895432,
+        "fee": 0.009621361388138176
+      }
+    },
+    {
+      "number": 10,
+      "value": 9.98752736113277,
+      "params": {
+        "spread_threshold": 0.1447850144520564,
+        "n_bins": 17,
+        "kelly_fraction": 0.19540699002603623,
+        "max_position_pct": 0.02413123139140852,
+        "fee": 0.021296663769454466
+      }
+    },
+    {
+      "number": 11,
+      "value": 10.088031298353458,
+      "params": {
+        "spread_threshold": 0.08145556629697263,
+        "n_bins": 5,
+        "kelly_fraction": 0.19153905456426484,
+        "max_position_pct": 0.09700289053134434,
+        "fee": 0.01610851483391868
+      }
+    },
+    {
+      "number": 12,
+      "value": 8.866080050315452,
+      "params": {
+        "spread_threshold": 0.1026568851920904,
+        "n_bins": 13,
+        "kelly_fraction": 0.19444329570964444,
+        "max_position_pct": 0.0738471455940328,
+        "fee": 0.02050408313023787
+      }
+    },
+    {
+      "number": 13,
+      "value": 8.82857764551443,
+      "params": {
+        "spread_threshold": 0.0652021717474567,
+        "n_bins": 19,
+        "kelly_fraction": 0.3543605238734836,
+        "max_position_pct": 0.1202536294115622,
+        "fee": 0.005175490948921687
+      }
+    },
+    {
+      "number": 14,
+      "value": 10.090700492314747,
+      "params": {
+        "spread_threshold": 0.11264439530881774,
+        "n_bins": 10,
+        "kelly_fraction": 0.14240286352394307,
+        "max_position_pct": 0.19904692227208484,
+        "fee": 0.014123244170113843
+      }
+    },
+    {
+      "number": 15,
+      "value": 11.59446791650538,
+      "params": {
+        "spread_threshold": 0.1451972405618763,
+        "n_bins": 7,
+        "kelly_fraction": 0.4982074392863459,
+        "max_position_pct": 0.038046348542359526,
+        "fee": 0.027242047308406764
+      }
+    },
+    {
+      "number": 16,
+      "value": 8.973120973684495,
+      "params": {
+        "spread_threshold": 0.08425502692290338,
+        "n_bins": 13,
+        "kelly_fraction": 0.25307545161424566,
+        "max_position_pct": 0.09603332363662496,
+        "fee": 0.017427134840271315
+      }
+    },
+    {
+      "number": 17,
+      "value": 10.005285057040538,
+      "params": {
+        "spread_threshold": 0.057824356837236336,
+        "n_bins": 20,
+        "kelly_fraction": 0.3272479639213409,
+        "max_position_pct": 0.2058551879228478,
+        "fee": 0.023808949797041665
+      }
+    },
+    {
+      "number": 18,
+      "value": 8.740409521266091,
+      "params": {
+        "spread_threshold": 0.1281659757363316,
+        "n_bins": 13,
+        "kelly_fraction": 0.23684297736348503,
+        "max_position_pct": 0.11950163564514045,
+        "fee": 0.008444043592220294
+      }
+    },
+    {
+      "number": 19,
+      "value": 10.312586978422436,
+      "params": {
+        "spread_threshold": 0.09827892835502888,
+        "n_bins": 5,
+        "kelly_fraction": 0.1466548051403523,
+        "max_position_pct": 0.061297883297308564,
+        "fee": 0.018975621345000714
+      }
+    },
+    {
+      "number": 20,
+      "value": 8.072677385202828,
+      "params": {
+        "spread_threshold": 0.07080004581185576,
+        "n_bins": 8,
+        "kelly_fraction": 0.3241669802947307,
+        "max_position_pct": 0.13956207891633268,
+        "fee": 0.012996814339922193
+      }
+    },
+    {
+      "number": 21,
+      "value": 12.658098135996312,
+      "params": {
+        "spread_threshold": 0.129462646364564,
+        "n_bins": 7,
+        "kelly_fraction": 0.4951012967068355,
+        "max_position_pct": 0.02724103196263078,
+        "fee": 0.026491246879888783
+      }
+    },
+    {
+      "number": 22,
+      "value": 11.985717157985944,
+      "params": {
+        "spread_threshold": 0.13542688023604932,
+        "n_bins": 7,
+        "kelly_fraction": 0.47553666245399007,
+        "max_position_pct": 0.046139415723657595,
+        "fee": 0.02576568625678164
+      }
+    },
+    {
+      "number": 23,
+      "value": 9.874127297233914,
+      "params": {
+        "spread_threshold": 0.108896512076364,
+        "n_bins": 10,
+        "kelly_fraction": 0.12404128069998181,
+        "max_position_pct": 0.09052845812920575,
+        "fee": 0.014732978842556402
+      }
+    },
+    {
+      "number": 24,
+      "value": 10.177706865957747,
+      "params": {
+        "spread_threshold": 0.09031652545078289,
+        "n_bins": 12,
+        "kelly_fraction": 0.3939660910266991,
+        "max_position_pct": 0.182771029524315,
+        "fee": 0.018764236145007992
+      }
+    },
+    {
+      "number": 25,
+      "value": 7.080174541342958,
+      "params": {
+        "spread_threshold": 0.11396061682337652,
+        "n_bins": 9,
+        "kelly_fraction": 0.21401995194915885,
+        "max_position_pct": 0.14114969354672977,
+        "fee": 0.025325489539621982
+      }
+    },
+    {
+      "number": 26,
+      "value": 12.321094254284136,
+      "params": {
+        "spread_threshold": 0.13314392667905736,
+        "n_bins": 7,
+        "kelly_fraction": 0.16765084652692314,
+        "max_position_pct": 0.029508812792984895,
+        "fee": 0.029781929903589993
+      }
+    },
+    {
+      "number": 27,
+      "value": 8.683101930799639,
+      "params": {
+        "spread_threshold": 0.13292235874897929,
+        "n_bins": 15,
+        "kelly_fraction": 0.1130754578768883,
+        "max_position_pct": 0.024012774037972813,
+        "fee": 0.029811491153770873
+      }
+    },
+    {
+      "number": 28,
+      "value": 12.056371698811896,
+      "params": {
+        "spread_threshold": 0.13886678511600647,
+        "n_bins": 5,
+        "kelly_fraction": 0.3085341657126812,
+        "max_position_pct": 0.047886796792576,
+        "fee": 0.027664698008583906
+      }
+    },
+    {
+      "number": 29,
+      "value": 10.135360336678149,
+      "params": {
+        "spread_threshold": 0.12143106639211398,
+        "n_bins": 23,
+        "kelly_fraction": 0.3841263750056033,
+        "max_position_pct": 0.07776569233800386,
+        "fee": 0.02672548477159505
+      }
+    },
+    {
+      "number": 30,
+      "value": 9.08788332269596,
+      "params": {
+        "spread_threshold": 0.10584560877411828,
+        "n_bins": 9,
+        "kelly_fraction": 0.4308323479032562,
+        "max_position_pct": 0.020061949649720294,
+        "fee": 0.024092933646740894
+      }
+    },
+    {
+      "number": 31,
+      "value": 12.514185775745299,
+      "params": {
+        "spread_threshold": 0.13833775015337363,
+        "n_bins": 5,
+        "kelly_fraction": 0.30600878144482807,
+        "max_position_pct": 0.044568448883311816,
+        "fee": 0.02839148085195129
+      }
+    },
+    {
+      "number": 32,
+      "value": 9.533762122473975,
+      "params": {
+        "spread_threshold": 0.14963311187151754,
+        "n_bins": 6,
+        "kelly_fraction": 0.24757998019066635,
+        "max_position_pct": 0.052746797568516315,
+        "fee": 0.028438776635483724
+      }
+    },
+    {
+      "number": 33,
+      "value": 10.256645149562816,
+      "params": {
+        "spread_threshold": 0.12782142548170802,
+        "n_bins": 6,
+        "kelly_fraction": 0.3502610946713406,
+        "max_position_pct": 0.035384754845781276,
+        "fee": 0.02593338917621527
+      }
+    },
+    {
+      "number": 34,
+      "value": 9.343146972955473,
+      "params": {
+        "spread_threshold": 0.13872721526982099,
+        "n_bins": 8,
+        "kelly_fraction": 0.45384675966553234,
+        "max_position_pct": 0.06177447933050939,
+        "fee": 0.029713607493709538
+      }
+    },
+    {
+      "number": 35,
+      "value": 11.971074313873855,
+      "params": {
+        "spread_threshold": 0.11617770240057353,
+        "n_bins": 7,
+        "kelly_fraction": 0.40353578869482376,
+        "max_position_pct": 0.03655226506846564,
+        "fee": 0.022505957428775356
+      }
+    },
+    {
+      "number": 36,
+      "value": 10.791734362516147,
+      "params": {
+        "spread_threshold": 0.12870565965282915,
+        "n_bins": 11,
+        "kelly_fraction": 0.27749523723962216,
+        "max_position_pct": 0.1550719661638998,
+        "fee": 0.027990082760190077
+      }
+    },
+    {
+      "number": 37,
+      "value": 9.40972908741592,
+      "params": {
+        "spread_threshold": 0.1414162280255003,
+        "n_bins": 6,
+        "kelly_fraction": 0.29734295859719245,
+        "max_position_pct": 0.05422561796775553,
+        "fee": 0.010282746869864318
+      }
+    },
+    {
+      "number": 38,
+      "value": 11.416924095148888,
+      "params": {
+        "spread_threshold": 0.05027594513116329,
+        "n_bins": 10,
+        "kelly_fraction": 0.2278747180440741,
+        "max_position_pct": 0.10924194288907133,
+        "fee": 0.024867516834123502
+      }
+    },
+    {
+      "number": 39,
+      "value": 8.703083330386407,
+      "params": {
+        "spread_threshold": 0.12011225171520776,
+        "n_bins": 8,
+        "kelly_fraction": 0.156428509856025,
+        "max_position_pct": 0.08346946563092425,
+        "fee": 0.02261748683027311
+      }
+    }
+  ]
+}

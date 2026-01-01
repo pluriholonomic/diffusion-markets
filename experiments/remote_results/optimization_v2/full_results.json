@@ -1,0 +1,82 @@
+[
+  {
+    "strategy": "blackwell",
+    "cv_value": 5.567044037746737,
+    "best_params": {
+      "initial_bankroll": 10681.754472902552,
+      "kelly_fraction": 0.11071796346706023,
+      "leverage": 2.12086416983968,
+      "max_position_pct": 0.20568680782687337,
+      "min_edge": 0.07987032901062745,
+      "fee": 0.015931327999827525,
+      "max_drawdown_stop": 0.6417307234803431,
+      "compounding": false,
+      "n_bins": 3,
+      "g_bar_threshold": 0.1910159678998083,
+      "t_stat_threshold": 2.345955288821643,
+      "min_samples": 25
+    },
+    "holdout": {
+      "pnl": 237058987.03529176,
+      "sharpe": 5.046712251255921,
+      "n_trades": 3276,
+      "win_rate": 0.7527472527472527,
+      "max_dd": 0.047821539253372264,
+      "final_bankroll": 237069668.78976467,
+      "return_pct": 2219288.859678084
+    },
+    "n_trials": 1000
+  },
+  {
+    "strategy": "stat_arb",
+    "cv_value": 5.495227439769614,
+    "best_params": {
+      "initial_bankroll": 27866.179722209417,
+      "kelly_fraction": 0.5554171475838141,
+      "leverage": 0.5851034537848071,
+      "max_position_pct": 0.2526687189447959,
+      "min_edge": 0.12511558302383943,
+      "fee": 0.005047031603727062,
+      "max_drawdown_stop": 0.3139319923870165,
+      "compounding": false,
+      "n_bins": 3,
+      "distance_scale": 3.8029281476759738
+    },
+    "holdout": {
+      "pnl": 989618654.6131012,
+      "sharpe": 4.9841672040770195,
+      "n_trades": 3276,
+      "win_rate": 0.7527472527472527,
+      "max_dd": 0.03901406226686411,
+      "final_bankroll": 989646520.7928234,
+      "return_pct": 3551325.17079251
+    },
+    "n_trials": 1000
+  },
+  {
+    "strategy": "mean_reversion",
+    "cv_value": 4.8265556217928065,
+    "best_params": {
+      "initial_bankroll": 5124.543150940323,
+      "kelly_fraction": 0.33511284058903323,
+      "leverage": 4.345905361961039,
+      "max_position_pct": 0.23694584139852187,
+      "min_edge": 0.08014164751707159,
+      "fee": 0.01798581409375756,
+      "max_drawdown_stop": 0.23324016246666046,
+      "compounding": true,
+      "mean_revert_threshold": 0.09594595328254207,
+      "momentum_threshold": 0.24145737027762548
+    },
+    "holdout": {
+      "pnl": 42370.19256118228,
+      "sharpe": 9.035382168439353,
+      "n_trades": 2,
+      "win_rate": 0.5,
+      "max_dd": 0.25240824143502155,
+      "final_bankroll": 47494.7357121226,
+      "return_pct": 826.8091674358835
+    },
+    "n_trials": 1000
+  }
+]

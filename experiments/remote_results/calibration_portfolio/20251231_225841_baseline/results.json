@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-12-31T22:58:41.857482",
+  "use_semantic_features": false,
+  "train_size": 12048,
+  "val_size": 4819,
+  "test_size": 7229,
+  "n_trades": 7229,
+  "n_categories": 6,
+  "win_rate": 0.7079817402130308,
+  "total_pnl": 1101.741035304821,
+  "avg_pnl": 0.15240573181696238,
+  "pnl_std": 0.4365366288107102,
+  "sharpe": 29.683815446979708,
+  "weighted_total_pnl": 1082.0564389264255,
+  "weighted_avg_pnl": 0.1496827277529984,
+  "weighted_pnl_std": 0.5218525002598973,
+  "weighted_sharpe": 24.387261365750458,
+  "avg_weight": 0.970618922764113,
+  "by_category": {
+    "sports": {
+      "calibration": -0.14638983805278202,
+      "n_trades": 2067,
+      "win_rate": 0.7063376874697629,
+      "total_pnl": 333.30850000000004,
+      "avg_weight": 1.2111797877277568,
+      "weighted_pnl": 336.3938608616937
+    },
+    "weather": {
+      "calibration": -0.2547942295820211,
+      "n_trades": 418,
+      "win_rate": 0.854066985645933,
+      "total_pnl": 110.1275,
+      "avg_weight": 1.3436102380009205,
+      "weighted_pnl": 155.19924731479526
+    },
+    "other": {
+      "calibration": -0.08738765577335142,
+      "n_trades": 3762,
+      "win_rate": 0.6935140882509303,
+      "total_pnl": 519.3655352472854,
+      "avg_weight": 0.809426443159625,
+      "weighted_pnl": 458.20779706624677
+    },
+    "crypto": {
+      "calibration": -0.08719913802753054,
+      "n_trades": 442,
+      "win_rate": 0.7624434389140271,
+      "total_pnl": 68.30779205345002,
+      "avg_weight": 1.2226404184790327,
+      "weighted_pnl": 85.70459969142601
+    },
+    "politics": {
+      "calibration": -0.06376973482960036,
+      "n_trades": 506,
+      "win_rate": 0.6521739130434783,
+      "total_pnl": 63.106708004085704,
+      "avg_weight": 0.6489355932590958,
+      "weighted_pnl": 39.18682185366907
+    },
+    "finance": {
+      "calibration": -0.1094507015310055,
+      "n_trades": 34,
+      "win_rate": 0.7352941176470589,
+      "total_pnl": 7.5249999999999995,
+      "avg_weight": 1.1069334594344467,
+      "weighted_pnl": 7.364112138594579
+    }
+  },
+  "elapsed_seconds": 0.36254310607910156,
+  "calibration_weight_correlation": 0.7232070043632549
+}

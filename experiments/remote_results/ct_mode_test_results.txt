@@ -1,0 +1,20 @@
+============================================================
+C_t MODE COMPARISON TEST
+============================================================
+Loading data from data/polymarket/turtel_exa_enriched.parquet...
+Traceback (most recent call last):
+  File "/root/diffusion-markets/experiments/scripts/test_ct_modes.py", line 362, in <module>
+    main()
+  File "/root/diffusion-markets/experiments/scripts/test_ct_modes.py", line 331, in main
+    df, market_ids, texts = load_test_data(args.data, args.max_rows)
+  File "/root/diffusion-markets/experiments/scripts/test_ct_modes.py", line 29, in load_test_data
+    df = pd.read_parquet(data_path)
+  File "/root/diffusion-markets/experiments/.venv/lib/python3.10/site-packages/pandas/io/parquet.py", line 669, in read_parquet
+    return impl.read(
+  File "/root/diffusion-markets/experiments/.venv/lib/python3.10/site-packages/pandas/io/parquet.py", line 258, in read
+    path_or_handle, handles, filesystem = _get_path_or_handle(
+  File "/root/diffusion-markets/experiments/.venv/lib/python3.10/site-packages/pandas/io/parquet.py", line 141, in _get_path_or_handle
+    handles = get_handle(
+  File "/root/diffusion-markets/experiments/.venv/lib/python3.10/site-packages/pandas/io/common.py", line 882, in get_handle
+    handle = open(handle, ioargs.mode)
+FileNotFoundError: [Errno 2] No such file or directory: 'data/polymarket/turtel_exa_enriched.parquet'

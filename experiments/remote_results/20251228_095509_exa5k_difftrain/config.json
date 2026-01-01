@@ -1,0 +1,51 @@
+{
+  "benchmark": "pm_difftrain",
+  "bundling": {
+    "enabled": false
+  },
+  "dataset_path": "/root/diffusion-markets/data/polymarket/turtel_exa_5k.parquet",
+  "diffusion": {
+    "T": 64,
+    "agg": "mean",
+    "batch_size": 128,
+    "beta_end": 0.02,
+    "beta_start": 0.0001,
+    "depth": 3,
+    "device": "auto",
+    "eta": 0.0,
+    "hidden_dim": 256,
+    "label_eps": 0.001,
+    "lr": 0.0002,
+    "mc": 16,
+    "sample_steps": 32,
+    "time_dim": 64,
+    "train_steps": 5000
+  },
+  "embed": {
+    "batch_size": 64,
+    "device": "auto",
+    "device_map": null,
+    "dtype": "auto",
+    "max_length": 256,
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "normalize": true,
+    "trust_remote_code": true
+  },
+  "eval": {
+    "B": 1.0,
+    "bins": 20,
+    "group_cols": null,
+    "pred_col": "pred_prob",
+    "trading_mode": "sign",
+    "transaction_cost": 0.0
+  },
+  "max_rows": 20000,
+  "split": {
+    "seed": 0,
+    "train_frac": 0.8
+  },
+  "text_cols": [
+    "question",
+    "description"
+  ]
+}

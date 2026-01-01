@@ -1,0 +1,38 @@
+{
+  "L": 4,
+  "S": [
+    5,
+    9,
+    14,
+    11
+  ],
+  "benchmark": "intrinsic_post",
+  "llm": null,
+  "post": {
+    "group_J": [
+      5,
+      9,
+      11,
+      14
+    ],
+    "post_bins": 20,
+    "post_clip_eps": 0.0001,
+    "post_prior": 5.0
+  },
+  "rho": 0.95,
+  "spec": {
+    "alpha": 0.8,
+    "d": 20,
+    "k": 4,
+    "seed": 0,
+    "subset": null
+  },
+  "test": {
+    "bins": 20,
+    "n_test": 10000,
+    "transaction_cost": 0.0
+  },
+  "train": {
+    "n_train": 50000
+  }
+}

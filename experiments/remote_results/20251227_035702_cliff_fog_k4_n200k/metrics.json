@@ -1,0 +1,267 @@
+{
+  "S": [
+    6,
+    11,
+    17,
+    14
+  ],
+  "ar_results": [
+    {
+      "ECE": 0.0013799999999999923,
+      "K": 1,
+      "L": 2,
+      "SCE": 0.1600000262260437,
+      "arb_profit": 0.39999999112278223,
+      "beats_theory": true,
+      "brier": 0.25,
+      "theory_SCE_lower_bound": 0.16000000000000003
+    },
+    {
+      "ECE": 0.0013799999999999923,
+      "K": 4,
+      "L": 2,
+      "SCE": 0.1600000262260437,
+      "arb_profit": 0.39999999112278223,
+      "beats_theory": true,
+      "brier": 0.25,
+      "theory_SCE_lower_bound": 0.16000000000000003
+    },
+    {
+      "ECE": 0.0013799999999999923,
+      "K": 16,
+      "L": 2,
+      "SCE": 0.1600000262260437,
+      "arb_profit": 0.39999999112278223,
+      "beats_theory": true,
+      "brier": 0.25,
+      "theory_SCE_lower_bound": 0.16000000000000003
+    },
+    {
+      "ECE": 0.0007899911227822567,
+      "K": 1,
+      "L": 4,
+      "SCE": 0.0,
+      "arb_profit": 0.0,
+      "beats_theory": true,
+      "brier": 0.09063199999552995,
+      "theory_SCE_lower_bound": 0.0
+    },
+    {
+      "ECE": 0.0013799999999999923,
+      "K": 4,
+      "L": 4,
+      "SCE": 0.1600000262260437,
+      "arb_profit": 0.39999999112278223,
+      "beats_theory": true,
+      "brier": 0.25,
+      "theory_SCE_lower_bound": 0.0
+    },
+    {
+      "ECE": 0.0013799999999999923,
+      "K": 16,
+      "L": 4,
+      "SCE": 0.1600000262260437,
+      "arb_profit": 0.39999999112278223,
+      "beats_theory": true,
+      "brier": 0.25,
+      "theory_SCE_lower_bound": 0.0
+    },
+    {
+      "ECE": 0.0007899911227822567,
+      "K": 1,
+      "L": 6,
+      "SCE": 0.0,
+      "arb_profit": 0.0,
+      "beats_theory": true,
+      "brier": 0.09063199999552995,
+      "theory_SCE_lower_bound": 0.0
+    },
+    {
+      "ECE": 0.0013799999999999923,
+      "K": 4,
+      "L": 6,
+      "SCE": 0.1600000262260437,
+      "arb_profit": 0.39999999112278223,
+      "beats_theory": true,
+      "brier": 0.25,
+      "theory_SCE_lower_bound": 0.0
+    },
+    {
+      "ECE": 0.0013799999999999923,
+      "K": 16,
+      "L": 6,
+      "SCE": 0.1600000262260437,
+      "arb_profit": 0.39999999112278223,
+      "beats_theory": true,
+      "brier": 0.25,
+      "theory_SCE_lower_bound": 0.0
+    }
+  ],
+  "diffusion_results": [
+    {
+      "ECE": 0.3742100088772177,
+      "SCE": 0.140625,
+      "arb_profit": 0.375,
+      "brier": 0.2306645066534433,
+      "matches_theory": true,
+      "rho": 0.5,
+      "theory_SCE": 0.14062500000000003
+    },
+    {
+      "ECE": 0.30316998954772945,
+      "SCE": 0.09239169955253601,
+      "arb_profit": 0.3039599806705117,
+      "brier": 0.1825434184623704,
+      "matches_theory": true,
+      "rho": 0.7,
+      "theory_SCE": 0.09239168160000003
+    },
+    {
+      "ECE": 0.2353700041389465,
+      "SCE": 0.05577154830098152,
+      "arb_profit": 0.23615999526172876,
+      "brier": 0.1460304147483677,
+      "matches_theory": true,
+      "rho": 0.8,
+      "theory_SCE": 0.05577154559999999
+    },
+    {
+      "ECE": 0.19040747877120967,
+      "SCE": 0.03655647858977318,
+      "arb_profit": 0.19119746989399194,
+      "brier": 0.12688638387200868,
+      "matches_theory": true,
+      "rho": 0.85,
+      "theory_SCE": 0.03655648400625002
+    },
+    {
+      "ECE": 0.1367700188335776,
+      "SCE": 0.018922751769423485,
+      "arb_profit": 0.13756000995635986,
+      "brier": 0.10933741396129305,
+      "matches_theory": true,
+      "rho": 0.9,
+      "theory_SCE": 0.0189227536
+    },
+    {
+      "ECE": 0.07340749498367306,
+      "SCE": 0.0055052656680345535,
+      "arb_profit": 0.07419748610645532,
+      "brier": 0.09602003621977799,
+      "matches_theory": true,
+      "rho": 0.95,
+      "theory_SCE": 0.0055052690062500085
+    },
+    {
+      "ECE": 0.030262732467651342,
+      "SCE": 0.0009642717195674777,
+      "arb_profit": 0.0310527235904336,
+      "brier": 0.09154720887640865,
+      "matches_theory": true,
+      "rho": 0.98,
+      "theory_SCE": 0.0009642724130856991
+    },
+    {
+      "ECE": 0.014971622723042938,
+      "SCE": 0.0002484284632373601,
+      "arb_profit": 0.015761613845825195,
+      "brier": 0.09085552539651702,
+      "matches_theory": true,
+      "rho": 0.99,
+      "theory_SCE": 0.0002484279084672167
+    }
+  ],
+  "matched_comparison": [
+    {
+      "ar_L": 1,
+      "ar_SCE": 0.1600000262260437,
+      "ar_arb": 0.39999999112278223,
+      "compute": 1,
+      "diff_SCE": 0.140625,
+      "diff_T": 1,
+      "diff_arb": 0.375,
+      "diff_rho": 0.5,
+      "diff_wins_arb": true,
+      "diff_wins_sce": true
+    },
+    {
+      "ar_L": 2,
+      "ar_SCE": 0.1600000262260437,
+      "ar_arb": 0.39999999112278223,
+      "compute": 2,
+      "diff_SCE": 0.10303306579589844,
+      "diff_T": 2,
+      "diff_arb": 0.320987656776011,
+      "diff_rho": 0.6666666666666667,
+      "diff_wins_arb": true,
+      "diff_wins_sce": true
+    },
+    {
+      "ar_L": 4,
+      "ar_SCE": 0.0,
+      "ar_arb": 0.0,
+      "compute": 4,
+      "diff_SCE": 0.05577154830098152,
+      "diff_T": 4,
+      "diff_arb": 0.23615999526172876,
+      "diff_rho": 0.8,
+      "diff_wins_arb": false,
+      "diff_wins_sce": false
+    },
+    {
+      "ar_L": 8,
+      "ar_SCE": 0.0,
+      "ar_arb": 0.0,
+      "compute": 8,
+      "diff_SCE": 0.02258467860519886,
+      "diff_T": 8,
+      "diff_arb": 0.1502819806972146,
+      "diff_rho": 0.8888888888888888,
+      "diff_wins_arb": false,
+      "diff_wins_sce": false
+    },
+    {
+      "ar_L": 16,
+      "ar_SCE": 0.0,
+      "ar_arb": 0.0,
+      "compute": 16,
+      "diff_SCE": 0.007419071160256863,
+      "diff_T": 16,
+      "diff_arb": 0.0861340314784646,
+      "diff_rho": 0.9411764705882353,
+      "diff_wins_arb": false,
+      "diff_wins_sce": false
+    },
+    {
+      "ar_L": 32,
+      "ar_SCE": 0.0,
+      "ar_arb": 0.0,
+      "compute": 32,
+      "diff_SCE": 0.002146020531654358,
+      "diff_T": 32,
+      "diff_arb": 0.04632516211658716,
+      "diff_rho": 0.9696969696969697,
+      "diff_wins_arb": false,
+      "diff_wins_sce": false
+    },
+    {
+      "ar_L": 64,
+      "ar_SCE": 0.0,
+      "ar_arb": 0.0,
+      "compute": 64,
+      "diff_SCE": 0.0005785527755506337,
+      "diff_T": 64,
+      "diff_arb": 0.024053126700520514,
+      "diff_rho": 0.9846153846153847,
+      "diff_wins_arb": false,
+      "diff_wins_sce": false
+    }
+  ],
+  "spec": {
+    "alpha": 0.8,
+    "d": 24,
+    "k": 4,
+    "n_samples": 200000,
+    "seed": 0
+  }
+}

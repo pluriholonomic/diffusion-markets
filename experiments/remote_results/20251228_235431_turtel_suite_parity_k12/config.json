@@ -1,0 +1,30 @@
+{
+  "L": 4,
+  "S": [
+    11,
+    19,
+    7,
+    8,
+    5,
+    3,
+    4,
+    0,
+    14,
+    17,
+    21,
+    1
+  ],
+  "benchmark": "parity",
+  "bins": 20,
+  "llm": null,
+  "n": 100000,
+  "rho": 0.95,
+  "spec": {
+    "alpha": 0.8,
+    "d": 24,
+    "k": 12,
+    "seed": 0,
+    "subset": null
+  },
+  "transaction_cost": 0.0
+}

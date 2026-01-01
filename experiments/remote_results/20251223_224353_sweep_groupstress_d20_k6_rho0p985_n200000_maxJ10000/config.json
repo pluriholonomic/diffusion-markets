@@ -1,0 +1,23 @@
+{
+  "L": 4,
+  "S": [
+    4,
+    10,
+    8,
+    5,
+    0,
+    12
+  ],
+  "benchmark": "groupstress",
+  "exact": false,
+  "max_J": 10000,
+  "n": 200000,
+  "rho": 0.985,
+  "spec": {
+    "alpha": 0.8,
+    "d": 20,
+    "k": 6,
+    "seed": 0,
+    "subset": null
+  }
+}

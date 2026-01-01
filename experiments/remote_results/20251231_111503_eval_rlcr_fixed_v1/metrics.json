@@ -1,0 +1,27 @@
+{
+  "llm_meta": {
+    "K": 3,
+    "L": 1,
+    "aggregate": "mean",
+    "max_new_tokens_used": 96,
+    "n": 2000,
+    "parse_failures": 573
+  },
+  "metrics": {
+    "brier": 0.21512067842993138,
+    "ece": 0.1287898179813055,
+    "logloss": 0.6294200273874125,
+    "n": 2000,
+    "trading": {
+      "B": 1.0,
+      "kelly": {
+        "final_bankroll": 5.861684258482744e-06,
+        "n": 2000,
+        "roi": -0.9999941383157415
+      },
+      "mode": "sign",
+      "pnl_per_event": 0.07468350000642472,
+      "transaction_cost": 0.02
+    }
+  }
+}

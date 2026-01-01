@@ -1,0 +1,47 @@
+{
+  "baselines": {
+    "constant_0.5": {
+      "bayes_brier": 0.20993976294994354,
+      "brier": 0.25,
+      "correlation_with_truth": NaN,
+      "ece": 0.014999985694885254,
+      "excess_brier": 0.04006023705005646,
+      "mse_to_truth": 0.044161992210426215,
+      "n": 400
+    },
+    "oracle": {
+      "bayes_brier": 0.20993976294994354,
+      "brier": 0.20993976294994354,
+      "correlation_with_truth": 1.0,
+      "ece": 0.058886533156037334,
+      "excess_brier": 0.0,
+      "mse_to_truth": 0.0,
+      "n": 400
+    },
+    "prior": {
+      "base_rate": 0.5368750095367432,
+      "bayes_brier": 0.20993976294994354,
+      "brier": 0.2524660166144372,
+      "correlation_with_truth": NaN,
+      "ece": 0.05187499523162842,
+      "excess_brier": 0.04252625366449364,
+      "mse_to_truth": 0.04244360720499902,
+      "n": 400
+    }
+  },
+  "headlines_sample": [
+    "Will G2 score more than 3 goals against Heat?",
+    "Will US hold elections by 2024-09?",
+    "Will BNB outperform Ethereum this week?",
+    "Will H.R. 156 pass the House?",
+    "Will Lakers win ESL Katowice?"
+  ],
+  "n_test": 400,
+  "n_train": 1600,
+  "spec": {
+    "n_factors": 5,
+    "n_samples": 2000,
+    "noise": 0.2,
+    "structure": "factor"
+  }
+}

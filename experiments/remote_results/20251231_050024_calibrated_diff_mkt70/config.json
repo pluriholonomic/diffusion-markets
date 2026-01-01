@@ -1,0 +1,23 @@
+{
+  "data_path": "data/polymarket/pm_horizon_24h.parquet",
+  "max_rows": null,
+  "embed_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embed_dim": 384,
+  "hidden_dim": 256,
+  "depth": 4,
+  "time_dim": 64,
+  "T": 100,
+  "beta_start": 0.0001,
+  "beta_end": 0.02,
+  "steps": 5000,
+  "batch_size": 128,
+  "lr": 0.0002,
+  "weight_decay": 0.01,
+  "warmup_steps": 200,
+  "seed": 42,
+  "use_platt_scaling": true,
+  "use_market_prior": true,
+  "market_weight": 0.7,
+  "run_name": "calibrated_diff_mkt70",
+  "output_dir": "runs"
+}

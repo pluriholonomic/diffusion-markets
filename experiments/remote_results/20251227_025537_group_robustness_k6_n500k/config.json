@@ -1,0 +1,11 @@
+{
+  "L_ar": 5,
+  "alpha": 0.8,
+  "benchmark": "group_robustness",
+  "d": 24,
+  "delta": 0.05,
+  "k": 6,
+  "n": 500000,
+  "rho": 0.95,
+  "seed": 0
+}

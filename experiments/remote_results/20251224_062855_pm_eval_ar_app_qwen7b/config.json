@@ -1,0 +1,56 @@
+{
+  "approachability": {
+    "clip_eps": 1e-06,
+    "curve_every": 25,
+    "enabled": true,
+    "eps": null,
+    "group_cols": [
+      "category"
+    ],
+    "n_bins": 20,
+    "time_col": null,
+    "topk": 10
+  },
+  "benchmark": "polymarket_eval",
+  "dataset_path": "runs/20251224_032903_pm_suite_difftrain/predictions.parquet",
+  "eval": {
+    "B": 1.0,
+    "bins": 20,
+    "group_cols": [
+      "category"
+    ],
+    "trading_mode": "sign",
+    "transaction_cost": 0.0
+  },
+  "llm": {
+    "K": 5,
+    "L": 4,
+    "agg": "median",
+    "device": "cuda",
+    "device_map": "auto",
+    "dtype": "auto",
+    "max_new_tokens": 128,
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "no_cot": false,
+    "temperature": 0.7,
+    "top_p": 0.95
+  },
+  "max_examples": 256,
+  "pred_col": "pred_prob_ar",
+  "repair_at_resolution": {
+    "clip_eps": 1e-06,
+    "enabled": true,
+    "event_time_col": null,
+    "forecast_time_col": null,
+    "group_cols": [
+      "category"
+    ],
+    "n_bins": 20,
+    "out_pred_col": "pred_prob_ar_repair",
+    "prior_strength": 5.0
+  },
+  "text_cols": [
+    "question",
+    "description"
+  ]
+}

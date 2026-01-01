@@ -1,0 +1,22 @@
+{
+  "llm_meta": null,
+  "metrics": {
+    "brier": 0.20132276900468793,
+    "ece": 0.16386650062026453,
+    "groups": {
+      "category": {
+        "avg_abs_bias": 0.1570725,
+        "n_groups": 1,
+        "worst_abs_bias": 0.1570725
+      }
+    },
+    "logloss": 0.5765455846972106,
+    "n": 1000,
+    "trading": {
+      "B": 1.0,
+      "mode": "sign",
+      "pnl_per_event": 0.0,
+      "transaction_cost": 0.0
+    }
+  }
+}

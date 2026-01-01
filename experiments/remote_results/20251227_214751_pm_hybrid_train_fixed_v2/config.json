@@ -1,0 +1,12 @@
+{
+  "ar_K": 3,
+  "ar_model": "Qwen/Qwen3-14B",
+  "benchmark": "pm_hybrid_train",
+  "dataset_path": "/root/polymarket_data/derived/gamma_yesno_ready.parquet",
+  "diff_T": 100,
+  "diff_depth": 6,
+  "diff_hidden_dim": 512,
+  "diff_train_steps": 5000,
+  "embed_model": "Qwen/Qwen3-14B",
+  "max_rows": 2000
+}

@@ -1,0 +1,196 @@
+{
+  "llm_meta": {
+    "K": 1,
+    "L": 4,
+    "aggregate": "median",
+    "max_new_tokens_used": 128,
+    "n": 128,
+    "parse_failures": 1
+  },
+  "metrics": {
+    "approachability": {
+      "clip_eps": 1e-06,
+      "curve": {
+        "app_err": [
+          0.0949999988079071,
+          0.0949999988079071,
+          0.06333333253860474,
+          0.05,
+          0.06,
+          0.075,
+          0.09285714285714286,
+          0.1,
+          0.10555555555555556,
+          0.1,
+          0.1,
+          0.10416666666666667,
+          0.09765625
+        ],
+        "t": [
+          10,
+          20,
+          30,
+          40,
+          50,
+          60,
+          70,
+          80,
+          90,
+          100,
+          110,
+          120,
+          128
+        ]
+      },
+      "curve_every": 10,
+      "curve_time_ts": [
+        1764454170.796427,
+        1764975603.961904,
+        1746039253.0143192,
+        1764975612.153339,
+        1764489601.992749,
+        1716582294.7209432,
+        1752605662.6692412,
+        1759844335.3846478,
+        1763787610.0185869,
+        1757692801.088487,
+        1759939208.795478,
+        1758794401.875069,
+        1758276001.6209679
+      ],
+      "eps": 0.0,
+      "family": "group_bin_indicator",
+      "final": {
+        "app_err": 0.09765625,
+        "top_violations": [
+          {
+            "bin_hi": 0.5,
+            "bin_idx": 9,
+            "bin_lo": 0.45,
+            "coord": 9,
+            "group": "crypto",
+            "group_idx": 0,
+            "mean_payoff": -0.09765625,
+            "violation": 0.09765625
+          },
+          {
+            "bin_hi": 0.5,
+            "bin_idx": 9,
+            "bin_lo": 0.45,
+            "coord": 29,
+            "group": "politics",
+            "group_idx": 1,
+            "mean_payoff": -0.03125,
+            "violation": 0.03125
+          },
+          {
+            "bin_hi": 0.75,
+            "bin_idx": 14,
+            "bin_lo": 0.7000000000000001,
+            "coord": 14,
+            "group": "crypto",
+            "group_idx": 0,
+            "mean_payoff": -0.015625,
+            "violation": 0.015625
+          },
+          {
+            "bin_hi": 0.9500000000000001,
+            "bin_idx": 18,
+            "bin_lo": 0.9,
+            "coord": 18,
+            "group": "crypto",
+            "group_idx": 0,
+            "mean_payoff": -0.014843749813735485,
+            "violation": 0.014843749813735485
+          },
+          {
+            "bin_hi": 0.25,
+            "bin_idx": 4,
+            "bin_lo": 0.2,
+            "coord": 4,
+            "group": "crypto",
+            "group_idx": 0,
+            "mean_payoff": -0.014453125069849193,
+            "violation": 0.014453125069849193
+          },
+          {
+            "bin_hi": 0.15000000000000002,
+            "bin_idx": 2,
+            "bin_lo": 0.1,
+            "coord": 22,
+            "group": "politics",
+            "group_idx": 1,
+            "mean_payoff": 0.011718749941792339,
+            "violation": 0.011718749941792339
+          },
+          {
+            "bin_hi": 0.5,
+            "bin_idx": 9,
+            "bin_lo": 0.45,
+            "coord": 49,
+            "group": "sports",
+            "group_idx": 2,
+            "mean_payoff": -0.0078125,
+            "violation": 0.0078125
+          },
+          {
+            "bin_hi": 0.9500000000000001,
+            "bin_idx": 18,
+            "bin_lo": 0.9,
+            "coord": 58,
+            "group": "sports",
+            "group_idx": 2,
+            "mean_payoff": -0.0074218749068677425,
+            "violation": 0.0074218749068677425
+          },
+          {
+            "bin_hi": 0.15000000000000002,
+            "bin_idx": 2,
+            "bin_lo": 0.1,
+            "coord": 2,
+            "group": "crypto",
+            "group_idx": 0,
+            "mean_payoff": 0.0054687499650754035,
+            "violation": 0.0054687499650754035
+          },
+          {
+            "bin_hi": 0.65,
+            "bin_idx": 12,
+            "bin_lo": 0.6000000000000001,
+            "coord": 12,
+            "group": "crypto",
+            "group_idx": 0,
+            "mean_payoff": -0.005078124813735485,
+            "violation": 0.005078124813735485
+          }
+        ]
+      },
+      "group_cols": [
+        "topic"
+      ],
+      "n": 128,
+      "n_bins": 20,
+      "n_groups": 3,
+      "pred_col": "pred_prob",
+      "time_col": "createdAt",
+      "y_col": "y"
+    },
+    "brier": 0.22595781157097083,
+    "ece": 0.2285937480191933,
+    "groups": {
+      "topic": {
+        "avg_abs_bias": 0.19890625072002877,
+        "n_groups": 3,
+        "worst_abs_bias": 0.21931818246164106
+      }
+    },
+    "logloss": 0.6565537847846603,
+    "n": 128,
+    "trading": {
+      "B": 1.0,
+      "mode": "sign",
+      "pnl_per_event": 0.04243359360771137,
+      "transaction_cost": 0.0
+    }
+  }
+}

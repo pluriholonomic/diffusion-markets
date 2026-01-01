@@ -1,0 +1,73 @@
+{
+  "benchmark": "difftrain_simplex_parity",
+  "sample": {
+    "eta": 0.0,
+    "sample_steps": 32
+  },
+  "spec": {
+    "alpha": 1.0,
+    "d": 24,
+    "k": 12,
+    "n_outcomes": 4,
+    "seed": 0,
+    "subsets": null
+  },
+  "subsets": [
+    [
+      11,
+      19,
+      7,
+      8,
+      5,
+      3,
+      4,
+      0,
+      14,
+      17,
+      21,
+      1
+    ],
+    [
+      23,
+      5,
+      19,
+      3,
+      13,
+      22,
+      1,
+      8,
+      16,
+      12,
+      0,
+      18
+    ],
+    [
+      12,
+      9,
+      15,
+      21,
+      6,
+      22,
+      3,
+      17,
+      8,
+      16,
+      19,
+      23
+    ]
+  ],
+  "train": {
+    "T": 64,
+    "batch_size": 1024,
+    "beta_end": 0.02,
+    "beta_start": 0.0001,
+    "depth": 3,
+    "device": "cuda",
+    "hidden_dim": 256,
+    "lr": 0.0002,
+    "n_test": 10000,
+    "n_train": 50000,
+    "time_dim": 64,
+    "train_steps": 1000
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "metrics": {
+    "brier": 0.24737782061933206,
+    "ece": 0.2268761184439063,
+    "logloss": 0.6878751462026391,
+    "n": 4000,
+    "trading": {
+      "B": 1.0,
+      "kelly": {
+        "final_bankroll": 1.1841929963410647e-85,
+        "n": 4000,
+        "roi": -1.0
+      },
+      "mode": "sign",
+      "pnl_per_event": 0.00996350016379438,
+      "transaction_cost": 0.0
+    }
+  },
+  "train_meta": {
+    "final_loss": 0.31565529419109223,
+    "steps": 5000
+  }
+}

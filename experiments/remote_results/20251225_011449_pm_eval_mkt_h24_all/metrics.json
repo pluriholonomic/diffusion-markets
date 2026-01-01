@@ -1,0 +1,32 @@
+{
+  "llm_meta": null,
+  "metrics": {
+    "brier": 0.06349510719897382,
+    "ece": 0.02073612863094866,
+    "groups": {
+      "category": {
+        "avg_abs_bias": 0.010825872215216479,
+        "n_groups": 3,
+        "worst_abs_bias": 0.010830487033523089
+      },
+      "ttc_q5": {
+        "avg_abs_bias": 0.010771017234131989,
+        "n_groups": 1,
+        "worst_abs_bias": 0.010771017234131989
+      },
+      "volume_q5": {
+        "avg_abs_bias": 0.015773749474569145,
+        "n_groups": 5,
+        "worst_abs_bias": 0.055534663865546216
+      }
+    },
+    "logloss": 0.20111359664247747,
+    "n": 4758,
+    "trading": {
+      "B": 1.0,
+      "mode": "sign",
+      "pnl_per_event": 0.0,
+      "transaction_cost": 0.0
+    }
+  }
+}

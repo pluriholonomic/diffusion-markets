@@ -1,0 +1,43 @@
+{
+  "L": 4,
+  "S": [
+    11,
+    19,
+    7,
+    8,
+    5,
+    3,
+    4,
+    0,
+    14,
+    17,
+    21,
+    1
+  ],
+  "benchmark": "parity",
+  "bins": 20,
+  "llm": {
+    "K": 5,
+    "agg": "median",
+    "device": "cuda",
+    "device_map": "auto",
+    "dtype": "bfloat16",
+    "max_examples": 512,
+    "max_new_tokens": 128,
+    "model": "Qwen/Qwen2.5-14B-Instruct",
+    "no_cot": false,
+    "temperature": 0.7,
+    "text_style": "natural",
+    "top_p": 0.95
+  },
+  "n": 50000,
+  "rho": 0.95,
+  "spec": {
+    "alpha": 0.8,
+    "d": 24,
+    "k": 12,
+    "seed": 0,
+    "subset": null
+  },
+  "transaction_cost": 0.0
+}

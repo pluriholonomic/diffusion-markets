@@ -1,0 +1,7 @@
+{
+  "benchmark": "synth_headlines",
+  "n_factors": 5,
+  "n_samples": 5000,
+  "noise": 0.2,
+  "structure": "adversarial"
+}

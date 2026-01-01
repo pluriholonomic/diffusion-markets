@@ -1,0 +1,380 @@
+{
+  "llm_meta": {
+    "K": 5,
+    "L": 4,
+    "aggregate": "median",
+    "max_new_tokens_used": 128,
+    "n": 143,
+    "parse_failures": 4
+  },
+  "metrics": {
+    "approachability": {
+      "clip_eps": 1e-06,
+      "curve": {
+        "app_err": [
+          0.03799999952316284,
+          0.02,
+          0.023999999364217123,
+          0.02,
+          0.016,
+          0.018531468364742253
+        ],
+        "t": [
+          25,
+          50,
+          75,
+          100,
+          125,
+          143
+        ]
+      },
+      "curve_every": 25,
+      "curve_time_ts": [
+        1676206855.0,
+        1680657563.0,
+        1685853977.0,
+        1691973137.0,
+        1721035189.0,
+        1722952310.0
+      ],
+      "eps": 0.0,
+      "family": "group_bin_indicator",
+      "final": {
+        "app_err": 0.018531468364742253,
+        "top_violations": [
+          {
+            "bin_hi": 0.9,
+            "bin_idx": 17,
+            "bin_lo": 0.8500000000000001,
+            "coord": 57,
+            "group": "(2791.916, 7728.148]|nan",
+            "group_idx": 2,
+            "mean_payoff": -0.018531468364742253,
+            "violation": 0.018531468364742253
+          },
+          {
+            "bin_hi": 0.75,
+            "bin_idx": 14,
+            "bin_lo": 0.7000000000000001,
+            "coord": 34,
+            "group": "(17073.558, 57421.476]|nan",
+            "group_idx": 1,
+            "mean_payoff": -0.013986013986013986,
+            "violation": 0.013986013986013986
+          },
+          {
+            "bin_hi": 1.0,
+            "bin_idx": 19,
+            "bin_lo": 0.9500000000000001,
+            "coord": 79,
+            "group": "(57421.476, 6552460.32]|nan",
+            "group_idx": 3,
+            "mean_payoff": -0.013985993006993007,
+            "violation": 0.013985993006993007
+          },
+          {
+            "bin_hi": 0.05,
+            "bin_idx": 0,
+            "bin_lo": 0.0,
+            "coord": 80,
+            "group": "(7728.148, 17073.558]|nan",
+            "group_idx": 4,
+            "mean_payoff": 0.013839132869926836,
+            "violation": 0.013839132869926836
+          },
+          {
+            "bin_hi": 0.9500000000000001,
+            "bin_idx": 18,
+            "bin_lo": 0.9,
+            "coord": 78,
+            "group": "(57421.476, 6552460.32]|nan",
+            "group_idx": 3,
+            "mean_payoff": -0.01188811138793305,
+            "violation": 0.01188811138793305
+          },
+          {
+            "bin_hi": 0.9,
+            "bin_idx": 17,
+            "bin_lo": 0.8500000000000001,
+            "coord": 77,
+            "group": "(57421.476, 6552460.32]|nan",
+            "group_idx": 3,
+            "mean_payoff": -0.011188811355537467,
+            "violation": 0.011188811355537467
+          },
+          {
+            "bin_hi": 0.8500000000000001,
+            "bin_idx": 16,
+            "bin_lo": 0.8,
+            "coord": 76,
+            "group": "(57421.476, 6552460.32]|nan",
+            "group_idx": 3,
+            "mean_payoff": -0.011188811355537467,
+            "violation": 0.011188811355537467
+          },
+          {
+            "bin_hi": 0.35000000000000003,
+            "bin_idx": 6,
+            "bin_lo": 0.30000000000000004,
+            "coord": 6,
+            "group": "(1152.449, 2791.916]|nan",
+            "group_idx": 0,
+            "mean_payoff": -0.010489510906326186,
+            "violation": 0.010489510906326186
+          },
+          {
+            "bin_hi": 0.5,
+            "bin_idx": 9,
+            "bin_lo": 0.45,
+            "coord": 9,
+            "group": "(1152.449, 2791.916]|nan",
+            "group_idx": 0,
+            "mean_payoff": -0.01048951048951049,
+            "violation": 0.01048951048951049
+          },
+          {
+            "bin_hi": 0.45,
+            "bin_idx": 8,
+            "bin_lo": 0.4,
+            "coord": 8,
+            "group": "(1152.449, 2791.916]|nan",
+            "group_idx": 0,
+            "mean_payoff": -0.008741258741258742,
+            "violation": 0.008741258741258742
+          }
+        ]
+      },
+      "group_cols": [
+        "volume_q5",
+        "ttc_q5"
+      ],
+      "n": 143,
+      "n_bins": 20,
+      "n_groups": 5,
+      "pred_col": "pred_prob",
+      "time_col": "market_prob_target_ts",
+      "y_col": "y"
+    },
+    "brier": 0.20547711232539606,
+    "ece": 0.18036993119546735,
+    "groups": {
+      "category": {
+        "avg_abs_bias": 0.1303993025790046,
+        "n_groups": 3,
+        "worst_abs_bias": 0.949999988079071
+      },
+      "ttc_q5": {
+        "avg_abs_bias": 0.1303993025790046,
+        "n_groups": 1,
+        "worst_abs_bias": 0.1303993025790046
+      },
+      "volume_q5": {
+        "avg_abs_bias": 0.13039930257900462,
+        "n_groups": 5,
+        "worst_abs_bias": 0.23103448427442846
+      }
+    },
+    "logloss": 0.9237122927817478,
+    "n": 143,
+    "repair_at_resolution": {
+      "approachability": {
+        "clip_eps": 1e-06,
+        "curve": {
+          "app_err": [
+            0.04154761791229248,
+            0.031130951642990113,
+            0.020753967761993408,
+            0.017708333134651186,
+            0.014166666507720947,
+            0.013658216783216784
+          ],
+          "t": [
+            25,
+            50,
+            75,
+            100,
+            125,
+            143
+          ]
+        },
+        "curve_every": 25,
+        "curve_time_ts": [
+          1676206855.0,
+          1680657563.0,
+          1685853977.0,
+          1691973137.0,
+          1721035189.0,
+          1722952310.0
+        ],
+        "eps": 0.0,
+        "family": "group_bin_indicator",
+        "final": {
+          "app_err": 0.013658216783216784,
+          "top_violations": [
+            {
+              "bin_hi": 1.0,
+              "bin_idx": 19,
+              "bin_lo": 0.9500000000000001,
+              "coord": 79,
+              "group": "(57421.476, 6552460.32]|nan",
+              "group_idx": 3,
+              "mean_payoff": -0.013658216783216784,
+              "violation": 0.013658216783216784
+            },
+            {
+              "bin_hi": 0.9,
+              "bin_idx": 17,
+              "bin_lo": 0.8500000000000001,
+              "coord": 77,
+              "group": "(57421.476, 6552460.32]|nan",
+              "group_idx": 3,
+              "mean_payoff": -0.012383449744511317,
+              "violation": 0.012383449744511317
+            },
+            {
+              "bin_hi": 0.2,
+              "bin_idx": 3,
+              "bin_lo": 0.15000000000000002,
+              "coord": 83,
+              "group": "(7728.148, 17073.558]|nan",
+              "group_idx": 4,
+              "mean_payoff": 0.011738261768034289,
+              "violation": 0.011738261768034289
+            },
+            {
+              "bin_hi": 0.55,
+              "bin_idx": 10,
+              "bin_lo": 0.5,
+              "coord": 10,
+              "group": "(1152.449, 2791.916]|nan",
+              "group_idx": 0,
+              "mean_payoff": -0.010884948126919619,
+              "violation": 0.010884948126919619
+            },
+            {
+              "bin_hi": 0.65,
+              "bin_idx": 12,
+              "bin_lo": 0.6000000000000001,
+              "coord": 32,
+              "group": "(17073.558, 57421.476]|nan",
+              "group_idx": 1,
+              "mean_payoff": -0.008777680513742087,
+              "violation": 0.008777680513742087
+            },
+            {
+              "bin_hi": 0.6000000000000001,
+              "bin_idx": 11,
+              "bin_lo": 0.55,
+              "coord": 91,
+              "group": "(7728.148, 17073.558]|nan",
+              "group_idx": 4,
+              "mean_payoff": -0.008109945517319899,
+              "violation": 0.008109945517319899
+            },
+            {
+              "bin_hi": 0.45,
+              "bin_idx": 8,
+              "bin_lo": 0.4,
+              "coord": 48,
+              "group": "(2791.916, 7728.148]|nan",
+              "group_idx": 2,
+              "mean_payoff": 0.008066933055024046,
+              "violation": 0.008066933055024046
+            },
+            {
+              "bin_hi": 0.8,
+              "bin_idx": 15,
+              "bin_lo": 0.75,
+              "coord": 75,
+              "group": "(57421.476, 6552460.32]|nan",
+              "group_idx": 3,
+              "mean_payoff": -0.00746024780340128,
+              "violation": 0.00746024780340128
+            },
+            {
+              "bin_hi": 0.2,
+              "bin_idx": 3,
+              "bin_lo": 0.15000000000000002,
+              "coord": 3,
+              "group": "(1152.449, 2791.916]|nan",
+              "group_idx": 0,
+              "mean_payoff": -0.007145632084433015,
+              "violation": 0.007145632084433015
+            },
+            {
+              "bin_hi": 0.05,
+              "bin_idx": 0,
+              "bin_lo": 0.0,
+              "coord": 80,
+              "group": "(7728.148, 17073.558]|nan",
+              "group_idx": 4,
+              "mean_payoff": 0.006847312349970524,
+              "violation": 0.006847312349970524
+            }
+          ]
+        },
+        "group_cols": [
+          "volume_q5",
+          "ttc_q5"
+        ],
+        "n": 143,
+        "n_bins": 20,
+        "n_groups": 5,
+        "pred_col": "pred_prob_repair",
+        "time_col": "market_prob_target_ts",
+        "y_col": "y"
+      },
+      "meta": {
+        "clip_eps": 1e-06,
+        "event_time_col": "market_event_ts",
+        "forecast_time_col": "market_prob_target_ts",
+        "group_cols": [
+          "volume_q5",
+          "ttc_q5"
+        ],
+        "n_bins": 20,
+        "n_groups_seen": 5,
+        "n_updates": 136,
+        "pred_col": "pred_prob",
+        "prior_strength": 5.0,
+        "y_col": "y"
+      },
+      "metrics": {
+        "brier": 0.20254232525061688,
+        "ece": 0.20504765134551056,
+        "groups": {
+          "category": {
+            "avg_abs_bias": 0.1250567604490785,
+            "n_groups": 3,
+            "worst_abs_bias": 0.949999988079071
+          },
+          "ttc_q5": {
+            "avg_abs_bias": 0.1250567604490785,
+            "n_groups": 1,
+            "worst_abs_bias": 0.1250567604490785
+          },
+          "volume_q5": {
+            "avg_abs_bias": 0.1250567604490785,
+            "n_groups": 5,
+            "worst_abs_bias": 0.22224933499919958
+          }
+        },
+        "logloss": 0.6416873657493354,
+        "n": 143,
+        "trading": {
+          "B": 1.0,
+          "mode": "sign",
+          "pnl_per_event": 0.027286713359994698,
+          "transaction_cost": 0.0
+        }
+      },
+      "pred_col": "pred_prob_repair"
+    },
+    "trading": {
+      "B": 1.0,
+      "mode": "sign",
+      "pnl_per_event": 0.03425174799480742,
+      "transaction_cost": 0.0
+    }
+  }
+}

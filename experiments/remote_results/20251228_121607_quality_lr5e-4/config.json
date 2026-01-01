@@ -1,0 +1,53 @@
+{
+  "benchmark": "pm_difftrain",
+  "bundling": {
+    "enabled": false
+  },
+  "dataset_path": "/root/diffusion-markets/data/polymarket/quality_subset.parquet",
+  "diffusion": {
+    "T": 200,
+    "agg": "median",
+    "batch_size": 64,
+    "beta_end": 0.02,
+    "beta_start": 0.0001,
+    "depth": 6,
+    "device": "cuda",
+    "eta": 0.0,
+    "hidden_dim": 512,
+    "label_eps": 0.001,
+    "lr": 0.0005,
+    "mc": 32,
+    "sample_steps": 100,
+    "time_dim": 64,
+    "train_steps": 10000
+  },
+  "embed": {
+    "batch_size": 4,
+    "device": "cuda",
+    "device_map": "auto",
+    "dtype": "bfloat16",
+    "max_length": 256,
+    "model": "Qwen/Qwen3-14B",
+    "normalize": true,
+    "trust_remote_code": true
+  },
+  "eval": {
+    "B": 1.0,
+    "bins": 20,
+    "group_cols": [
+      "category_extracted"
+    ],
+    "pred_col": "final_prob",
+    "trading_mode": "sign",
+    "transaction_cost": 0.0
+  },
+  "max_rows": 607,
+  "split": {
+    "seed": 42,
+    "train_frac": 0.7
+  },
+  "text_cols": [
+    "question",
+    "description"
+  ]
+}

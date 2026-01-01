@@ -1,0 +1,30 @@
+{
+  "metrics": {
+    "brier": 0.3317222700759048,
+    "ece": 0.3792166762115038,
+    "groups": {
+      "category_extracted": {
+        "avg_abs_bias": 0.29313821918610994,
+        "n_groups": 2,
+        "worst_abs_bias": 0.32453215647385353
+      }
+    },
+    "logloss": 1.0491785663272706,
+    "n": 183,
+    "trading": {
+      "B": 1.0,
+      "kelly": {
+        "final_bankroll": 2.2206584712962787e-08,
+        "n": 183,
+        "roi": -0.9999999777934153
+      },
+      "mode": "sign",
+      "pnl_per_event": 0.0012650287956956143,
+      "transaction_cost": 0.0
+    }
+  },
+  "train_meta": {
+    "final_loss": 0.03285646009258926,
+    "steps": 8000
+  }
+}

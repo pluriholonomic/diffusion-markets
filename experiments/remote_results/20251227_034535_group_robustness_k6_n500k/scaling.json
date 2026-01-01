@@ -1,0 +1,24 @@
+[
+  {
+    "ar_gcal": 0.4000000059604645,
+    "ar_theory": 0.4,
+    "diff_gcal": 0.07419750094413757,
+    "diff_theory": 0.07419750000000006,
+    "diffusion_wins": true,
+    "group_size": 0.0625,
+    "k": 4,
+    "log2_group_size": -4,
+    "separation": 0.3258025050163269
+  },
+  {
+    "ar_gcal": 0.4000000059604645,
+    "ar_theory": 0.4,
+    "diff_gcal": 0.10596325993537903,
+    "diff_theory": 0.10596324375000009,
+    "diffusion_wins": true,
+    "group_size": 0.015625,
+    "k": 6,
+    "log2_group_size": -6,
+    "separation": 0.29403674602508545
+  }
+]

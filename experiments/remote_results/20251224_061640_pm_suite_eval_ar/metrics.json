@@ -1,0 +1,29 @@
+{
+  "llm_meta": {
+    "K": 5,
+    "L": 4,
+    "aggregate": "median",
+    "max_new_tokens_used": 128,
+    "n": 512,
+    "parse_failures": 75
+  },
+  "metrics": {
+    "brier": 0.21323341684752034,
+    "ece": 0.14360574888291922,
+    "groups": {
+      "category": {
+        "avg_abs_bias": 0.02251199621991873,
+        "n_groups": 1,
+        "worst_abs_bias": 0.02251199621991873
+      }
+    },
+    "logloss": 0.6939919792036073,
+    "n": 512,
+    "trading": {
+      "B": 1.0,
+      "mode": "sign",
+      "pnl_per_event": 0.12595800812960078,
+      "transaction_cost": 0.0
+    }
+  }
+}

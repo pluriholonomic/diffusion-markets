@@ -1,0 +1,9 @@
+{
+  "benchmark": "synth_market",
+  "d": 64,
+  "m": 16,
+  "n_test": 10000,
+  "n_train": 50000,
+  "noise": 0.3,
+  "structure": "frechet"
+}

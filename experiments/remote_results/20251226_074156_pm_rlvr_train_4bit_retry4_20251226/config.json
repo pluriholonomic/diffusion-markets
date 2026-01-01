@@ -1,0 +1,57 @@
+{
+  "benchmark": "pm_rlvr_train",
+  "dataset_path": "/root/polymarket_data/derived/gamma_yesno_ready.parquet",
+  "market_prob_col": "market_prob",
+  "max_rows": 5000,
+  "spec": {
+    "baseline_ema": 0.95,
+    "batch_size": 4,
+    "bnb_4bit_compute_dtype": "bfloat16",
+    "cot_max_steps": 4,
+    "device": "cuda",
+    "device_map": "auto",
+    "dtype": "auto",
+    "grad_clip": 1.0,
+    "include_cot": true,
+    "kl_coef": 0.02,
+    "load_in_4bit": true,
+    "log_every": 10,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "lora_r": 16,
+    "lora_target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "lr": 0.0001,
+    "max_new_tokens": 192,
+    "max_prompt_tokens": 512,
+    "model_name_or_path": "Qwen/Qwen3-14B",
+    "reward": {
+      "B": 1.0,
+      "alpha_logscore": 1.0,
+      "beta_pnl": 0.1,
+      "trading_mode": "linear",
+      "transaction_cost": 0.0
+    },
+    "reward_clip": 10.0,
+    "save_every": 50,
+    "seed": 0,
+    "steps": 200,
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "trust_remote_code": true,
+    "use_lora": true,
+    "weight_decay": 0.0
+  },
+  "text_cols": [
+    "question",
+    "description"
+  ],
+  "y_col": "y"
+}

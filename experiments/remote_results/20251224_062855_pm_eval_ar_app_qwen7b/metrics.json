@@ -1,0 +1,387 @@
+{
+  "llm_meta": {
+    "K": 5,
+    "L": 4,
+    "aggregate": "median",
+    "max_new_tokens_used": 128,
+    "n": 256,
+    "parse_failures": 43
+  },
+  "metrics": {
+    "approachability": {
+      "clip_eps": 1e-06,
+      "curve": {
+        "app_err": [
+          0.03399999976158142,
+          0.08279996038444995,
+          0.06533329366115888,
+          0.05339997037103891,
+          0.04031997635047531,
+          0.033333313631356554,
+          0.03359426884193254,
+          0.03764498527580652,
+          0.03266220915193163,
+          0.040395988259090215,
+          0.03913670729125271
+        ],
+        "t": [
+          25,
+          50,
+          75,
+          100,
+          125,
+          150,
+          175,
+          200,
+          225,
+          250,
+          256
+        ]
+      },
+      "curve_every": 25,
+      "curve_time_ts": [
+        1758506401.954638,
+        1744297137.744982,
+        1756506352.6586208,
+        1737407801.1653152,
+        1755467612.307583,
+        1715277908.478744,
+        1766020217.0135932,
+        1761572794.019048,
+        1751847477.2057338,
+        1733775829.381151,
+        1757606401.3496692
+      ],
+      "eps": 0.0,
+      "family": "group_bin_indicator",
+      "final": {
+        "app_err": 0.03913670729125271,
+        "top_violations": [
+          {
+            "bin_hi": 0.05,
+            "bin_idx": 0,
+            "bin_lo": 0.0,
+            "coord": 0,
+            "group": "",
+            "group_idx": 0,
+            "mean_payoff": 0.03913670729125271,
+            "violation": 0.03913670729125271
+          },
+          {
+            "bin_hi": 0.65,
+            "bin_idx": 12,
+            "bin_lo": 0.6000000000000001,
+            "coord": 12,
+            "group": "",
+            "group_idx": 0,
+            "mean_payoff": -0.019726564176380634,
+            "violation": 0.019726564176380634
+          },
+          {
+            "bin_hi": 0.7000000000000001,
+            "bin_idx": 13,
+            "bin_lo": 0.65,
+            "coord": 13,
+            "group": "",
+            "group_idx": 0,
+            "mean_payoff": -0.01757812430150807,
+            "violation": 0.01757812430150807
+          },
+          {
+            "bin_hi": 0.25,
+            "bin_idx": 4,
+            "bin_lo": 0.2,
+            "coord": 4,
+            "group": "",
+            "group_idx": 0,
+            "mean_payoff": 0.008027343545109034,
+            "violation": 0.008027343545109034
+          },
+          {
+            "bin_hi": 0.15000000000000002,
+            "bin_idx": 2,
+            "bin_lo": 0.1,
+            "coord": 2,
+            "group": "",
+            "group_idx": 0,
+            "mean_payoff": 0.00647321407450363,
+            "violation": 0.00647321407450363
+          },
+          {
+            "bin_hi": 0.5,
+            "bin_idx": 9,
+            "bin_lo": 0.45,
+            "coord": 9,
+            "group": "",
+            "group_idx": 0,
+            "mean_payoff": -0.005781250074505806,
+            "violation": 0.005781250074505806
+          },
+          {
+            "bin_hi": 0.35000000000000003,
+            "bin_idx": 6,
+            "bin_lo": 0.30000000000000004,
+            "coord": 6,
+            "group": "",
+            "group_idx": 0,
+            "mean_payoff": -0.005078125512227416,
+            "violation": 0.005078125512227416
+          },
+          {
+            "bin_hi": 0.45,
+            "bin_idx": 8,
+            "bin_lo": 0.4,
+            "coord": 8,
+            "group": "",
+            "group_idx": 0,
+            "mean_payoff": -0.0037109374534338713,
+            "violation": 0.0037109374534338713
+          },
+          {
+            "bin_hi": 0.2,
+            "bin_idx": 3,
+            "bin_lo": 0.15000000000000002,
+            "coord": 3,
+            "group": "",
+            "group_idx": 0,
+            "mean_payoff": 0.0027343749534338713,
+            "violation": 0.0027343749534338713
+          },
+          {
+            "bin_hi": 0.1,
+            "bin_idx": 1,
+            "bin_lo": 0.05,
+            "coord": 1,
+            "group": "",
+            "group_idx": 0,
+            "mean_payoff": 0.0023437499767169356,
+            "violation": 0.0023437499767169356
+          }
+        ]
+      },
+      "group_cols": [
+        "category"
+      ],
+      "n": 256,
+      "n_bins": 20,
+      "n_groups": 1,
+      "pred_col": "pred_prob_ar",
+      "time_col": "createdAt",
+      "y_col": "y"
+    },
+    "brier": 0.19342239945125658,
+    "ece": 0.11461384046606328,
+    "groups": {
+      "category": {
+        "avg_abs_bias": 0.006332587560336833,
+        "n_groups": 1,
+        "worst_abs_bias": 0.006332587560336833
+      }
+    },
+    "logloss": 0.5977299291408793,
+    "n": 256,
+    "repair_at_resolution": {
+      "approachability": {
+        "clip_eps": 1e-06,
+        "curve": {
+          "app_err": [
+            0.03350000023841858,
+            0.03526295781135559,
+            0.023508638540903726,
+            0.017214812226593493,
+            0.016270244240760803,
+            0.017615430355072022,
+            0.015098940304347446,
+            0.013211572766304016,
+            0.01174362023671468,
+            0.010569258213043213,
+            0.010321541223675013
+          ],
+          "t": [
+            25,
+            50,
+            75,
+            100,
+            125,
+            150,
+            175,
+            200,
+            225,
+            250,
+            256
+          ]
+        },
+        "curve_every": 25,
+        "curve_time_ts": [
+          1758506401.954638,
+          1744297137.744982,
+          1756506352.6586208,
+          1737407801.1653152,
+          1755467612.307583,
+          1715277908.478744,
+          1766020217.0135932,
+          1761572794.019048,
+          1751847477.2057338,
+          1733775829.381151,
+          1757606401.3496692
+        ],
+        "eps": 0.0,
+        "family": "group_bin_indicator",
+        "final": {
+          "app_err": 0.010321541223675013,
+          "top_violations": [
+            {
+              "bin_hi": 0.05,
+              "bin_idx": 0,
+              "bin_lo": 0.0,
+              "coord": 0,
+              "group": "",
+              "group_idx": 0,
+              "mean_payoff": 0.010321541223675013,
+              "violation": 0.010321541223675013
+            },
+            {
+              "bin_hi": 0.55,
+              "bin_idx": 10,
+              "bin_lo": 0.5,
+              "coord": 10,
+              "group": "",
+              "group_idx": 0,
+              "mean_payoff": -0.00891877873800695,
+              "violation": 0.00891877873800695
+            },
+            {
+              "bin_hi": 0.15000000000000002,
+              "bin_idx": 2,
+              "bin_lo": 0.1,
+              "coord": 2,
+              "group": "",
+              "group_idx": 0,
+              "mean_payoff": 0.008762567245867103,
+              "violation": 0.008762567245867103
+            },
+            {
+              "bin_hi": 0.5,
+              "bin_idx": 9,
+              "bin_lo": 0.45,
+              "coord": 9,
+              "group": "",
+              "group_idx": 0,
+              "mean_payoff": -0.007869316497817636,
+              "violation": 0.007869316497817636
+            },
+            {
+              "bin_hi": 0.1,
+              "bin_idx": 1,
+              "bin_lo": 0.05,
+              "coord": 1,
+              "group": "",
+              "group_idx": 0,
+              "mean_payoff": 0.005922154014115222,
+              "violation": 0.005922154014115222
+            },
+            {
+              "bin_hi": 0.6000000000000001,
+              "bin_idx": 11,
+              "bin_lo": 0.55,
+              "coord": 11,
+              "group": "",
+              "group_idx": 0,
+              "mean_payoff": -0.004567522322759032,
+              "violation": 0.004567522322759032
+            },
+            {
+              "bin_hi": 0.7000000000000001,
+              "bin_idx": 13,
+              "bin_lo": 0.65,
+              "coord": 13,
+              "group": "",
+              "group_idx": 0,
+              "mean_payoff": -0.0042480467818677425,
+              "violation": 0.0042480467818677425
+            },
+            {
+              "bin_hi": 0.30000000000000004,
+              "bin_idx": 5,
+              "bin_lo": 0.25,
+              "coord": 5,
+              "group": "",
+              "group_idx": 0,
+              "mean_payoff": -0.0023987829918041825,
+              "violation": 0.0023987829918041825
+            },
+            {
+              "bin_hi": 0.4,
+              "bin_idx": 7,
+              "bin_lo": 0.35000000000000003,
+              "coord": 7,
+              "group": "",
+              "group_idx": 0,
+              "mean_payoff": -0.00236684107221663,
+              "violation": 0.00236684107221663
+            },
+            {
+              "bin_hi": 0.35000000000000003,
+              "bin_idx": 6,
+              "bin_lo": 0.30000000000000004,
+              "coord": 6,
+              "group": "",
+              "group_idx": 0,
+              "mean_payoff": 0.0021859491243958473,
+              "violation": 0.0021859491243958473
+            }
+          ]
+        },
+        "group_cols": [
+          "category"
+        ],
+        "n": 256,
+        "n_bins": 20,
+        "n_groups": 1,
+        "pred_col": "pred_prob_ar_repair",
+        "time_col": "createdAt",
+        "y_col": "y"
+      },
+      "meta": {
+        "clip_eps": 1e-06,
+        "event_time_col": "endDate",
+        "forecast_time_col": "createdAt",
+        "group_cols": [
+          "category"
+        ],
+        "n_bins": 20,
+        "n_groups_seen": 1,
+        "n_updates": 236,
+        "pred_col": "pred_prob_ar",
+        "prior_strength": 5.0,
+        "y_col": "y"
+      },
+      "metrics": {
+        "brier": 0.190185238497105,
+        "ece": 0.0638021099875914,
+        "groups": {
+          "category": {
+            "avg_abs_bias": 0.0007903393561718985,
+            "n_groups": 1,
+            "worst_abs_bias": 0.0007903393561718985
+          }
+        },
+        "logloss": 0.5827549528922498,
+        "n": 256,
+        "trading": {
+          "B": 1.0,
+          "mode": "sign",
+          "pnl_per_event": 0.17151171959994826,
+          "transaction_cost": 0.0
+        }
+      },
+      "pred_col": "pred_prob_ar_repair"
+    },
+    "trading": {
+      "B": 1.0,
+      "mode": "sign",
+      "pnl_per_event": 0.15432421943114605,
+      "transaction_cost": 0.0
+    }
+  }
+}

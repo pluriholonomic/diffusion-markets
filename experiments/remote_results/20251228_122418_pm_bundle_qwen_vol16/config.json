@@ -1,0 +1,60 @@
+{
+  "benchmark": "pm_difftrain",
+  "bundling": {
+    "bundle_col": "volume_q5",
+    "bundle_drop_last": true,
+    "bundle_size": 16,
+    "enabled": true,
+    "n_bundles": 1249,
+    "n_test_bundles": 250,
+    "n_train_bundles": 999
+  },
+  "dataset_path": "polymarket_backups/pm_suite_derived/gamma_yesno_sample_clob_fixed.parquet",
+  "diffusion": {
+    "T": 64,
+    "agg": "mean",
+    "batch_size": 256,
+    "beta_end": 0.02,
+    "beta_start": 0.0001,
+    "depth": 3,
+    "device": "cuda",
+    "eta": 0.0,
+    "hidden_dim": 256,
+    "label_eps": 0.001,
+    "lr": 0.0002,
+    "mc": 32,
+    "sample_steps": 64,
+    "time_dim": 64,
+    "train_steps": 20000
+  },
+  "embed": {
+    "batch_size": 4,
+    "device": "cuda",
+    "device_map": "auto",
+    "dtype": "bfloat16",
+    "max_length": 512,
+    "model": "Qwen/Qwen3-14B",
+    "normalize": true,
+    "trust_remote_code": true
+  },
+  "eval": {
+    "B": 1.0,
+    "bins": 20,
+    "group_cols": [
+      "volume_q5",
+      "ttc_q5"
+    ],
+    "pred_col": "pred_prob",
+    "trading_mode": "sign",
+    "transaction_cost": 0.0
+  },
+  "max_rows": 20000,
+  "split": {
+    "seed": 0,
+    "train_frac": 0.8
+  },
+  "text_cols": [
+    "question",
+    "description"
+  ]
+}

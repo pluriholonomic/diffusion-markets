@@ -1,0 +1,32 @@
+{
+  "approachability": null,
+  "benchmark": "polymarket_eval",
+  "dataset_path": "polymarket_backups/pm_suite_derived/gamma_yesno_ready_20k.parquet",
+  "eval": {
+    "B": 1.0,
+    "bins": 20,
+    "group_cols": null,
+    "trading_mode": "sign",
+    "transaction_cost": 0.02
+  },
+  "llm": {
+    "K": 3,
+    "L": 1,
+    "agg": "mean",
+    "device": "cuda",
+    "device_map": "auto",
+    "dtype": "bfloat16",
+    "max_new_tokens": 128,
+    "model": "runs/grpo/20251231_002357_rlcr_fixed_v1/best",
+    "no_cot": false,
+    "temperature": 0.7,
+    "top_p": 0.95
+  },
+  "max_examples": 2000,
+  "pred_col": "pred_prob",
+  "repair_at_resolution": null,
+  "text_cols": [
+    "question",
+    "description"
+  ]
+}

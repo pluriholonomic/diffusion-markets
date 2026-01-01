@@ -1,0 +1,23 @@
+{
+  "approachability": null,
+  "benchmark": "polymarket_eval",
+  "dataset_path": "data/polymarket/derived/pm_h24_f1.parquet",
+  "eval": {
+    "B": 1.0,
+    "bins": 20,
+    "group_cols": [
+      "category",
+      "volume_q5",
+      "ttc_q5"
+    ],
+    "trading_mode": "sign",
+    "transaction_cost": 0.0
+  },
+  "llm": null,
+  "max_examples": null,
+  "pred_col": "market_prob",
+  "repair_at_resolution": null,
+  "text_cols": [
+    "question"
+  ]
+}

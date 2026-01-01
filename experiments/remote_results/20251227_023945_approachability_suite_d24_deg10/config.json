@@ -1,0 +1,10 @@
+{
+  "T_dynamics": 30000,
+  "benchmark": "approachability_suite",
+  "d": 24,
+  "max_degree": 10,
+  "n": 100000,
+  "n_constraints": 100,
+  "rho": 0.95,
+  "seed": 0
+}

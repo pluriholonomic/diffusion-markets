@@ -1,0 +1,47 @@
+{
+  "baselines": {
+    "constant_0.5": {
+      "bayes_brier": 0.21299463510513306,
+      "brier": 0.25,
+      "correlation_with_truth": NaN,
+      "ece": 0.006999999284744263,
+      "excess_brier": 0.03700536489486694,
+      "mse_to_truth": 0.03127961747599275,
+      "n": 1000
+    },
+    "oracle": {
+      "bayes_brier": 0.21299463510513306,
+      "brier": 0.21299463510513306,
+      "correlation_with_truth": 1.0,
+      "ece": 0.04712887512147427,
+      "excess_brier": 0.0,
+      "mse_to_truth": 0.0,
+      "n": 1000
+    },
+    "prior": {
+      "base_rate": 0.5047777891159058,
+      "bayes_brier": 0.21299463510513306,
+      "brier": 0.25008971631645877,
+      "correlation_with_truth": NaN,
+      "ece": 0.011777788400650024,
+      "excess_brier": 0.03709508121132571,
+      "mse_to_truth": 0.03125336621038099,
+      "n": 1000
+    }
+  },
+  "headlines_sample": [
+    "Will Suns vs. Nuggets end in a draw?",
+    "Will Celtics score more than 3 goals against Warriors?",
+    "Will BNB be above $118000 on 2024-09?",
+    "Will Cloud9 beat G2 in World Cup?",
+    "Will Ethereum market cap exceed $673B?"
+  ],
+  "n_test": 1000,
+  "n_train": 9000,
+  "spec": {
+    "n_factors": 5,
+    "n_samples": 10000,
+    "noise": 0.2,
+    "structure": "independent"
+  }
+}

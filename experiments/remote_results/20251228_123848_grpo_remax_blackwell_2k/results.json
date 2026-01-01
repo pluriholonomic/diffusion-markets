@@ -1,0 +1,7 @@
+{
+  "n": 607,
+  "steps": 65,
+  "best_step": 45,
+  "best_brier": 0.0006250000000000001,
+  "early_stopped": true
+}

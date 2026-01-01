@@ -1,0 +1,10 @@
+{
+  "L_ar": 4,
+  "alpha": 0.8,
+  "benchmark": "swap_regret",
+  "d": 20,
+  "k": 10,
+  "n": 100000,
+  "rho": 0.95,
+  "seed": 0
+}

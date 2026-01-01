@@ -1,0 +1,62 @@
+{
+  "L": 4,
+  "S": [
+    5,
+    15,
+    7,
+    4,
+    2,
+    0,
+    13,
+    3,
+    14,
+    12
+  ],
+  "benchmark": "intrinsic_post",
+  "llm": {
+    "K": 1,
+    "agg": "mean",
+    "device": "cuda",
+    "device_map": null,
+    "dtype": "auto",
+    "max_new_tokens": 64,
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "no_cot": false,
+    "temperature": 0.7,
+    "text_style": "natural",
+    "top_p": 0.95
+  },
+  "post": {
+    "group_J": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      7,
+      12,
+      13,
+      14,
+      15
+    ],
+    "post_bins": 20,
+    "post_clip_eps": 0.0001,
+    "post_prior": 5.0
+  },
+  "rho": 0.95,
+  "spec": {
+    "alpha": 0.8,
+    "d": 16,
+    "k": 10,
+    "seed": 0,
+    "subset": null
+  },
+  "test": {
+    "bins": 20,
+    "n_test": 1024,
+    "transaction_cost": 0.0
+  },
+  "train": {
+    "n_train": 4096
+  }
+}

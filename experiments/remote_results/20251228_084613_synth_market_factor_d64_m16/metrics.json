@@ -1,0 +1,129 @@
+{
+  "ar_results": [
+    {
+      "L": 2,
+      "brier": 0.2501410245895386,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 0.030909622088074684,
+      "n_constraints": 0
+    },
+    {
+      "L": 4,
+      "brier": 0.25039905309677124,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 0.031138723716139793,
+      "n_constraints": 0
+    },
+    {
+      "L": 8,
+      "brier": 0.2512681782245636,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 0.03191797062754631,
+      "n_constraints": 0
+    },
+    {
+      "L": 16,
+      "brier": 0.2525506615638733,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 0.03317784518003464,
+      "n_constraints": 0
+    },
+    {
+      "L": 32,
+      "brier": 0.2545391917228699,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 0.03562481701374054,
+      "n_constraints": 0
+    }
+  ],
+  "constant_baseline": {
+    "brier": 0.25,
+    "frac_any_violated": 0.0,
+    "max_violation": 0.0,
+    "mean_violation": 0.0,
+    "mse": 0.03076615370810032,
+    "n_constraints": 0
+  },
+  "diffusion_results": [
+    {
+      "brier": 0.22712448239326477,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 0.00769153842702508,
+      "n_constraints": 0,
+      "rho": 0.5
+    },
+    {
+      "brier": 0.2222815454006195,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 0.0027689544949680567,
+      "n_constraints": 0,
+      "rho": 0.7
+    },
+    {
+      "brier": 0.2207830548286438,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 0.0012306455755606294,
+      "n_constraints": 0,
+      "rho": 0.8
+    },
+    {
+      "brier": 0.21989992260932922,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 0.00030766159761697054,
+      "n_constraints": 0,
+      "rho": 0.9
+    },
+    {
+      "brier": 0.21968905627727509,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 7.691562495892867e-05,
+      "n_constraints": 0,
+      "rho": 0.95
+    },
+    {
+      "brier": 0.2196311503648758,
+      "frac_any_violated": 0.0,
+      "max_violation": 0.0,
+      "mean_violation": 0.0,
+      "mse": 3.076610710195382e-06,
+      "n_constraints": 0,
+      "rho": 0.99
+    }
+  ],
+  "oracle": {
+    "brier": 0.21963205933570862,
+    "frac_any_violated": 0.0,
+    "max_violation": 0.0,
+    "mean_violation": 0.0,
+    "mse": 0.0,
+    "n_constraints": 0
+  },
+  "spec": {
+    "d": 64,
+    "m": 16,
+    "n_test": 10000,
+    "n_train": 50000,
+    "noise": 0.3,
+    "structure": "factor"
+  }
+}

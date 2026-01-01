@@ -1,0 +1,9 @@
+{
+  "alpha": 0.8,
+  "ar_width": true,
+  "benchmark": "cliff_fog",
+  "d": 24,
+  "k": 6,
+  "n": 200000,
+  "seed": 0
+}

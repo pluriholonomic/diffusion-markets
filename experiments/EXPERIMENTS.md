@@ -598,20 +598,18 @@ forecastbench pm_difftrain \
 ---
 
 
-### Auto-Updated Status (2025-12-31T21:46:43Z)
+### Auto-Updated Status (2026-01-01T21:01:50Z)
 
 **Headlines Fetch**: ⏳ Pending
 
 
 **GPU Status**:
-- GPU 0: 100% util, 58765/143771 MB
-- GPU 1: 100% util, 58577/143771 MB
+- GPU 0: 18% util, 29563/143771 MB
+- GPU 1: 25% util, 29421/143771 MB
 
 **Running Experiments**:
-- PID 2007048: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
 - PID 2461075: `.venv/bin/python -m forecastbench pm_eval --dataset-path pol...`
 - PID 2539536: `.venv/bin/python -m forecastbench pm_eval --dataset-path pol...`
-- PID 2560999: `.venv/bin/python -m forecastbench pm_hybrid_train --dataset-...`
 
 ---
 
@@ -817,5 +815,5 @@ print(f"PnL by group: {result.pnl_by_group}")
 
 ---
 
-*This document is auto-updated. Last modified: 2025-12-31T21:46:43Z*
+*This document is auto-updated. Last modified: 2026-01-01T21:01:50Z*
 

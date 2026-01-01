@@ -634,8 +634,9 @@ def cmd_pm_eval(args: argparse.Namespace) -> None:
             include_cot=not args.llm_no_cot,
         )
         pred = ARCoTPredictor(spec_llm)
+        batch_size = getattr(args, 'llm_batch_size', 8)
         probs, llm_meta = pred.predict_proba(
-            infos, L=args.L, K=args.K, seed=args.seed, aggregate=args.llm_agg
+            infos, L=args.L, K=args.K, seed=args.seed, aggregate=args.llm_agg, batch_size=batch_size
         )
         df[pred_col] = probs
     else:
@@ -3973,9 +3974,10 @@ def cmd_pm_hybrid_train(args: argparse.Namespace) -> None:
         include_cot=not args.ar_no_cot,
     )
     ar_predictor = ARCoTPredictor(ar_spec)
+    batch_size = getattr(args, 'ar_batch_size', 8)
     
-    q_ar_train, ar_meta_train = ar_predictor.predict_proba(train_texts, K=args.ar_K, seed=args.seed)
-    q_ar_test, ar_meta_test = ar_predictor.predict_proba(test_texts, K=args.ar_K, seed=args.seed + 1)
+    q_ar_train, ar_meta_train = ar_predictor.predict_proba(train_texts, K=args.ar_K, seed=args.seed, batch_size=batch_size)
+    q_ar_test, ar_meta_test = ar_predictor.predict_proba(test_texts, K=args.ar_K, seed=args.seed + 1, batch_size=batch_size)
     
     print(f"AR train: mean={np.mean(q_ar_train):.3f}, std={np.std(q_ar_train):.3f}")
     print(f"AR test: mean={np.mean(q_ar_test):.3f}, std={np.std(q_ar_test):.3f}")
@@ -4351,6 +4353,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_pm_eval.add_argument("--llm-max-new-tokens", type=int, default=256)
     p_pm_eval.add_argument("--llm-no-cot", action="store_true")
     p_pm_eval.add_argument("--llm-agg", type=str, default="mean", help="mean|median aggregation over K samples")
+    p_pm_eval.add_argument("--llm-batch-size", type=int, default=8, help="Batch size for LLM inference (higher = faster but more memory)")
     p_pm_eval.set_defaults(func=cmd_pm_eval)
 
     # ====== PM_EVAL_V2: Hierarchical Constraints ======
@@ -5022,6 +5025,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_hybrid.add_argument("--ar-no-cot", action="store_true")
     p_hybrid.add_argument("--ar-device", type=str, default="cuda")
     p_hybrid.add_argument("--ar-device-map", type=str, default="auto")
+    p_hybrid.add_argument("--ar-batch-size", dest="ar_batch_size", type=int, default=8, help="Batch size for AR LLM inference")
     # Embedding for diffusion conditioning
     p_hybrid.add_argument("--embed-model", type=str, default="Qwen/Qwen3-14B")
     p_hybrid.add_argument("--embed-device", type=str, default="cuda")

@@ -1,0 +1,18 @@
+{
+  "metrics": {
+    "brier": 0.28270197723727963,
+    "ece": 0.281520355187977,
+    "logloss": 1.9106096711270877,
+    "n": 1007,
+    "trading": {
+      "B": 1.0,
+      "mode": "sign",
+      "pnl_per_event": 0.14802035773538288,
+      "transaction_cost": 0.0
+    }
+  },
+  "train_meta": {
+    "final_loss": 0.05818151021376252,
+    "steps": 4000
+  }
+}

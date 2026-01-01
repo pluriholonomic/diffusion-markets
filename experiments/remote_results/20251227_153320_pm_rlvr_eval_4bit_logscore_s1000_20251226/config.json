@@ -1,0 +1,45 @@
+{
+  "adapter_path": "runs/20251226_212631_pm_rlvr_train_4bit_logscore_s1000_20251226/rlvr/final",
+  "approachability": {
+    "enabled": true
+  },
+  "base_model": "Qwen/Qwen3-14B",
+  "benchmark": "pm_rlvr_eval",
+  "dataset_path": "runs/20251226_071714_pm_suite_scalar_retry2_20251226/predictions.parquet",
+  "eval": {
+    "B": 1.0,
+    "bins": 20,
+    "group_cols": [
+      "volume_q5",
+      "ttc_q5"
+    ],
+    "trading_mode": "sign",
+    "transaction_cost": 0.0
+  },
+  "infer": {
+    "K": 5,
+    "L": 4,
+    "agg": "median",
+    "bnb_4bit_compute_dtype": "bfloat16",
+    "device": "cuda",
+    "device_map": "auto",
+    "dtype": "auto",
+    "max_new_tokens": 128,
+    "no_4bit": false,
+    "no_cot": false,
+    "temperature": 0.7,
+    "top_p": 0.95
+  },
+  "llm_meta": {
+    "K": 5,
+    "n": 1000,
+    "parse_failures": 0
+  },
+  "max_examples": null,
+  "pred_col": "pred_prob",
+  "repair_at_resolution": null,
+  "text_cols": [
+    "question",
+    "description"
+  ]
+}

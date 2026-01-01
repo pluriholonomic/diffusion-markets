@@ -1,0 +1,124 @@
+{
+  "learnedCt_arb": {
+    "Ct": {
+      "dist_l2_mean": 0.21604045136495711,
+      "dist_l2_p90": 0.42714673692246324,
+      "sample_summary_mean": {
+        "radius2": 1.6550954276278702
+      }
+    },
+    "T": 124,
+    "T_used": 124,
+    "cfg": {
+      "B_trade": 1.0,
+      "hedge_eta": null,
+      "seed": 0,
+      "transaction_cost": 0.0,
+      "witness_depth": 2,
+      "witness_hidden": 128,
+      "witness_lr": 0.001
+    },
+    "k": 8,
+    "mc": 32,
+    "profits": {
+      "hedge": {
+        "best_expert_vs_market": 59.05150037491694,
+        "best_expert_vs_ours": 252.67618429660797,
+        "cum_mix_vs_market": 7.210592056721716,
+        "cum_mix_vs_ours": 158.63144843794237,
+        "regret_bound_vs_market": 216.49189625267726,
+        "regret_bound_vs_ours": 216.49189625267726,
+        "ub_best_expert_vs_market": 223.70248830939897,
+        "ub_best_expert_vs_ours": 375.12334469061966
+      },
+      "neural": {
+        "cum_vs_market": 104.8772773338334,
+        "cum_vs_ours": 328.4400170846611,
+        "mean_vs_market": 0.8457844946276888,
+        "mean_vs_ours": 2.64870981519888
+      },
+      "sign": {
+        "cum_vs_market": -144.4415007927455,
+        "cum_vs_ours": -410.3641254901886,
+        "mean_vs_market": -1.1648508128447217,
+        "mean_vs_ours": -3.3093881087918438
+      }
+    }
+  },
+  "metrics": {
+    "brier": 0.3707112222003452,
+    "ece": 0.4141213058103477,
+    "groups": {
+      "ttc_q5": {
+        "avg_abs_bias": 0.4139243052491257,
+        "n_groups": 6,
+        "worst_abs_bias": 0.488740772784998
+      },
+      "volume_q5": {
+        "avg_abs_bias": 0.4139243052491257,
+        "n_groups": 5,
+        "worst_abs_bias": 0.4639575037390295
+      }
+    },
+    "logloss": 0.9603131333684505,
+    "n": 992,
+    "trading": {
+      "B": 1.0,
+      "kelly": {
+        "final_bankroll": 1.7453888681809263e-60,
+        "n": 992,
+        "roi": -1.0
+      },
+      "mode": "sign",
+      "pnl_per_event": -0.1456063516055902,
+      "transaction_cost": 0.0
+    }
+  },
+  "repair_at_resolution": {
+    "meta": {
+      "clip_eps": 1e-06,
+      "event_time_col": "endDate",
+      "forecast_time_col": "createdAt",
+      "group_cols": [
+        "volume_q5",
+        "ttc_q5"
+      ],
+      "n_bins": 20,
+      "n_groups_seen": 29,
+      "n_updates": 930,
+      "pred_col": "pred_prob",
+      "prior_strength": 5.0,
+      "y_col": "y"
+    },
+    "metrics": {
+      "brier": 0.2551018545986177,
+      "ece": 0.215603590522322,
+      "groups": {
+        "ttc_q5": {
+          "avg_abs_bias": 0.20717181286384018,
+          "n_groups": 6,
+          "worst_abs_bias": 0.29640031900877756
+        },
+        "volume_q5": {
+          "avg_abs_bias": 0.20717181286384018,
+          "n_groups": 5,
+          "worst_abs_bias": 0.23657790187633398
+        }
+      },
+      "logloss": 0.7060349218386403,
+      "n": 992,
+      "trading": {
+        "B": 1.0,
+        "kelly": {
+          "final_bankroll": 8.590416329638246e-25,
+          "n": 992,
+          "roi": -1.0
+        },
+        "mode": "sign",
+        "pnl_per_event": 0.0028714718679229037,
+        "transaction_cost": 0.0
+      }
+    },
+    "pred_col": "pred_prob_repair"
+  }
+}

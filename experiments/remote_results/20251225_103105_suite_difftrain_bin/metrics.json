@@ -1,0 +1,17 @@
+{
+  "models": [
+    {
+      "arb_profit": 0.40019288054704666,
+      "brier": 0.3877128816279346,
+      "ece": 0.3656018271476031,
+      "logloss": 1.107694482143844,
+      "n_eval": 10000,
+      "name": "learned_logit_diff(T=64,sample_steps=32)",
+      "sce": 0.29449535184989223
+    }
+  ],
+  "train_meta": {
+    "final_loss": 0.6134155477583408,
+    "steps": 1000
+  }
+}

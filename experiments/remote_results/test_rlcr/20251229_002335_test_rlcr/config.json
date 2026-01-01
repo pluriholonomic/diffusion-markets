@@ -1,0 +1,16 @@
+{
+  "data_path": "polymarket_backups/pm_suite_derived/gamma_yesno_ready_20k.parquet",
+  "n_samples": 20000,
+  "algorithm": "remax",
+  "reward_mode": "rlcr",
+  "model": "Qwen/Qwen3-14B",
+  "steps": 1,
+  "batch_size": 1,
+  "K": 1,
+  "lr": 2e-06,
+  "kl_coef": 0.005,
+  "rlcr_alpha": 1.0,
+  "rlcr_beta": 1.0,
+  "rlcr_gamma": 0.1,
+  "seed": 0
+}

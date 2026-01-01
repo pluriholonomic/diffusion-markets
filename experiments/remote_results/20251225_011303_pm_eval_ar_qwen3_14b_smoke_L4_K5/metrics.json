@@ -1,0 +1,245 @@
+{
+  "llm_meta": {
+    "K": 5,
+    "L": 4,
+    "aggregate": "median",
+    "max_new_tokens_used": 128,
+    "n": 8,
+    "parse_failures": 0
+  },
+  "metrics": {
+    "approachability": {
+      "clip_eps": 1e-06,
+      "curve": {
+        "app_err": [
+          0.25,
+          0.125,
+          0.08333333333333333,
+          0.125
+        ],
+        "t": [
+          2,
+          4,
+          6,
+          8
+        ]
+      },
+      "curve_every": 2,
+      "curve_time_ts": [
+        1766055621.102845,
+        1762202702.055299,
+        1708992168.9139998,
+        1721072847.496459
+      ],
+      "eps": 0.0,
+      "family": "group_bin_indicator",
+      "final": {
+        "app_err": 0.125,
+        "top_violations": [
+          {
+            "bin_hi": 0.5,
+            "bin_idx": 9,
+            "bin_lo": 0.45,
+            "coord": 89,
+            "group": "(9554.308, 21305.783]",
+            "group_idx": 4,
+            "mean_payoff": 0.125,
+            "violation": 0.125
+          },
+          {
+            "bin_hi": 0.5,
+            "bin_idx": 9,
+            "bin_lo": 0.45,
+            "coord": 9,
+            "group": "(1601.654, 4323.39]",
+            "group_idx": 0,
+            "mean_payoff": -0.0625,
+            "violation": 0.0625
+          },
+          {
+            "bin_hi": 0.5,
+            "bin_idx": 9,
+            "bin_lo": 0.45,
+            "coord": 49,
+            "group": "(4323.39, 9554.308]",
+            "group_idx": 2,
+            "mean_payoff": -0.0625,
+            "violation": 0.0625
+          },
+          {
+            "bin_hi": 0.35000000000000003,
+            "bin_idx": 6,
+            "bin_lo": 0.30000000000000004,
+            "coord": 26,
+            "group": "(21305.783, 79930.604]",
+            "group_idx": 1,
+            "mean_payoff": -0.03750000149011612,
+            "violation": 0.03750000149011612
+          },
+          {
+            "bin_hi": 0.35000000000000003,
+            "bin_idx": 6,
+            "bin_lo": 0.30000000000000004,
+            "coord": 66,
+            "group": "(79930.604, 238731.954]",
+            "group_idx": 3,
+            "mean_payoff": -0.03750000149011612,
+            "violation": 0.03750000149011612
+          }
+        ]
+      },
+      "group_cols": [
+        "volume_q5"
+      ],
+      "n": 8,
+      "n_bins": 20,
+      "n_groups": 5,
+      "pred_col": "pred_prob_qwen3",
+      "time_col": "createdAt",
+      "y_col": "y"
+    },
+    "brier": 0.15656250182539228,
+    "ece": 0.11875000316649675,
+    "groups": {
+      "volume_q5": {
+        "avg_abs_bias": 0.36875000316649675,
+        "n_groups": 5,
+        "worst_abs_bias": 0.5
+      }
+    },
+    "logloss": 0.48487265424279186,
+    "n": 8,
+    "repair_at_resolution": {
+      "approachability": {
+        "clip_eps": 1e-06,
+        "curve": {
+          "app_err": [
+            0.25,
+            0.125,
+            0.09375,
+            0.072265625
+          ],
+          "t": [
+            2,
+            4,
+            6,
+            8
+          ]
+        },
+        "curve_every": 2,
+        "curve_time_ts": [
+          1766055621.102845,
+          1762202702.055299,
+          1708992168.9139998,
+          1721072847.496459
+        ],
+        "eps": 0.0,
+        "family": "group_bin_indicator",
+        "final": {
+          "app_err": 0.072265625,
+          "top_violations": [
+            {
+              "bin_hi": 0.6000000000000001,
+              "bin_idx": 11,
+              "bin_lo": 0.55,
+              "coord": 11,
+              "group": "(1601.654, 4323.39]",
+              "group_idx": 0,
+              "mean_payoff": -0.072265625,
+              "violation": 0.072265625
+            },
+            {
+              "bin_hi": 0.45,
+              "bin_idx": 8,
+              "bin_lo": 0.4,
+              "coord": 88,
+              "group": "(9554.308, 21305.783]",
+              "group_idx": 4,
+              "mean_payoff": 0.0703125,
+              "violation": 0.0703125
+            },
+            {
+              "bin_hi": 0.5,
+              "bin_idx": 9,
+              "bin_lo": 0.45,
+              "coord": 49,
+              "group": "(4323.39, 9554.308]",
+              "group_idx": 2,
+              "mean_payoff": -0.0625,
+              "violation": 0.0625
+            },
+            {
+              "bin_hi": 0.7000000000000001,
+              "bin_idx": 13,
+              "bin_lo": 0.65,
+              "coord": 93,
+              "group": "(9554.308, 21305.783]",
+              "group_idx": 4,
+              "mean_payoff": 0.0424107164144516,
+              "violation": 0.0424107164144516
+            },
+            {
+              "bin_hi": 0.35000000000000003,
+              "bin_idx": 6,
+              "bin_lo": 0.30000000000000004,
+              "coord": 66,
+              "group": "(79930.604, 238731.954]",
+              "group_idx": 3,
+              "mean_payoff": -0.03750000149011612,
+              "violation": 0.03750000149011612
+            }
+          ]
+        },
+        "group_cols": [
+          "volume_q5"
+        ],
+        "n": 8,
+        "n_bins": 20,
+        "n_groups": 5,
+        "pred_col": "pred_prob_qwen3_repair",
+        "time_col": "createdAt",
+        "y_col": "y"
+      },
+      "meta": {
+        "clip_eps": 1e-06,
+        "event_time_col": "endDate",
+        "forecast_time_col": "createdAt",
+        "group_cols": [
+          "volume_q5"
+        ],
+        "n_bins": 20,
+        "n_groups_seen": 5,
+        "n_updates": 7,
+        "pred_col": "pred_prob_qwen3",
+        "prior_strength": 5.0,
+        "y_col": "y"
+      },
+      "metrics": {
+        "brier": 0.1564500350469213,
+        "ece": 0.36259301099926233,
+        "groups": {
+          "volume_q5": {
+            "avg_abs_bias": 0.36259301099926233,
+            "n_groups": 5,
+            "worst_abs_bias": 0.5
+          }
+        },
+        "logloss": 0.4828595360927477,
+        "n": 8,
+        "trading": {
+          "B": 1.0,
+          "mode": "sign",
+          "pnl_per_event": 0.2681249976158142,
+          "transaction_cost": 0.0
+        }
+      },
+      "pred_col": "pred_prob_qwen3_repair"
+    },
+    "trading": {
+      "B": 1.0,
+      "mode": "sign",
+      "pnl_per_event": 0.2681249976158142,
+      "transaction_cost": 0.0
+    }
+  }
+}

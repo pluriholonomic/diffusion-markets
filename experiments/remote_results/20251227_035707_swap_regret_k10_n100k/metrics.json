@@ -1,0 +1,34 @@
+{
+  "ar": {
+    "external_regret": 0.4796100000021397,
+    "gap": 0.0,
+    "per_round": {
+      "external": 4.7961000000213974e-06,
+      "swap": 4.7961000000213974e-06
+    },
+    "swap_regret": 0.4796100000021397
+  },
+  "comparison": {
+    "diff_wins_external": true,
+    "diff_wins_swap": false,
+    "external_ratio": 479610000.0021397,
+    "swap_ratio": 0.00018423577311271592
+  },
+  "diffusion": {
+    "external_regret": -13463.5631344243,
+    "gap": 16066.803492683675,
+    "per_round": {
+      "external": -0.134635631344243,
+      "swap": 0.02603240358259376
+    },
+    "swap_regret": 2603.240358259376
+  },
+  "spec": {
+    "L_ar": 4,
+    "alpha": 0.8,
+    "d": 20,
+    "k": 10,
+    "n_samples": 100000,
+    "rho_diff": 0.95
+  }
+}

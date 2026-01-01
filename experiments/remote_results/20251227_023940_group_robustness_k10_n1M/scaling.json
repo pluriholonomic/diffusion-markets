@@ -1,0 +1,46 @@
+[
+  {
+    "ar_gcal": 0.4000000059604645,
+    "ar_theory": 0.4,
+    "diff_gcal": 0.07419750094413757,
+    "diff_theory": 0.07419750000000006,
+    "diffusion_wins": true,
+    "group_size": 0.0625,
+    "k": 4,
+    "log2_group_size": -4,
+    "separation": 0.3258025050163269
+  },
+  {
+    "ar_gcal": 0.4000000059604645,
+    "ar_theory": 0.4,
+    "diff_gcal": 0.10596325993537903,
+    "diff_theory": 0.10596324375000009,
+    "diffusion_wins": true,
+    "group_size": 0.015625,
+    "k": 6,
+    "log2_group_size": -6,
+    "separation": 0.29403674602508545
+  },
+  {
+    "ar_gcal": 0.4000000059604645,
+    "ar_theory": 0.4,
+    "diff_gcal": 0.13463184237480164,
+    "diff_theory": 0.1346318274843751,
+    "diffusion_wins": true,
+    "group_size": 0.00390625,
+    "k": 8,
+    "log2_group_size": -8,
+    "separation": 0.26536816358566284
+  },
+  {
+    "ar_gcal": 0.4000000059604645,
+    "ar_theory": 0.4,
+    "diff_gcal": 0.1605052351951599,
+    "diff_theory": 0.16050522430464853,
+    "diffusion_wins": true,
+    "group_size": 0.0009765625,
+    "k": 10,
+    "log2_group_size": -10,
+    "separation": 0.23949477076530457
+  }
+]

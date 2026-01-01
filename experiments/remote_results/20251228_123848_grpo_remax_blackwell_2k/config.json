@@ -1,0 +1,16 @@
+{
+  "data_path": "/root/diffusion-markets/data/polymarket/quality_subset.parquet",
+  "n_samples": 607,
+  "algorithm": "remax",
+  "reward_mode": "blackwell_aware",
+  "model": "Qwen/Qwen3-14B",
+  "steps": 2000,
+  "batch_size": 2,
+  "K": 4,
+  "lr": 2e-06,
+  "kl_coef": 0.005,
+  "rlcr_alpha": 1.0,
+  "rlcr_beta": 1.0,
+  "rlcr_gamma": 0.1,
+  "seed": 42
+}

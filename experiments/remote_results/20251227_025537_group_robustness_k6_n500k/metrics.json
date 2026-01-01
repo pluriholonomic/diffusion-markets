@@ -1,0 +1,54 @@
+{
+  "S": [
+    5,
+    12,
+    10,
+    7,
+    0,
+    16
+  ],
+  "ar": {
+    "L": 5,
+    "beats_theory": true,
+    "empirical_gcal": 0.4000000059604645,
+    "n_significant": 64,
+    "theory_lower_bound": 0.4,
+    "worst_group_detail": {
+      "N_G": 7731,
+      "ci_hi": -0.3691082115403952,
+      "ci_lo": -0.4308919791944681,
+      "ci_width": 0.03089188382703645,
+      "key": 14,
+      "mu_hat": -0.40000009536743164,
+      "significant": true
+    }
+  },
+  "diffusion": {
+    "empirical_gcal": 0.10596325993537903,
+    "matches_theory": true,
+    "n_significant": 64,
+    "rho": 0.95,
+    "theory_prediction": 0.10596324375000009,
+    "worst_group_detail": {
+      "N_G": 8077,
+      "ci_hi": -0.07574027168787488,
+      "ci_lo": -0.13618621838056078,
+      "ci_width": 0.030222973346342955,
+      "key": 21,
+      "mu_hat": -0.10596324503421783,
+      "significant": true
+    }
+  },
+  "diffusion_wins": true,
+  "group_size": 0.015625,
+  "separation": 0.29403674602508545,
+  "spec": {
+    "L_ar": 5,
+    "alpha": 0.8,
+    "d": 24,
+    "delta": 0.05,
+    "k": 6,
+    "n_samples": 500000,
+    "rho": 0.95
+  }
+}

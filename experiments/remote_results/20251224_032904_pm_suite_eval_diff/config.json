@@ -1,0 +1,20 @@
+{
+  "benchmark": "polymarket_eval",
+  "dataset_path": "runs/20251224_032903_pm_suite_difftrain/predictions.parquet",
+  "eval": {
+    "B": 1.0,
+    "bins": 20,
+    "group_cols": [
+      "category"
+    ],
+    "trading_mode": "sign",
+    "transaction_cost": 0.0
+  },
+  "llm": null,
+  "max_examples": null,
+  "pred_col": "pred_prob",
+  "text_cols": [
+    "question",
+    "description"
+  ]
+}

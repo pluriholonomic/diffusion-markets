@@ -1,0 +1,113 @@
+{
+  "learnedCt_arb": {
+    "Ct": {
+      "dist_l2_mean": NaN,
+      "dist_l2_p90": NaN,
+      "sample_summary_mean": {
+        "radius2": 1.5439233070064506
+      }
+    },
+    "T": 500,
+    "T_used": 250,
+    "cfg": {
+      "B_trade": 1.0,
+      "hedge_eta": null,
+      "seed": 0,
+      "transaction_cost": 0.0,
+      "witness_depth": 2,
+      "witness_hidden": 128,
+      "witness_lr": 0.001
+    },
+    "k": 8,
+    "mc": 64,
+    "profits": {
+      "hedge": {
+        "best_expert_vs_market": NaN,
+        "best_expert_vs_ours": NaN,
+        "cum_mix_vs_market": NaN,
+        "cum_mix_vs_ours": NaN,
+        "regret_bound_vs_market": 342.4918962526773,
+        "regret_bound_vs_ours": 342.4918962526773,
+        "ub_best_expert_vs_market": NaN,
+        "ub_best_expert_vs_ours": NaN
+      },
+      "neural": {
+        "cum_vs_market": NaN,
+        "cum_vs_ours": NaN,
+        "mean_vs_market": NaN,
+        "mean_vs_ours": NaN
+      },
+      "sign": {
+        "cum_vs_market": NaN,
+        "cum_vs_ours": NaN,
+        "mean_vs_market": NaN,
+        "mean_vs_ours": NaN
+      }
+    }
+  },
+  "metrics": {
+    "brier": 0.24329523881225845,
+    "ece": 0.19937892135977742,
+    "groups": {
+      "topic": {
+        "avg_abs_bias": 0.1987439969778061,
+        "n_groups": 3,
+        "worst_abs_bias": 0.22646256685256957
+      }
+    },
+    "logloss": 0.6796402423793027,
+    "n": 4000,
+    "trading": {
+      "B": 1.0,
+      "kelly": {
+        "final_bankroll": 8.585418578570476e-17,
+        "n": 4000,
+        "roi": -0.9999999999999999
+      },
+      "mode": "sign",
+      "pnl_per_event": NaN,
+      "transaction_cost": 0.0
+    }
+  },
+  "repair_at_resolution": {
+    "meta": {
+      "clip_eps": 1e-06,
+      "event_time_col": "endDate",
+      "forecast_time_col": "createdAt",
+      "group_cols": [
+        "topic"
+      ],
+      "n_bins": 20,
+      "n_groups_seen": 3,
+      "n_updates": 3699,
+      "pred_col": "pred_prob",
+      "prior_strength": 5.0,
+      "y_col": "y"
+    },
+    "metrics": {
+      "brier": 0.20478189547859826,
+      "ece": 0.05206387509964409,
+      "groups": {
+        "topic": {
+          "avg_abs_bias": 0.011656256636604667,
+          "n_groups": 3,
+          "worst_abs_bias": 0.015997304135199748
+        }
+      },
+      "logloss": 0.6012226418106357,
+      "n": 4000,
+      "trading": {
+        "B": 1.0,
+        "kelly": {
+          "final_bankroll": 171507847.89660436,
+          "n": 4000,
+          "roi": 171507846.89660436
+        },
+        "mode": "sign",
+        "pnl_per_event": NaN,
+        "transaction_cost": 0.0
+      }
+    },
+    "pred_col": "pred_prob_repair"
+  }
+}

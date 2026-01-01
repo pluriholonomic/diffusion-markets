@@ -1,0 +1,35 @@
+{
+  "approachability": {
+    "clip_eps": 1e-06,
+    "curve_every": 10,
+    "enabled": true,
+    "eps": null,
+    "group_cols": [
+      "volume_q5",
+      "ttc_q5"
+    ],
+    "n_bins": 20,
+    "time_col": null,
+    "topk": 10
+  },
+  "benchmark": "polymarket_eval",
+  "dataset_path": "runs/20251226_071714_pm_suite_scalar_retry2_20251226/predictions.parquet",
+  "eval": {
+    "B": 1.0,
+    "bins": 20,
+    "group_cols": [
+      "volume_q5",
+      "ttc_q5"
+    ],
+    "trading_mode": "sign",
+    "transaction_cost": 0.0
+  },
+  "llm": null,
+  "max_examples": null,
+  "pred_col": "market_prob",
+  "repair_at_resolution": null,
+  "text_cols": [
+    "question",
+    "description"
+  ]
+}

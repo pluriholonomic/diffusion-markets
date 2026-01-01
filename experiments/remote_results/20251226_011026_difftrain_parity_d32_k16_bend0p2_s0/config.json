@@ -1,0 +1,28 @@
+{
+  "benchmark": "difftrain_parity",
+  "parity": {
+    "alpha": 0.8,
+    "d": 32,
+    "k": 16,
+    "seed": 0,
+    "subset": null
+  },
+  "sample": {
+    "eta": 0.0,
+    "sample_steps": 32
+  },
+  "train": {
+    "T": 64,
+    "batch_size": 512,
+    "beta_end": 0.2,
+    "beta_start": 0.0001,
+    "depth": 4,
+    "device": "cuda",
+    "hidden_dim": 512,
+    "lr": 0.0002,
+    "n_test": 20000,
+    "n_train": 100000,
+    "time_dim": 64,
+    "train_steps": 5000
+  }
+}

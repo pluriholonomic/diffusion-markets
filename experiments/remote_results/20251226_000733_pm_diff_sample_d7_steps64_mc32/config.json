@@ -1,0 +1,51 @@
+{
+  "approachability": {
+    "clip_eps": 1e-06,
+    "curve_every": 200,
+    "enabled": true,
+    "eps": null,
+    "group_cols": [
+      "volume_q5",
+      "ttc_q5"
+    ],
+    "n_bins": 20,
+    "time_col": null,
+    "topk": 10
+  },
+  "benchmark": "pm_diff_sample",
+  "dataset_path": "data/polymarket/derived/pm_d7_f1.parquet",
+  "diffusion_infer": {
+    "agg": "mean",
+    "device": "cuda",
+    "eta": 0.0,
+    "mc": 32,
+    "sample_steps": 64,
+    "seed": 0
+  },
+  "embed": {
+    "batch_size": 128,
+    "device": "cuda",
+    "dtype": "float16",
+    "max_length": 256,
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "normalize": true
+  },
+  "eval": {
+    "B": 1.0,
+    "bins": 20,
+    "group_cols": [
+      "volume_q5",
+      "ttc_q5"
+    ],
+    "trading_mode": "sign",
+    "transaction_cost": 0.0
+  },
+  "max_rows": 3371,
+  "model_path": "runs/20251225_231523_pm_difftrain_d7_miniLM/model.pt",
+  "pred_col": "pred_prob",
+  "repair_at_resolution": null,
+  "text_cols": [
+    "question",
+    "description"
+  ]
+}

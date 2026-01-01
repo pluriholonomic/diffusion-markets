@@ -1,0 +1,56 @@
+{
+  "llm_meta": {
+    "K": 1,
+    "L": 4,
+    "aggregate": "median",
+    "max_new_tokens_used": 32,
+    "n": 192,
+    "parse_failures": 192
+  },
+  "models": [
+    {
+      "arb_profit": 0.3999999933876097,
+      "brier": 0.25,
+      "ece": 0.09375,
+      "gcal_S": 0.4000000059604645,
+      "gcal_S_argmax_key": 1,
+      "logloss": 0.6931471805599453,
+      "n_eval": 64,
+      "name": "AR-intrinsic",
+      "sce": 0.15999999471008802
+    },
+    {
+      "arb_profit": 0.18742360407486558,
+      "brier": 0.129113417142662,
+      "ece": 0.17804861068725586,
+      "gcal_S": 0.18742361664772034,
+      "gcal_S_argmax_key": 1,
+      "logloss": 0.4381730028819705,
+      "n_eval": 64,
+      "name": "Diffusion-intrinsic",
+      "sce": 0.035127607364412186
+    },
+    {
+      "arb_profit": 0.2867639996111393,
+      "brier": 0.17426759710648643,
+      "ece": 0.2054337258450687,
+      "gcal_S": 0.44166669249534607,
+      "gcal_S_argmax_key": 32,
+      "logloss": 0.5344844949153709,
+      "n_eval": 64,
+      "name": "AR+post",
+      "sce": 0.0910944780699865
+    },
+    {
+      "arb_profit": 0.08216881542466581,
+      "brier": 0.11999612457010109,
+      "ece": 0.17461673286743462,
+      "gcal_S": 0.2750000059604645,
+      "gcal_S_argmax_key": 32,
+      "logloss": 0.4222762204583503,
+      "n_eval": 64,
+      "name": "Diffusion+post",
+      "sce": 0.01172077065956368
+    }
+  ]
+}

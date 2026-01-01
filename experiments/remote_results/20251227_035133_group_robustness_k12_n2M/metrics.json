@@ -1,0 +1,60 @@
+{
+  "S": [
+    14,
+    23,
+    9,
+    11,
+    6,
+    4,
+    5,
+    0,
+    17,
+    21,
+    25,
+    1
+  ],
+  "ar": {
+    "L": 11,
+    "beats_theory": true,
+    "empirical_gcal": 0.4000000059604645,
+    "n_significant": 4096,
+    "theory_lower_bound": 0.4,
+    "worst_group_detail": {
+      "N_G": 523,
+      "ci_hi": -0.28122882951891975,
+      "ci_lo": -0.5187713612159435,
+      "ci_width": 0.11877126584851187,
+      "key": 1,
+      "mu_hat": -0.40000009536743164,
+      "significant": true
+    }
+  },
+  "diffusion": {
+    "empirical_gcal": 0.18385598063468933,
+    "matches_theory": true,
+    "n_significant": 4096,
+    "rho": 0.95,
+    "theory_prediction": 0.18385596493494535,
+    "worst_group_detail": {
+      "N_G": 523,
+      "ci_hi": -0.06508474458849985,
+      "ci_lo": -0.3026272762855236,
+      "ci_width": 0.11877126584851187,
+      "key": 1,
+      "mu_hat": -0.18385601043701172,
+      "significant": true
+    }
+  },
+  "diffusion_wins": true,
+  "group_size": 0.000244140625,
+  "separation": 0.21614402532577515,
+  "spec": {
+    "L_ar": 11,
+    "alpha": 0.8,
+    "d": 28,
+    "delta": 0.05,
+    "k": 12,
+    "n_samples": 2000000,
+    "rho": 0.95
+  }
+}

@@ -16,12 +16,25 @@ from ..utils.models import Platform, Side, Signal, Market, RiskLimits
 
 @dataclass
 class StatArbConfig:
-    """Configuration for stat arb strategy."""
+    """Configuration for stat arb strategy.
+    
+    Parameters optimized via CMA-ES on historical data (2026-01-02):
+    - kelly_fraction: 0.40 (vs default 0.20) - more aggressive sizing
+    - spread_threshold: 0.089 (vs 0.05) - require larger edge
+    - min_edge: 0.086 - minimum expected edge
+    - max_position_pct: 0.05 (vs 0.08) - smaller positions
+    - Category weights: politics=1.76, crypto=0.51, sports=1.79
+    """
     min_category_samples: int = 20  # Min samples per category
-    spread_threshold: float = 0.05  # Min miscalibration
-    kelly_fraction: float = 0.20
-    max_position_pct: float = 0.08
+    spread_threshold: float = 0.089  # Min miscalibration (optimized)
+    kelly_fraction: float = 0.40  # Fraction of Kelly (optimized)
+    max_position_pct: float = 0.05  # Max position % (optimized)
+    min_edge: float = 0.086  # Minimum expected edge (optimized)
     recalibrate_days: int = 5
+    # Category weights (optimized)
+    category_weight_politics: float = 1.76
+    category_weight_crypto: float = 0.51
+    category_weight_sports: float = 1.79
 
 
 class StatArbStrategy:

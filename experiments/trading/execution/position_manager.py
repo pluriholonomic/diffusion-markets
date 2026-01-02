@@ -152,13 +152,23 @@ class Position:
 
 @dataclass
 class OnlineLearnerConfig:
-    """Configuration for online learner."""
-    # Initial thresholds (before learning)
-    initial_profit_take_pct: float = 20.0  # Take profit at 20% gain
-    initial_stop_loss_pct: float = 15.0    # Stop loss at 15% loss
+    """Configuration for online learner.
     
-    # Learning rate and regularization
-    learning_rate: float = 0.01
+    Parameters optimized via CMA-ES on historical data (2026-01-02):
+    - profit_take_pct: 60% - exit winners at 60% gain
+    - stop_loss_pct: 38.5% - exit losers at 38.5% loss  
+    - trailing_stop_pct: 19.6% - trail by 19.6%
+    - ema_alpha_fast: 0.15 (vs 0.10) - faster reaction
+    - ema_alpha_slow: 0.028 (vs 0.02) - slightly faster
+    - learning_rate: 0.05 (vs 0.01) - faster adaptation
+    """
+    # Initial thresholds (optimized via CMA-ES)
+    initial_profit_take_pct: float = 60.0  # Take profit at 60% gain (optimized)
+    initial_stop_loss_pct: float = 38.5    # Stop loss at 38.5% loss (optimized)
+    trailing_stop_pct: float = 19.6        # Trailing stop (optimized)
+    
+    # Learning rate and regularization (optimized)
+    learning_rate: float = 0.05  # Faster adaptation (optimized)
     l2_regularization: float = 0.001
     
     # Feature configuration
@@ -167,9 +177,9 @@ class OnlineLearnerConfig:
     use_time_feature: bool = True
     use_volatility: bool = True
     
-    # EMA parameters
-    ema_alpha_fast: float = 0.1
-    ema_alpha_slow: float = 0.02
+    # EMA parameters (optimized)
+    ema_alpha_fast: float = 0.15  # Faster reaction (optimized)
+    ema_alpha_slow: float = 0.028  # Slightly faster (optimized)
     
     # Constraints
     min_profit_take_pct: float = 5.0

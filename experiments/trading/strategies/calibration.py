@@ -21,14 +21,27 @@ from ..utils.models import (
 
 @dataclass
 class CalibrationConfig:
-    """Configuration for calibration strategy."""
+    """Configuration for calibration strategy.
+    
+    Parameters optimized via CMA-ES on historical data (2026-01-02):
+    - kelly_fraction: 0.50 (vs default 0.25) - more aggressive sizing
+    - spread_threshold: 0.117 (vs 0.05) - require larger edge to trade
+    - min_edge: 0.064 - minimum expected edge
+    - max_position_pct: 0.05 (vs 0.10) - smaller positions for diversification
+    - profit_take_pct: 50% - exit winners at 50% gain
+    - stop_loss_pct: 30% - exit losers at 30% loss
+    """
     n_bins: int = 10
-    spread_threshold: float = 0.05  # Minimum miscalibration to trade
-    kelly_fraction: float = 0.25  # Fraction of Kelly to use
-    max_position_pct: float = 0.10  # Max position as % of bankroll
+    spread_threshold: float = 0.117  # Minimum miscalibration to trade (optimized)
+    kelly_fraction: float = 0.50  # Fraction of Kelly to use (optimized)
+    max_position_pct: float = 0.05  # Max position as % of bankroll (optimized)
+    min_edge: float = 0.064  # Minimum expected edge (optimized)
     recalibrate_days: int = 7  # How often to recalibrate
     min_samples_per_bin: int = 10  # Minimum observations per bin
     categories: List[str] = field(default_factory=list)  # Focus categories
+    # Position management (optimized)
+    profit_take_pct: float = 50.0  # Take profit at 50% gain
+    stop_loss_pct: float = 30.0  # Stop loss at 30% loss
 
 
 class CalibrationStrategy:

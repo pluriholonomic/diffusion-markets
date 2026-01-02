@@ -410,8 +410,8 @@ DASHBOARD_HTML = """
                 <th>Platform</th>
                 <th style="max-width: 300px;">Market Question</th>
                 <th>Side</th>
-                <th>Entry</th>
-                <th>Current</th>
+                <th title="Price paid for this side (YES or NO)">Entry $</th>
+                <th title="Current price of this side">Current $</th>
                 <th>Size</th>
                 <th>Unrealized PnL</th>
             </tr>
@@ -428,7 +428,10 @@ DASHBOARD_HTML = """
                 </td>
                 <td>{{ pos.side | upper }}</td>
                 <td>{{ '{:.3f}'.format(pos.entry_price) }}</td>
-                <td>{{ '{:.3f}'.format(pos.current_price) }}</td>
+                {# Show current price as SIDE price (same convention as entry) #}
+                {# For YES: current_price is already YES price #}
+                {# For NO: convert YES price to NO price (1 - current_price) #}
+                <td>{{ '{:.3f}'.format(pos.current_price if pos.side == 'yes' else (1 - pos.current_price)) }}</td>
                 <td>${{ '{:.0f}'.format(pos.size) }}</td>
                 <td class="{{ 'win' if pos.unrealized_pnl >= 0 else 'loss' }}">
                     {{ '+' if pos.unrealized_pnl >= 0 else '' }}${{ '{:.0f}'.format(pos.unrealized_pnl) }}

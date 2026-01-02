@@ -598,18 +598,18 @@ forecastbench pm_difftrain \
 ---
 
 
-### Auto-Updated Status (2026-01-01T21:01:50Z)
+### Auto-Updated Status (2026-01-02T01:25:05Z)
 
 **Headlines Fetch**: ⏳ Pending
 
 
 **GPU Status**:
-- GPU 0: 18% util, 29563/143771 MB
-- GPU 1: 25% util, 29421/143771 MB
+- GPU 0: 43% util, 14315/143771 MB
+- GPU 1: 32% util, 34395/143771 MB
 
 **Running Experiments**:
-- PID 2461075: `.venv/bin/python -m forecastbench pm_eval --dataset-path pol...`
-- PID 2539536: `.venv/bin/python -m forecastbench pm_eval --dataset-path pol...`
+- PID 3247757: `python -m forecastbench pm_eval --dataset-path polymarket_ba...`
+- PID 3254002: `python -m forecastbench pm_rlvr_eval --dataset-path polymark...`
 
 ---
 
@@ -815,5 +815,5 @@ print(f"PnL by group: {result.pnl_by_group}")
 
 ---
 
-*This document is auto-updated. Last modified: 2026-01-01T21:01:50Z*
+*This document is auto-updated. Last modified: 2026-01-02T01:25:05Z*
 

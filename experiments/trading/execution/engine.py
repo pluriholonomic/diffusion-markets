@@ -24,8 +24,13 @@ from ..clients.kalshi import KalshiClient, KalshiConfig
 from ..clients.simulated import SimulatedMarketClient, create_simulated_polymarket, create_simulated_kalshi
 from ..clients.hybrid import HybridPolymarketClient, HybridKalshiClient, create_hybrid_polymarket, create_hybrid_kalshi
 from ..strategies.calibration import CalibrationStrategy
+from ..strategies.stat_arb import StatArbStrategy
+from ..strategies.longshot import LongshotStrategy
+from ..strategies.momentum import MomentumStrategy
+from ..strategies.dispersion import DispersionStrategy, CorrelationStrategy
 from .risk_manager import RiskManager
 from .position_manager import PositionManager, PositionManagerConfig
+from ..monitoring.strategy_logger import get_strategy_logger, StrategyLogger
 
 
 logging.basicConfig(level=logging.INFO)
@@ -51,10 +56,10 @@ class EngineConfig:
     # Data mode: 'simulated' (historical), 'hybrid' (live data, simulated execution), 'live' (real trading)
     data_mode: str = "simulated"
     
-    # Position management with learned entry/exit
+    # Position management with learned entry/exit (optimized via CMA-ES 2026-01-02)
     position_management_enabled: bool = True
-    profit_take_pct: float = 20.0  # Take profit threshold
-    stop_loss_pct: float = 15.0    # Stop loss threshold
+    profit_take_pct: float = 20.0  # Take profit at 20% gain
+    stop_loss_pct: float = 20.0    # Stop loss at 20% loss
     use_online_learning: bool = True  # Learn optimal thresholds
     
     # Market impact / slippage (applied to entry price)
@@ -126,14 +131,17 @@ class TradingEngine:
         
         # Initialize position manager with learned entry/exit
         if self.config.position_management_enabled:
+            # Use persist path to maintain positions across restarts
+            persist_path = str(Path(self.config.log_dir) / "position_state.json")
             pm_config = PositionManagerConfig(
                 default_profit_take_pct=self.config.profit_take_pct,
                 default_stop_loss_pct=self.config.stop_loss_pct,
                 use_online_learning=self.config.use_online_learning,
                 max_position_size=self.config.initial_bankroll * 0.1,  # Max 10% per position
+                persist_path=persist_path,
             )
             self.position_manager = PositionManager(pm_config)
-            logger.info(f"Position manager enabled: profit_take={self.config.profit_take_pct}%, stop_loss={self.config.stop_loss_pct}%, online_learning={self.config.use_online_learning}")
+            logger.info(f"Position manager enabled: profit_take={self.config.profit_take_pct}%, stop_loss={self.config.stop_loss_pct}%, online_learning={self.config.use_online_learning}, persist={persist_path}")
         else:
             self.position_manager = None
         
@@ -190,27 +198,65 @@ class TradingEngine:
         """Generate signals for all markets using all strategies."""
         signals = []
         
+        # Get strategy logger for stats
+        strategy_logger = get_strategy_logger()
+        
         for strategy_name, strategy in self.strategies.items():
-            for market in markets:
-                # Check if strategy applies to this platform
-                if market.platform != strategy.platform:
-                    continue
-                
+            strategy_signals = []
+            
+            # Filter markets for this strategy's platform
+            platform_markets = [m for m in markets if m.platform == strategy.platform]
+            
+            # Log market scan
+            strategy_logger.log_market_scan(strategy_name, len(platform_markets))
+            
+            # Try bulk signal generation (new strategies)
+            if hasattr(strategy, 'generate_signals') and callable(getattr(strategy, 'generate_signals')):
                 try:
-                    signal = strategy.generate_signal(
-                        market=market,
-                        bankroll=self.risk_manager.state.bankroll,
-                    )
-                    
-                    if signal is not None:
+                    bulk_signals = strategy.generate_signals(platform_markets)
+                    for signal in bulk_signals:
                         signal.strategy = strategy_name
-                        signals.append(signal)
-                        
-                        # Log signal
-                        self._log_signal(signal)
-                        
+                        strategy_signals.append(signal)
                 except Exception as e:
-                    logger.warning(f"Error generating signal for {market.market_id}: {e}")
+                    logger.warning(f"Error in bulk signal generation for {strategy_name}: {e}")
+            
+            # Try per-market signal generation (original strategies)
+            if hasattr(strategy, 'generate_signal') and callable(getattr(strategy, 'generate_signal')):
+                for market in platform_markets:
+                    try:
+                        signal = strategy.generate_signal(
+                            market=market,
+                            bankroll=self.risk_manager.state.bankroll,
+                        )
+                        
+                        if signal is not None:
+                            signal.strategy = strategy_name
+                            strategy_signals.append(signal)
+                            
+                    except Exception as e:
+                        logger.debug(f"Error generating signal for {market.market_id}: {e}")
+            
+            # Log each signal for reconciliation
+            for signal in strategy_signals:
+                market = next((m for m in markets if m.market_id == signal.market_id), None)
+                if market:
+                    strategy_logger.log_signal(
+                        strategy_name=strategy_name,
+                        market_id=signal.market_id,
+                        side=signal.side.value,
+                        edge=signal.edge,
+                        confidence=signal.confidence,
+                        kelly=signal.kelly_fraction,
+                        market_yes_price=market.current_yes_price,
+                        market_bid=market.metadata.get('bid', market.current_yes_price),
+                        market_ask=market.metadata.get('ask', market.current_yes_price),
+                        market_volume=market.volume,
+                    )
+                
+                # Log signal to file
+                self._log_signal(signal)
+            
+            signals.extend(strategy_signals)
         
         logger.info(f"Generated {len(signals)} signals")
         return signals
@@ -245,6 +291,28 @@ class TradingEngine:
         # Sort final selection by confidence and limit
         selected.sort(key=lambda s: s.confidence, reverse=True)
         valid_signals = selected[:self.config.max_orders_per_run]
+        
+        # Filter out signals for markets we already have positions in
+        if self.position_manager:
+            existing_markets = {p.market_id for p in self.position_manager.open_positions.values()}
+            before_count = len(valid_signals)
+            valid_signals = [s for s in valid_signals if s.market_id not in existing_markets]
+            if before_count > len(valid_signals):
+                logger.debug(f"Filtered {before_count - len(valid_signals)} signals for existing positions")
+        
+        # Deduplicate signals by market_id within this batch
+        # Keep only the highest confidence signal per market
+        seen_markets = set()
+        deduped_signals = []
+        for signal in sorted(valid_signals, key=lambda s: s.confidence, reverse=True):
+            if signal.market_id not in seen_markets:
+                seen_markets.add(signal.market_id)
+                deduped_signals.append(signal)
+        
+        if len(deduped_signals) < len(valid_signals):
+            logger.debug(f"Deduplicated {len(valid_signals) - len(deduped_signals)} signals for same markets in batch")
+        
+        valid_signals = deduped_signals
         
         for signal in valid_signals:
             try:
@@ -344,8 +412,17 @@ class TradingEngine:
             if pnl != 0:
                 self.risk_manager.record_pnl(pnl)
             
-            # Track position for position management
+            # Track position for position management and sync with risk manager
             if self.position_manager and order.status == OrderStatus.FILLED:
+                # Record fill with risk manager
+                category = order.metadata.get('category', 'unknown')
+                self.risk_manager.record_fill_from_order(
+                    market_id=order.market_id,
+                    side=order.side.value,
+                    size=order.size,
+                    price=order.price,
+                    category=category,
+                )
                 # Get the market YES price (before impact cost) for mark-to-market tracking
                 # order.price is the entry price WITH impact cost
                 # order.metadata['market_price'] is the original market YES price
@@ -388,6 +465,35 @@ class TradingEngine:
         with open(self.trade_log, 'a') as f:
             f.write(json.dumps(trade_data) + '\n')
     
+    def _log_closed_trade(self, position):
+        """Log a closed trade to the closed trades file."""
+        log_dir = Path(self.config.log_dir)
+        closed_file = log_dir / "closed_trades.jsonl"
+        
+        trade_data = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'position_id': position.position_id,
+            'market_id': position.market_id,
+            'market_question': position.market_question,
+            'platform': position.platform,
+            'side': position.side,
+            'strategy': position.strategy,
+            'entry_price': position.entry_price,
+            'exit_price': position.exit_price,
+            'entry_time': position.entry_time.isoformat() if position.entry_time else None,
+            'exit_time': position.exit_time.isoformat() if position.exit_time else None,
+            'size': position.size,
+            'pnl': position.realized_pnl,
+            'return_pct': (position.realized_pnl / position.size * 100) if position.size > 0 else 0,
+            'exit_reason': position.exit_reason,
+            'hold_time_hours': position.time_in_position.total_seconds() / 3600 if position.time_in_position else 0,
+        }
+        
+        with open(closed_file, 'a') as f:
+            f.write(json.dumps(trade_data) + '\n')
+        
+        logger.info(f"Logged closed trade: {position.position_id} ({position.exit_reason}) PnL=${position.realized_pnl:.2f}")
+    
     def _log_positions(self):
         """Log current position state for dashboard."""
         if not self.position_manager:
@@ -411,10 +517,34 @@ class TradingEngine:
             'profit_takes': summary.get('profit_takes', 0),
             'stop_losses': summary.get('stop_losses', 0),
             'positions': open_positions[:20],  # Last 20 for display
+            # Threshold settings for dashboard
+            'profit_take_pct': self.config.profit_take_pct,
+            'stop_loss_pct': self.config.stop_loss_pct,
+            'online_learning_enabled': self.config.use_online_learning,
         }
         
         with open(position_file, 'w') as f:
             json.dump(position_data, f, indent=2)
+        
+        # Update strategy logger with position stats per strategy
+        strategy_logger = get_strategy_logger()
+        positions_by_strategy = {}
+        for pos in open_positions:
+            strat = pos.get('strategy', 'unknown')
+            if strat not in positions_by_strategy:
+                positions_by_strategy[strat] = {'count': 0, 'exposure': 0, 'upnl': 0, 'rpnl': 0}
+            positions_by_strategy[strat]['count'] += 1
+            positions_by_strategy[strat]['exposure'] += pos.get('size', 0)
+            positions_by_strategy[strat]['upnl'] += pos.get('unrealized_pnl', 0)
+        
+        for strat, stats in positions_by_strategy.items():
+            strategy_logger.log_position_update(
+                strategy_name=strat,
+                open_positions=stats['count'],
+                total_exposure=stats['exposure'],
+                unrealized_pnl=stats['upnl'],
+                realized_pnl=stats['rpnl'],
+            )
     
     def run_cycle(self):
         """Run one trading cycle."""
@@ -498,9 +628,13 @@ class TradingEngine:
                     f"PnL=${closed.realized_pnl:.2f}"
                 )
                 
-                # Record PnL with risk manager
+                # Record PnL with risk manager and remove position
                 if closed.realized_pnl:
                     self.risk_manager.record_pnl(closed.realized_pnl)
+                self.risk_manager.remove_position(position.market_id)
+                
+                # Log closed trade to file for dashboard
+                self._log_closed_trade(closed)
         
         # Log position summary
         if self.position_manager.open_positions:

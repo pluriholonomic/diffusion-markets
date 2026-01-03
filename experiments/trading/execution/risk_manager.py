@@ -169,6 +169,105 @@ class RiskManager:
         # Update daily stats
         self.state.daily_stats.trades += 1
     
+    def record_fill_from_order(
+        self,
+        market_id: str,
+        side: str,
+        size: float,
+        price: float,
+        category: str = "unknown",
+    ):
+        """
+        Record a fill from order details (used when Fill object not available).
+        
+        Args:
+            market_id: Market identifier
+            side: 'yes' or 'no'
+            size: USD size of the order
+            price: Execution price
+            category: Market category for concentration tracking
+        """
+        # Update category exposure
+        self.state.category_exposure[category] = (
+            self.state.category_exposure.get(category, 0) + size
+        )
+        
+        # Update positions tracking
+        if market_id not in self.state.positions:
+            from ..utils.models import Position, Platform, Side
+            self.state.positions[market_id] = Position(
+                platform=Platform.POLYMARKET,  # Default, can be overridden
+                market_id=market_id,
+                side=Side.YES if side == 'yes' else Side.NO,
+                size=size,
+                avg_entry_price=price,
+                current_price=price,
+            )
+        else:
+            # Add to existing position
+            pos = self.state.positions[market_id]
+            # Update weighted average entry
+            old_size = pos.size
+            new_total = old_size + size
+            if new_total > 0:
+                pos.avg_entry_price = (pos.avg_entry_price * old_size + price * size) / new_total
+            pos.size = new_total
+            pos.current_price = price
+        
+        # Update daily stats
+        self.state.daily_stats.trades += 1
+    
+    def sync_positions(self, open_positions: list):
+        """
+        Sync positions from PositionManager.
+        
+        Args:
+            open_positions: List of position dicts from PositionManager.get_open_positions()
+        """
+        # Clear existing positions
+        self.state.positions.clear()
+        self.state.category_exposure.clear()
+        
+        # Rebuild from PositionManager data
+        for pos_data in open_positions:
+            market_id = pos_data.get('market_id', '')
+            size = pos_data.get('size', 0)
+            entry_price = pos_data.get('entry_price', 0)
+            side = pos_data.get('side', 'yes')
+            
+            from ..utils.models import Position, Platform, Side
+            self.state.positions[market_id] = Position(
+                platform=Platform.POLYMARKET,  # Default
+                market_id=market_id,
+                side=Side.YES if side == 'yes' else Side.NO,
+                size=size,
+                avg_entry_price=entry_price,
+                current_price=entry_price,
+            )
+            
+            # Update category exposure (default category if not provided)
+            category = pos_data.get('category', 'unknown')
+            self.state.category_exposure[category] = (
+                self.state.category_exposure.get(category, 0) + size
+            )
+    
+    def remove_position(self, market_id: str, category: str = "unknown"):
+        """
+        Remove a closed position from tracking.
+        
+        Args:
+            market_id: Market identifier
+            category: Market category
+        """
+        if market_id in self.state.positions:
+            pos = self.state.positions.pop(market_id)
+            
+            # Update category exposure
+            if category in self.state.category_exposure:
+                self.state.category_exposure[category] -= pos.size
+                if self.state.category_exposure[category] <= 0:
+                    del self.state.category_exposure[category]
+    
     def record_pnl(self, pnl: float):
         """Record PnL from a position close."""
         self.state.bankroll += pnl

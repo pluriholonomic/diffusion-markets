@@ -232,6 +232,22 @@ class MarketStateManager:
         # Calculate cost
         cost = abs(trade_size) * transaction_cost
 
+        # Determine if we're adding to or reducing the position
+        is_reducing = (current_size != 0) and (trade_size * current_size < 0)
+        
+        # Calculate realized PnL if reducing position
+        realized_pnl = 0.0
+        if is_reducing and current_pos:
+            # We're closing some or all of the position
+            closed_size = min(abs(trade_size), abs(current_size))
+            # PnL = closed_size * (exit_price - entry_price)
+            if current_size > 0:
+                # Long position being reduced: sold at price, bought at entry_price
+                realized_pnl = closed_size * (price - current_pos.entry_price)
+            else:
+                # Short position being reduced: bought at price, sold at entry_price
+                realized_pnl = closed_size * (current_pos.entry_price - price)
+
         # Create trade record
         trade = Trade(
             market_id=market_id,
@@ -241,30 +257,44 @@ class MarketStateManager:
             price=price,
             cost=cost,
             strategy=strategy,
+            pnl=realized_pnl,  # Record realized PnL on the trade
         )
         self.trades.append(trade)
 
         # Update position
         if abs(size) < 1e-9:
-            # Close position
+            # Close position entirely
             if market_id in self.positions[strategy]:
                 del self.positions[strategy][market_id]
         else:
             # Open/adjust position
             if current_pos:
-                # Adjust existing position (average entry price)
-                total_size = current_size + trade_size
-                if abs(total_size) > 1e-9:
-                    avg_price = (
-                        current_pos.entry_price * current_size + price * trade_size
-                    ) / total_size
+                if is_reducing:
+                    # Reducing position: keep same entry price, just reduce size
+                    # Entry price stays the same because we're exiting at market,
+                    # not averaging in at a new price
                     self.positions[strategy][market_id] = Position(
                         market_id=market_id,
-                        size=total_size,
-                        entry_price=avg_price,
-                        entry_timestamp=self.current_time,
+                        size=size,
+                        entry_price=current_pos.entry_price,  # Keep original entry
+                        entry_timestamp=current_pos.entry_timestamp,  # Keep original time
                         strategy=strategy,
                     )
+                else:
+                    # Adding to position: compute weighted average entry price
+                    total_size = current_size + trade_size
+                    if abs(total_size) > 1e-9:
+                        # Weight by absolute sizes for correct average
+                        avg_price = (
+                            abs(current_pos.entry_price * current_size) + abs(price * trade_size)
+                        ) / abs(total_size)
+                        self.positions[strategy][market_id] = Position(
+                            market_id=market_id,
+                            size=total_size,
+                            entry_price=avg_price,
+                            entry_timestamp=self.current_time,
+                            strategy=strategy,
+                        )
             else:
                 # New position
                 self.positions[strategy][market_id] = Position(

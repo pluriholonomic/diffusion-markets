@@ -361,6 +361,33 @@ DASHBOARD_HTML = """
         </div>
     </div>
     
+    <!-- Position Management Settings -->
+    <h2 class="section-title">⚙️ Position Management Thresholds</h2>
+    <div class="grid grid-4">
+        <div class="card">
+            <div class="card-title">Take Profit</div>
+            <div class="card-value positive">+{{ '{:.1f}'.format(status.profit_take_pct) }}%</div>
+            <div class="card-subtitle">Exit winners at this gain</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Stop Loss</div>
+            <div class="card-value negative">-{{ '{:.1f}'.format(status.stop_loss_pct) }}%</div>
+            <div class="card-subtitle">Exit losers at this loss</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Online Learning</div>
+            <div class="card-value {{ 'positive' if status.online_learning else 'neutral' }}">
+                {{ 'Enabled' if status.online_learning else 'Disabled' }}
+            </div>
+            <div class="card-subtitle">Adaptive thresholds</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Open Positions</div>
+            <div class="card-value neutral">{{ status.open_positions }}</div>
+            <div class="card-subtitle">Profit takes: {{ status.profit_takes }} | Stop losses: {{ status.stop_losses }}</div>
+        </div>
+    </div>
+    
     <!-- Strategies Table -->
     <h2 class="section-title">📋 Strategies</h2>
     <table>
@@ -469,7 +496,7 @@ DASHBOARD_HTML = """
                 <td title="{{ trade.market_id }}">{{ trade.market_id[:12] }}...</td>
                 <td>{{ trade.side | upper }}</td>
                 <td>${{ '{:.0f}'.format(trade.size) }}</td>
-                <td>{{ '{:.2f}'.format(trade.price) }}</td>
+                <td>{{ '{:.2f}'.format(trade.entry_price) }} → {{ '{:.2f}'.format(trade.exit_price) }}</td>
                 <td class="{{ trade.result }}">{{ trade.result | upper }}</td>
                 <td class="{{ 'win' if trade.pnl >= 0 else 'loss' }}">
                     {{ '+' if trade.pnl >= 0 else '' }}${{ '{:.0f}'.format(trade.pnl) }}
@@ -481,6 +508,63 @@ DASHBOARD_HTML = """
             {% endif %}
         </tbody>
     </table>
+    
+    <!-- Risk Limits Panel -->
+    <details style="margin-top: 30px;">
+        <summary style="cursor: pointer; font-size: 18px; font-weight: bold; color: #fff; padding: 15px; background: #1a1a2a; border-radius: 8px; margin-bottom: 15px;">
+            ⚠️ Risk Limits & Configuration (click to expand)
+        </summary>
+        <div style="background: #12121a; border: 1px solid #2a2a3a; border-radius: 12px; padding: 20px; margin-top: 10px;">
+            <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                <!-- Position Management -->
+                <div style="background: #1a1a2a; border-radius: 8px; padding: 15px;">
+                    <h3 style="color: #60a5fa; margin-bottom: 15px; font-size: 14px;">📊 Position Management</h3>
+                    <table style="width: 100%; font-size: 13px;">
+                        <tr><td style="color: #888;">Take Profit</td><td style="color: #4ade80; text-align: right;">+{{ '{:.1f}'.format(limits.profit_take_pct) }}%</td></tr>
+                        <tr><td style="color: #888;">Stop Loss</td><td style="color: #ef4444; text-align: right;">-{{ '{:.1f}'.format(limits.stop_loss_pct) }}%</td></tr>
+                        <tr><td style="color: #888;">Max Positions</td><td style="text-align: right;">{{ limits.max_positions }}</td></tr>
+                        <tr><td style="color: #888;">Max Per Market</td><td style="text-align: right;">{{ limits.max_per_market }}</td></tr>
+                        <tr><td style="color: #888;">Max Position Size</td><td style="text-align: right;">${{ '{:,.0f}'.format(limits.max_position_size) }}</td></tr>
+                        <tr><td style="color: #888;">Max Hold Time</td><td style="text-align: right;">{{ limits.max_hold_hours }}h</td></tr>
+                        <tr><td style="color: #888;">Online Learning</td><td style="text-align: right;">{{ 'Enabled' if limits.online_learning else 'Disabled' }}</td></tr>
+                    </table>
+                </div>
+                
+                <!-- Global Risk Limits -->
+                <div style="background: #1a1a2a; border-radius: 8px; padding: 15px;">
+                    <h3 style="color: #fbbf24; margin-bottom: 15px; font-size: 14px;">🛡️ Global Risk Limits</h3>
+                    <table style="width: 100%; font-size: 13px;">
+                        <tr><td style="color: #888;">Max Position %</td><td style="text-align: right;">{{ '{:.0f}'.format(limits.max_position_pct * 100) }}%</td></tr>
+                        <tr><td style="color: #888;">Daily Loss Stop</td><td style="color: #ef4444; text-align: right;">{{ '{:.0f}'.format(limits.max_daily_loss_pct * 100) }}%</td></tr>
+                        <tr><td style="color: #888;">Max Drawdown</td><td style="color: #ef4444; text-align: right;">{{ '{:.0f}'.format(limits.max_drawdown_pct * 100) }}%</td></tr>
+                        <tr><td style="color: #888;">Kelly Fraction</td><td style="text-align: right;">{{ limits.kelly_fraction }}</td></tr>
+                        <tr><td style="color: #888;">Min Edge</td><td style="text-align: right;">{{ '{:.0f}'.format(limits.min_edge * 100) }}%</td></tr>
+                        <tr><td style="color: #888;">Min Liquidity</td><td style="text-align: right;">${{ '{:,.0f}'.format(limits.min_liquidity) }}</td></tr>
+                        <tr><td style="color: #888;">Max Concentration</td><td style="text-align: right;">{{ '{:.0f}'.format(limits.max_concentration * 100) }}%</td></tr>
+                    </table>
+                </div>
+                
+                <!-- Execution Settings -->
+                <div style="background: #1a1a2a; border-radius: 8px; padding: 15px;">
+                    <h3 style="color: #a78bfa; margin-bottom: 15px; font-size: 14px;">⚡ Execution Settings</h3>
+                    <table style="width: 100%; font-size: 13px;">
+                        <tr><td style="color: #888;">Initial Bankroll</td><td style="text-align: right;">${{ '{:,.0f}'.format(limits.initial_bankroll) }}</td></tr>
+                        <tr><td style="color: #888;">Max Orders/Run</td><td style="text-align: right;">{{ limits.max_orders_per_run }}</td></tr>
+                        <tr><td style="color: #888;">Min Confidence</td><td style="text-align: right;">{{ limits.min_confidence }}</td></tr>
+                        <tr><td style="color: #888;">Mode</td><td style="text-align: right;">{{ limits.mode | upper }}</td></tr>
+                    </table>
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #2a2a3a;">
+                        <h4 style="color: #888; font-size: 12px; margin-bottom: 8px;">Definitions</h4>
+                        <p style="font-size: 11px; color: #666; line-height: 1.5;">
+                            <b>Fill Rate</b> = positions / order attempts<br>
+                            <b>Win Rate</b> = wins / (wins + losses)<br>
+                            <b>Total Trades</b> = open + closed positions
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </details>
     
     <div class="timestamp">Last updated: {{ timestamp }}</div>
 </body>
@@ -575,6 +659,32 @@ class TradingDashboard:
         @self.app.route('/')
         def index():
             self._refresh_data()
+            
+            # Build limits object for display
+            limits_data = {
+                # Position Management
+                'profit_take_pct': self._data.status.get('profit_take_pct', 20.0),
+                'stop_loss_pct': self._data.status.get('stop_loss_pct', 20.0),
+                'max_positions': 50,
+                'max_per_market': 1,
+                'max_position_size': 1000,
+                'max_hold_hours': 72,
+                'online_learning': self._data.status.get('online_learning', True),
+                # Global Risk Limits
+                'max_position_pct': 0.10,
+                'max_daily_loss_pct': 0.20,
+                'max_drawdown_pct': 0.30,
+                'kelly_fraction': 0.25,
+                'min_edge': 0.05,
+                'min_liquidity': 1000,
+                'max_concentration': 0.30,
+                # Execution Settings
+                'initial_bankroll': self._data.status.get('initial_bankroll', 10000),
+                'max_orders_per_run': 20,
+                'min_confidence': 0.3,
+                'mode': self._data.mode,
+            }
+            
             return render_template_string(
                 DASHBOARD_HTML,
                 status=type('Status', (), self._data.status)(),
@@ -585,6 +695,7 @@ class TradingDashboard:
                 open_positions=self._data.open_positions,
                 closed_trades=self._data.closed_trades,
                 flow=type('Flow', (), self._data.flow)(),
+                limits=type('Limits', (), limits_data)(),
                 mode=self._data.mode,
                 timestamp=self._data.timestamp,
             )
@@ -732,7 +843,13 @@ class TradingDashboard:
                 except:
                     pass
             
-            # Try to read position state for unrealized PnL
+            # Try to read position state for unrealized PnL and thresholds
+            profit_take_pct = 60.0  # Default
+            stop_loss_pct = 38.5    # Default
+            online_learning = True
+            profit_takes = 0
+            stop_losses = 0
+            
             position_file = self.log_dir / "positions.json"
             if position_file.exists():
                 try:
@@ -740,6 +857,12 @@ class TradingDashboard:
                         positions_data = json.load(f)
                         unrealized_pnl = positions_data.get('unrealized_pnl', unrealized_pnl)
                         open_positions = positions_data.get('open_count', open_positions)
+                        # Get threshold settings
+                        profit_take_pct = positions_data.get('profit_take_pct', profit_take_pct)
+                        stop_loss_pct = positions_data.get('stop_loss_pct', stop_loss_pct)
+                        online_learning = positions_data.get('online_learning_enabled', online_learning)
+                        profit_takes = positions_data.get('profit_takes', 0)
+                        stop_losses = positions_data.get('stop_losses', 0)
                 except:
                     pass
             
@@ -771,8 +894,11 @@ class TradingDashboard:
                     'pnl': trade_info['pnl'],
                 }
             
-            # Compute fill rate
-            fill_rate = (len(trades) / len(signals) * 100) if len(signals) > 0 else 0
+            # Compute fill rate: positions opened / unique order attempts
+            # Count unique markets attempted (not duplicate attempts for same market)
+            unique_markets_attempted = len(set(t.get('market_id', '') for t in trades if t.get('market_id')))
+            actual_positions = open_positions + wins + losses
+            fill_rate = (actual_positions / unique_markets_attempted * 100) if unique_markets_attempted > 0 else 0
             
             # Update data
             self._data.status = {
@@ -786,37 +912,24 @@ class TradingDashboard:
                 'unrealized_pnl': unrealized_pnl,
                 'total_pnl': total_pnl,
                 'open_positions': open_positions,
-                'total_trades': len(trades),
+                'total_trades': open_positions + wins + losses,  # Actual positions: open + closed
                 'wins': wins,
                 'losses': losses,
                 'fill_rate': fill_rate,
+                # Position management thresholds
+                'profit_take_pct': profit_take_pct,
+                'stop_loss_pct': stop_loss_pct,
+                'online_learning': online_learning,
+                'profit_takes': profit_takes,
+                'stop_losses': stop_losses,
             }
             self._data.risk = risk_metrics
             self._data.strategies = strategies
             self._data.recent_signals = signals[-20:][::-1]
             self._data.recent_trades = trades[-30:][::-1]
             
-            # Separate open positions and closed trades
+            # Get open positions from positions.json
             open_positions_list = []
-            closed_trades_list = []
-            
-            for trade in trades:
-                if trade['result'] == 'pending':
-                    open_positions_list.append({
-                        'entry_time': trade['time'],
-                        'strategy': trade['strategy'],
-                        'platform': trade['platform'],
-                        'market_id': trade['market_id'],
-                        'side': trade['side'],
-                        'entry_price': trade['price'],
-                        'current_price': trade['price'],  # Would update from live data
-                        'size': trade['size'],
-                        'unrealized_pnl': trade['pnl'],
-                    })
-                else:
-                    closed_trades_list.append(trade)
-            
-            # Try to read position details from positions.json
             position_file = self.log_dir / "positions.json"
             if position_file.exists():
                 try:
@@ -824,18 +937,64 @@ class TradingDashboard:
                         positions_data = json.load(f)
                         if 'positions' in positions_data:
                             open_positions_list = positions_data['positions']
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Error reading positions.json: {e}")
+            
+            # Get closed trades from closed_trades.jsonl
+            closed_trades_list = []
+            closed_file = self.log_dir / "closed_trades.jsonl"
+            if closed_file.exists():
+                try:
+                    with open(closed_file) as f:
+                        for line in f:
+                            if line.strip():
+                                try:
+                                    trade = json.loads(line)
+                                    closed_trades_list.append({
+                                        'time': trade.get('exit_time', trade.get('timestamp', ''))[:16],
+                                        'strategy': trade.get('strategy', 'unknown'),
+                                        'platform': trade.get('platform', 'unknown'),
+                                        'market_id': trade.get('market_id', ''),
+                                        'market_question': trade.get('market_question', ''),
+                                        'side': trade.get('side', 'yes'),
+                                        'entry_price': trade.get('entry_price', 0),
+                                        'exit_price': trade.get('exit_price', 0),
+                                        'size': trade.get('size', 0),
+                                        'pnl': trade.get('pnl', 0),
+                                        'return_pct': trade.get('return_pct', 0),
+                                        'exit_reason': trade.get('exit_reason', 'unknown'),
+                                        'hold_time_hours': trade.get('hold_time_hours', 0),
+                                        'status': 'closed',
+                                        'result': trade.get('exit_reason', 'closed'),
+                                    })
+                                    # Update wins/losses based on closed trades
+                                    if trade.get('pnl', 0) > 0:
+                                        wins += 1
+                                    else:
+                                        losses += 1
+                                    realized_pnl += trade.get('pnl', 0)
+                                    pnl_series.append(trade.get('pnl', 0))
+                                except:
+                                    pass
+                except Exception as e:
+                    print(f"Error reading closed_trades.jsonl: {e}")
             
             self._data.open_positions = open_positions_list[-20:][::-1]
             self._data.closed_trades = closed_trades_list[-30:][::-1]
+            
+            # Count actual unique positions (not duplicate order attempts)
+            # trades_filled = open positions + closed positions (unique trades)
+            unique_positions = len(open_positions_list) + len(closed_trades_list)
+            
+            # Count unique markets attempted (first attempt per market)
+            unique_markets = len(set(t.get('market_id', '') for t in trades if t.get('market_id')))
             
             self._data.pnl_series = pnl_series
             self._data.flow = {
                 'markets_scanned': len(signals) * 5,  # Estimate
                 'signals_generated': len(signals),
-                'trades_attempted': len(trades),
-                'trades_filled': sum(1 for t in trades if t['status'] == 'filled'),
+                'trades_attempted': unique_markets,
+                'trades_filled': unique_positions,
             }
             self._data.timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
             

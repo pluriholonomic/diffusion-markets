@@ -155,16 +155,16 @@ class OnlineLearnerConfig:
     """Configuration for online learner.
     
     Parameters optimized via CMA-ES on historical data (2026-01-02):
-    - profit_take_pct: 60% - exit winners at 60% gain
-    - stop_loss_pct: 38.5% - exit losers at 38.5% loss  
+    - profit_take_pct: 20% - exit winners at 20% gain
+    - stop_loss_pct: 20% - exit losers at 20% loss  
     - trailing_stop_pct: 19.6% - trail by 19.6%
     - ema_alpha_fast: 0.15 (vs 0.10) - faster reaction
     - ema_alpha_slow: 0.028 (vs 0.02) - slightly faster
     - learning_rate: 0.05 (vs 0.01) - faster adaptation
     """
     # Initial thresholds (optimized via CMA-ES)
-    initial_profit_take_pct: float = 60.0  # Take profit at 60% gain (optimized)
-    initial_stop_loss_pct: float = 38.5    # Stop loss at 38.5% loss (optimized)
+    initial_profit_take_pct: float = 20.0  # Take profit at 20% gain
+    initial_stop_loss_pct: float = 20.0    # Stop loss at 20% loss
     trailing_stop_pct: float = 19.6        # Trailing stop (optimized)
     
     # Learning rate and regularization (optimized)
@@ -183,9 +183,9 @@ class OnlineLearnerConfig:
     
     # Constraints
     min_profit_take_pct: float = 5.0
-    max_profit_take_pct: float = 100.0
+    max_profit_take_pct: float = 20.0  # Clamped to 20% max
     min_stop_loss_pct: float = 5.0
-    max_stop_loss_pct: float = 50.0
+    max_stop_loss_pct: float = 20.0    # Clamped to 20% max
     
     # History
     max_history_size: int = 1000
@@ -404,15 +404,18 @@ class OnlineLinearLearner:
         }
 
 
-@dataclass 
+@dataclass
 class PositionManagerConfig:
     """Configuration for position manager."""
-    # Default thresholds (before learning)
+    # Default thresholds (before learning) - must match EngineConfig
     default_profit_take_pct: float = 20.0
-    default_stop_loss_pct: float = 15.0
+    default_stop_loss_pct: float = 20.0
     
     # Whether to use online learning
     use_online_learning: bool = True
+    
+    # Persistence path for saving/loading position state
+    persist_path: Optional[str] = None
     
     # EMA parameters
     ema_alpha_fast: float = 0.1
@@ -469,6 +472,78 @@ class PositionManager:
             'expiries': 0,
             'total_pnl': 0.0,
         }
+        
+        # Load persisted state if available
+        if self.config.persist_path:
+            self._load_state()
+    
+    def _load_state(self):
+        """Load position state from disk."""
+        from pathlib import Path
+        persist_file = Path(self.config.persist_path)
+        if not persist_file.exists():
+            logger.info(f"No persisted state found at {persist_file}")
+            return
+        
+        try:
+            with open(persist_file) as f:
+                data = json.load(f)
+            
+            # Load stats
+            self.stats = data.get('stats', self.stats)
+            
+            # Load open positions
+            for pos_data in data.get('open_positions', []):
+                try:
+                    position = Position(
+                        position_id=pos_data['position_id'],
+                        market_id=pos_data['market_id'],
+                        market_question=pos_data.get('market_question', ''),
+                        platform=pos_data['platform'],
+                        side=pos_data['side'],
+                        entry_price=pos_data['entry_price'],
+                        entry_time=datetime.fromisoformat(pos_data['entry_time']),
+                        size=pos_data['size'],
+                        strategy=pos_data.get('strategy', 'unknown'),
+                        current_price=pos_data.get('current_price', pos_data['entry_price']),
+                        peak_price=pos_data.get('peak_price', pos_data['entry_price']),
+                        trough_price=pos_data.get('trough_price', pos_data['entry_price']),
+                    )
+                    self.open_positions[position.position_id] = position
+                except Exception as e:
+                    logger.warning(f"Failed to load position: {e}")
+            
+            # Load price history
+            self.price_history = data.get('price_history', {})
+            
+            logger.info(f"Loaded {len(self.open_positions)} open positions from {persist_file}")
+            
+        except Exception as e:
+            logger.error(f"Failed to load state from {persist_file}: {e}")
+    
+    def _save_state(self):
+        """Save position state to disk."""
+        if not self.config.persist_path:
+            return
+        
+        from pathlib import Path
+        persist_file = Path(self.config.persist_path)
+        persist_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        try:
+            data = {
+                'timestamp': datetime.utcnow().isoformat(),
+                'stats': self.stats,
+                'open_positions': [p.to_dict() for p in self.open_positions.values()],
+                'closed_count': len(self.closed_positions),
+                'price_history': {k: v[-100:] for k, v in self.price_history.items()},  # Keep last 100
+            }
+            
+            with open(persist_file, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+        except Exception as e:
+            logger.error(f"Failed to save state to {persist_file}: {e}")
     
     def open_position(self, position_id: str, market_id: str, platform: str,
                       side: str, entry_price: float, size: float, 
@@ -521,11 +596,15 @@ class PositionManager:
         if market_id not in self.price_history:
             self.price_history[market_id] = []
         
+        # Persist state
+        self._save_state()
+        
         logger.info(f"Opened position {position_id}: {side.upper()} {market_id} @ {entry_price:.4f}")
         return position
     
     def update_prices(self, market_prices: Dict[str, float]):
         """Update prices for all open positions."""
+        updated = False
         for position in self.open_positions.values():
             if position.market_id in market_prices:
                 new_price = market_prices[position.market_id]
@@ -534,6 +613,7 @@ class PositionManager:
                     self.config.ema_alpha_fast,
                     self.config.ema_alpha_slow,
                 )
+                updated = True
                 
                 # Store price history
                 if position.market_id not in self.price_history:
@@ -543,6 +623,10 @@ class PositionManager:
                 # Limit history size
                 if len(self.price_history[position.market_id]) > 1000:
                     self.price_history[position.market_id] = self.price_history[position.market_id][-500:]
+        
+        # Persist updated prices
+        if updated:
+            self._save_state()
     
     def check_exits(self) -> List[Tuple[Position, str]]:
         """
@@ -611,6 +695,9 @@ class PositionManager:
                 optimal_profit,
                 optimal_stop,
             )
+        
+        # Persist state
+        self._save_state()
         
         logger.info(f"Closed position {position_id}: {reason}, PnL=${position.realized_pnl:.2f}")
         return position

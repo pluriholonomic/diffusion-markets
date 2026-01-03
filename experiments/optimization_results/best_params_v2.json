@@ -1,0 +1,20 @@
+{
+  "params": {
+    "min_edge": 0.01,
+    "confidence_threshold": 0.3659440158339223,
+    "kelly_fraction": 0.5,
+    "max_position_pct": 0.09962821118124744,
+    "max_positions": 29,
+    "profit_take_pct": 15.0,
+    "stop_loss_pct": 10.0,
+    "stale_hours": 60.71711197412345,
+    "min_price": 0.05,
+    "max_price": 0.95
+  },
+  "total_pnl": 952652.7049759829,
+  "daily_pnl": 1205.8894999695985,
+  "sharpe": 1.8185438130367388,
+  "win_rate": 0.3576263537906137,
+  "drawdown": 0.2385456248783213,
+  "trades": 8864
+}

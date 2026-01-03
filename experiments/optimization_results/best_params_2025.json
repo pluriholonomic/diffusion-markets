@@ -1,0 +1,18 @@
+{
+  "params": {
+    "hi_threshold": 0.65,
+    "lo_threshold": 0.35,
+    "profit_take_pct": 25,
+    "stop_loss_pct": 5,
+    "max_position_pct": 0.1,
+    "max_positions": 50,
+    "min_edge": 0.01
+  },
+  "daily_pnl": 700.452887402959,
+  "sharpe": 9.5855916287429,
+  "trades": 470069,
+  "win_rate": 0.07760137341539221,
+  "total_pnl": 176514.12762554563,
+  "optimized_on": "2025_ohlcv_fast",
+  "timestamp": "2026-01-03T23:51:36.533263"
+}

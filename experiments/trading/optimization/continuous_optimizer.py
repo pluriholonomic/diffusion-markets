@@ -26,6 +26,13 @@ import multiprocessing as mp
 import numpy as np
 import pandas as pd
 
+# Import cost model for realistic execution
+try:
+    from backtest.execution.cost_model import ExecutionCostModel, CostModelConfig
+    HAS_COST_MODEL = True
+except ImportError:
+    HAS_COST_MODEL = False
+
 # CMA-ES
 try:
     import cma
@@ -203,7 +210,12 @@ OPTIMIZATION_TASKS = [
 
 def run_single_backtest(params: Dict[str, float], data: pd.DataFrame, 
                         task: OptimizationTask) -> Dict[str, float]:
-    """Run a single backtest with given parameters."""
+    """
+    Run a single backtest with given parameters.
+    
+    IMPORTANT: Uses CALIBRATION-BASED edge estimation, NOT lookahead.
+    We first learn calibration from historical data, then apply it.
+    """
     # Extract common parameters
     kelly_fraction = params.get('kelly_fraction', 0.25)
     spread_threshold = params.get('spread_threshold', 0.08)
@@ -220,18 +232,75 @@ def run_single_backtest(params: Dict[str, float], data: pd.DataFrame,
     peak = bankroll
     max_drawdown = 0
     
-    # Impact cost
-    impact_cost = 0.02
+    # Use realistic cost model if available
+    if HAS_COST_MODEL:
+        cost_model = ExecutionCostModel(CostModelConfig(
+            conservative_multiplier=1.5,  # Be conservative in backtests
+        ))
+    else:
+        cost_model = None
     
-    for _, row in data.iterrows():
+    # Sort data by timestamp to ensure proper temporal ordering
+    df = data.copy()
+    if 'timestamp' in df.columns:
+        df = df.sort_values('timestamp').reset_index(drop=True)
+    
+    # STEP 1: Learn calibration from first 30% of data (training period)
+    # This is the proper way to estimate edge without lookahead
+    n_train = int(len(df) * 0.3)
+    train_data = df.iloc[:n_train]
+    test_data = df.iloc[n_train:]
+    
+    # Build calibration: bin prices and compute outcome rates
+    n_bins = 10
+    calibration = {}
+    
+    for _, row in train_data.iterrows():
         price = row.get('price', row.get('avg_price', 0.5))
         outcome = row.get('outcome', row.get('y', None))
         
         if outcome is None or pd.isna(outcome):
             continue
         
-        # Compute spread
-        spread = outcome - price
+        price = max(0.01, min(0.99, price))
+        bin_idx = min(int(price * n_bins), n_bins - 1)
+        
+        if bin_idx not in calibration:
+            calibration[bin_idx] = {'prices': [], 'outcomes': []}
+        calibration[bin_idx]['prices'].append(price)
+        calibration[bin_idx]['outcomes'].append(outcome)
+    
+    # Compute calibration spreads (expected edge by price bin)
+    bin_spreads = {}
+    for bin_idx, data_dict in calibration.items():
+        if len(data_dict['prices']) >= 10:  # Minimum samples
+            avg_price = np.mean(data_dict['prices'])
+            outcome_rate = np.mean(data_dict['outcomes'])
+            bin_spreads[bin_idx] = outcome_rate - avg_price
+    
+    if not bin_spreads:
+        # No valid calibration, return empty metrics
+        return {
+            'realized_pnl': 0, 'sharpe': 0, 'sortino': 0,
+            'max_drawdown': 0, 'es_sharpe': 0, 'win_rate': 0,
+            'total_trades': 0, 'portfolio_sharpe': 0, 'portfolio_pnl': 0,
+            'diversification_ratio': 1.0, 'risk_adjusted_return': 0,
+            'tail_risk': 0, 'recovery_time': 0,
+        }
+    
+    # STEP 2: Trade on test data using ONLY calibration-based edge (no outcome peeking)
+    for _, row in test_data.iterrows():
+        price = row.get('price', row.get('avg_price', 0.5))
+        outcome = row.get('outcome', row.get('y', None))
+        
+        if outcome is None or pd.isna(outcome):
+            continue
+        
+        price = max(0.01, min(0.99, price))
+        bin_idx = min(int(price * n_bins), n_bins - 1)
+        
+        # Get calibration-based edge (NOT using outcome - that's the key fix!)
+        spread = bin_spreads.get(bin_idx, 0)
         
         if abs(spread) < spread_threshold:
             continue
@@ -257,13 +326,32 @@ def run_single_backtest(params: Dict[str, float], data: pd.DataFrame,
         
         size = initial_bankroll * kelly
         
-        # Apply impact cost
-        if side == 'yes':
-            entry_price = min(0.99, price * (1 + impact_cost))
-        else:
-            entry_price = min(0.99, (1 - price) * (1 + impact_cost))
+        # Get volume for this market if available
+        volume = row.get('volume', 10000)
         
-        # Compute PnL
+        # Apply realistic execution costs using cost model
+        if cost_model:
+            cost_estimate = cost_model.estimate_cost(
+                side='buy' if side == 'yes' else 'sell',
+                size_usd=size,
+                mid_price=price,
+                volume_usd=volume,
+            )
+            if side == 'yes':
+                entry_price = min(0.99, cost_estimate.effective_price)
+            else:
+                entry_price = min(0.99, 1 - price + cost_estimate.slippage_bps / 10000)
+            execution_cost = cost_estimate.total_cost
+        else:
+            # Fallback to simple impact cost
+            impact_cost = 0.02
+            if side == 'yes':
+                entry_price = min(0.99, price * (1 + impact_cost))
+            else:
+                entry_price = min(0.99, (1 - price) * (1 + impact_cost))
+            execution_cost = size * impact_cost
+        
+        # Compute PnL using actual outcome (this is fine - it's the resolution)
         if side == 'yes':
             if outcome == 1:
                 pnl = size * (1 - entry_price) / entry_price
